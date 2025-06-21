@@ -1,10 +1,24 @@
 from bson import ObjectId
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
+
 from database import collection_name
 from schemas import list_games
 from games import Game
 
 app = FastAPI()
+
+origins = [
+    'http://localhost:4200'
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*']
+)
 
 @app.get('/')
 async def get_games():
