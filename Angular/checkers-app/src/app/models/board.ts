@@ -1,4 +1,4 @@
-import { Square } from "./square";
+import { Square } from "../square";
 
 export class Board {
     // The standard 8x8 board has 32 squares used for play, numbered 1-32. 
@@ -6,9 +6,12 @@ export class Board {
     // White pieces start on squares 21 to 32
 
     private _board: Map<number, Square[]>;
+    private started: boolean;
 
     constructor() {
         this._board = new Map<number, Square[]>();
+        this.started = false;
+
         this.initialize();
     }
 
@@ -17,7 +20,13 @@ export class Board {
     }
 
     public load() {
+        this.started = true;
+    }
 
+    public click(square: Square) : void {
+        if (this.started) {
+            
+        }
     }
 
     private initialize() {

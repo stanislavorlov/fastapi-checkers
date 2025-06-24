@@ -2,9 +2,9 @@ import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgFor, NgIf } from '@angular/common';
 import { Square } from './square';
-import { CheckersService } from './checkers.service';
-import { ApiResult } from './api-result';
-import { Board } from './board';
+import { CheckersService } from './services/checkers.service';
+import { ApiResult } from './models/api-result';
+import { Board } from './models/board';
 
 @Component({
   selector: 'app-root',
@@ -32,7 +32,7 @@ export class AppComponent implements OnInit {
   }
 
   clickBoard(square: Square): void {
-    console.log(square);
+    this.board.click(square);
   }
 
   newGame(): void {
