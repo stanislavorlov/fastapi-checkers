@@ -1,8 +1,16 @@
+import os
+
+from dotenv import load_dotenv
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 
-client = MongoClient("mongodb+srv://stasorlov21:1ibAsmJf2SUq95Ba@cluster0.cchn0.mongodb.net/?retryWrites=true&w=majority", server_api=ServerApi('1'))
+load_dotenv()
+
+DATABASE_URL=os.getenv('DATABASE_URL')
+DATABASE_NAME=os.getenv('DATABASE_NAME')
+
+client = MongoClient(DATABASE_URL, server_api=ServerApi('1'))
 
 #db = client.checkers
-db = client.get_database("checkers")
+db = client.get_database(DATABASE_NAME)
 collection_name = db["games"]
