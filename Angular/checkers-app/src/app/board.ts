@@ -12,8 +12,12 @@ export class Board {
         this.initialize();
     }
 
-    public getBoardView() {
+    public getView() {
         return Array.from(this._board.entries());
+    }
+
+    public load() {
+
     }
 
     private initialize() {

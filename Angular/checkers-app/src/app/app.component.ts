@@ -1,5 +1,5 @@
 import { Component, inject, OnInit } from '@angular/core';
-import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NgFor, NgIf } from '@angular/common';
 import { Square } from './square';
 import { CheckersService } from './checkers.service';
@@ -8,7 +8,7 @@ import { Board } from './board';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, NgFor, NgIf],
+  imports: [NgFor, NgIf],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -20,17 +20,17 @@ export class AppComponent implements OnInit {
   private readonly router = inject(Router);
 
   constructor(private checkersService: CheckersService) {
-    this.boardEntries = new Board().getBoardView();
   }
 
   ngOnInit(): void {
-    console.log('ng init');
     const gameId = this.route.snapshot.paramMap.get('id');
-    console.log(gameId);
+    let board = new Board();
 
     if (!!gameId) {
-      console.log('loading game');
+      board.load();
     }
+
+    this.boardEntries = board.getView();
   }
 
   clickBoard(square: Square): void {
