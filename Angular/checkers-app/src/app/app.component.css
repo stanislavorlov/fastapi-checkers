@@ -7,7 +7,7 @@
 .chess-board th:empty { border: none; }
 .chess-board td { width: 2em; height: 2em; text-align: center; font-size: 32px; line-height: 0; cursor: pointer;}
 .chess-board .light { background: #eee; }
-.chess-board .dark { background: black; }
+.chess-board .dark { background: gray; }
 
 .piece {
   height: 60px;

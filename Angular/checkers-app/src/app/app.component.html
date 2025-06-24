@@ -189,7 +189,7 @@
             <tr *ngFor="let item of boardEntries">
               <th>{{item[0]}}</th>
               <td *ngFor="let sq of item[1]" (click)="clickBoard(sq)" class="{{sq.color}}">
-                <img *ngIf="sq.piece" src="./{{sq.piece}}.jpeg" class="piece" />
+                <img *ngIf="sq.piece" src="./{{sq.piece}}.png" class="piece" />
               </td>
             </tr>
         </tbody>
