@@ -1,9 +1,11 @@
+import { Piece } from "./models/piece";
+
 export class Square {
     private _position : string;
     private _color: string;
-    private _piece: string;
+    private _piece: Piece | null;
 
-    constructor(pos: string, col: string, piece: string) {
+    constructor(pos: string, col: string, piece: Piece | null) {
         this._position = pos;
         this._color = col;
         this._piece = piece;

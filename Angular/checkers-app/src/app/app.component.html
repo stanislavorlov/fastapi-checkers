@@ -190,7 +190,7 @@
               <th>{{item[0]}}</th>
               <td *ngFor="let sq of item[1]" (click)="clickBoard(sq)" class="{{sq.color}}">
                 <div class="watermark">{{sq.position}}</div>
-                <img *ngIf="sq.piece" src="./{{sq.piece}}.png" class="piece" />
+                <img *ngIf="sq.piece" src="./{{sq.piece.image}}.png" class="piece" />
               </td>
             </tr>
         </tbody>

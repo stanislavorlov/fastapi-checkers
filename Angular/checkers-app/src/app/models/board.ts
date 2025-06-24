@@ -1,4 +1,5 @@
 import { Square } from "../square";
+import { Piece, PieceColor } from "./piece";
 
 export class Board {
     // The standard 8x8 board has 32 squares used for play, numbered 1-32. 
@@ -37,21 +38,20 @@ export class Board {
 
             for (let col = 0; col < 8; col++) {
                 const isDark = (row + col) % 2 === 1;
-                const color: 'light' | 'dark' = isDark ? 'dark' : 'light';
 
-                let piece: string = '';
+                let piece: Piece | null = null;
                 if (isDark) {
                     if (row <= 3) {
-                        piece = 'black_piece';
+                        piece = new Piece(PieceColor.BLACK);
                     } else if (row >= 6) {
-                        piece = 'red_piece';
+                        piece = new Piece(PieceColor.RED);
                     }
                 }
 
                 const position = isDark ? positionCounter.toString() : '';
                 if (isDark) positionCounter++;
 
-                cells.push(new Square(position, color, piece ));
+                cells.push(new Square(position, isDark ? 'dark' : 'light', piece ));
             }
 
             this._board.set(row, cells);
