@@ -14,23 +14,21 @@ import { Board } from './board';
 })
 export class AppComponent implements OnInit {
   title = 'checkers-app';
-  boardEntries: [number, Square[]][] = [];
+  board: Board;
   
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   constructor(private checkersService: CheckersService) {
+    this.board = new Board();
   }
 
   ngOnInit(): void {
     const gameId = this.route.snapshot.paramMap.get('id');
-    let board = new Board();
 
     if (!!gameId) {
-      board.load();
+      this.board.load();
     }
-
-    this.boardEntries = board.getView();
   }
 
   clickBoard(square: Square): void {
