@@ -39,21 +39,25 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-@app.get('/')
+@app.get('/api/')
 async def get_games():
     games = list_games(collection_name.find())
 
     return games
 
-@app.post("/")
+@app.post("/api/")
 async def post_game(game: Game):
-    collection_name.insert_one(dict(game))
+    inserted = collection_name.insert_one(dict(game))
 
-@app.put("/{id}")
+    return str(inserted.inserted_id)
+
+@app.put("/api/{id}")
 async def put_game(id: str, game: Game):
     collection_name.find_and_modify({"_id": ObjectId(id)}, {"$set":dict(game)})
 
-@app.delete("/{id}")
+    # ToDo: return
+
+@app.delete("/api/{id}")
 async def delete_game(id: str):
     collection_name.find_one_and_delete({"_id": ObjectId(id)})
 

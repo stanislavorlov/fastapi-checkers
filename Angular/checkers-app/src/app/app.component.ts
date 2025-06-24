@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, inject, OnInit } from '@angular/core';
+import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
 import { NgFor, NgIf } from '@angular/common';
 import { Square } from './square';
+import { CheckersService } from './checkers.service';
+import { ApiResult } from './api-result';
 
 @Component({
   selector: 'app-root',
@@ -9,105 +11,129 @@ import { Square } from './square';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'checkers-app';
   board: Map<number, Square[]>;
   boardEntries: [number, Square[]][] = [];
+  
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
-  constructor() {
+  constructor(private checkersService: CheckersService) {
     this.board = new Map<number, Square[]>();
     this.board.set(1, [
-      { position: 'a1', color: 'light', piece: '' },
-      { position: 'b1', color: 'dark', piece: 'red_piece' },
-      { position: 'c1', color: 'light', piece: '' },
-      { position: 'd1', color: 'dark', piece: 'red_piece' },
-      { position: 'e1', color: 'light', piece: '' },
-      { position: 'f1', color: 'dark', piece: 'red_piece' }, 
-      { position: 'g1', color: 'light', piece: '' },
-      { position: 'h1', color: 'dark', piece: 'red_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '1', color: 'dark', piece: 'red_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '2', color: 'dark', piece: 'red_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '3', color: 'dark', piece: 'red_piece' }, 
+      { position: '', color: 'light', piece: '' },
+      { position: '4', color: 'dark', piece: 'red_piece' },
     ]);
 
     this.board.set(2, [
-      { position: 'a2', color: 'dark', piece: 'red_piece' },
-      { position: 'b2', color: 'light', piece: '' },
-      { position: 'c2', color: 'dark', piece: 'red_piece' },
-      { position: 'd2', color: 'light', piece: '' },
-      { position: 'e2', color: 'dark', piece: 'red_piece' },
-      { position: 'f2', color: 'light', piece: '' },
-      { position: 'g2', color: 'dark', piece: 'red_piece' },
-      { position: 'h2', color: 'light', piece: '' },
+      { position: '5', color: 'dark', piece: 'red_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '6', color: 'dark', piece: 'red_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '7', color: 'dark', piece: 'red_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '8', color: 'dark', piece: 'red_piece' },
+      { position: '', color: 'light', piece: '' },
     ]);
 
     this.board.set(3, [
-      { position: 'a3', color: 'light', piece: '' },
-      { position: 'b3', color: 'dark', piece: 'red_piece' },
-      { position: 'c3', color: 'light', piece: '' },
-      { position: 'd3', color: 'dark', piece: 'red_piece' },
-      { position: 'e3', color: 'light', piece: '' },
-      { position: 'f3', color: 'dark', piece: 'red_piece' },
-      { position: 'g3', color: 'light', piece: '' },
-      { position: 'h3', color: 'dark', piece: 'red_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '9', color: 'dark', piece: 'red_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '10', color: 'dark', piece: 'red_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '11', color: 'dark', piece: 'red_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '12', color: 'dark', piece: 'red_piece' },
     ]);
 
     this.board.set(4, [
-      { position: 'a4', color: 'dark', piece: '' },
-      { position: 'b4', color: 'light', piece: '' },
-      { position: 'c4', color: 'dark', piece: '' },
-      { position: 'd4', color: 'light', piece: '' },
-      { position: 'e4', color: 'dark', piece: '' },
-      { position: 'f4', color: 'light', piece: '' },
-      { position: 'g4', color: 'dark', piece: '' },
-      { position: 'h4', color: 'light', piece: '' },
+      { position: '13', color: 'dark', piece: '' },
+      { position: '', color: 'light', piece: '' },
+      { position: '14', color: 'dark', piece: '' },
+      { position: '', color: 'light', piece: '' },
+      { position: '15', color: 'dark', piece: '' },
+      { position: '', color: 'light', piece: '' },
+      { position: '16', color: 'dark', piece: '' },
+      { position: '', color: 'light', piece: '' },
     ]);
     
     this.board.set(5, [
-      { position: 'a5', color: 'light', piece: '' },
-      { position: 'b5', color: 'dark', piece: '' },
-      { position: 'c5', color: 'light', piece: '' },
-      { position: 'd5', color: 'dark', piece: '' },
-      { position: 'e5', color: 'light', piece: '' },
-      { position: 'f5', color: 'dark', piece: '' },
-      { position: 'g5', color: 'light', piece: '' },
-      { position: 'h5', color: 'dark', piece: '' },
+      { position: '', color: 'light', piece: '' },
+      { position: '17', color: 'dark', piece: '' },
+      { position: '', color: 'light', piece: '' },
+      { position: '18', color: 'dark', piece: '' },
+      { position: '', color: 'light', piece: '' },
+      { position: '19', color: 'dark', piece: '' },
+      { position: '', color: 'light', piece: '' },
+      { position: '20', color: 'dark', piece: '' },
     ]);
 
     this.board.set(6, [
-       { position: 'a6', color: 'dark', piece: 'black_piece' },
-       { position: 'b6', color: 'light', piece: '' },
-       { position: 'c6', color: 'dark', piece: 'black_piece' },
-       { position: 'd6', color: 'light', piece: '' },
-       { position: 'e6', color: 'dark', piece: 'black_piece' },
-       { position: 'f6', color: 'light', piece: '' },
-       { position: 'g6', color: 'dark', piece: 'black_piece' },
-       { position: 'h6', color: 'light', piece: '' },
+       { position: '21', color: 'dark', piece: 'black_piece' },
+       { position: '', color: 'light', piece: '' },
+       { position: '22', color: 'dark', piece: 'black_piece' },
+       { position: '', color: 'light', piece: '' },
+       { position: '23', color: 'dark', piece: 'black_piece' },
+       { position: '', color: 'light', piece: '' },
+       { position: '24', color: 'dark', piece: 'black_piece' },
+       { position: '', color: 'light', piece: '' },
     ]);
 
     this.board.set(7, [
-        { position: 'a7', color: 'light', piece: '' },
-        { position: 'b7', color: 'dark', piece: 'black_piece' },
-        { position: 'c7', color: 'light', piece: '' },
-        { position: 'd7', color: 'dark', piece: 'black_piece' },
-        { position: 'e7', color: 'light', piece: '' },
-        { position: 'f7', color: 'dark', piece: 'black_piece' },
-        { position: 'g7', color: 'light', piece: '' },
-        { position: 'h7', color: 'dark', piece: 'black_piece' },
+        { position: '', color: 'light', piece: '' },
+        { position: '25', color: 'dark', piece: 'black_piece' },
+        { position: '', color: 'light', piece: '' },
+        { position: '26', color: 'dark', piece: 'black_piece' },
+        { position: '', color: 'light', piece: '' },
+        { position: '27', color: 'dark', piece: 'black_piece' },
+        { position: '', color: 'light', piece: '' },
+        { position: '28', color: 'dark', piece: 'black_piece' },
     ]);
     
     this.board.set(8, [
-      { position: 'a8', color: 'dark', piece: 'black_piece' },
-      { position: 'b8', color: 'light', piece: '' },
-      { position: 'c8', color: 'dark', piece: 'black_piece' },
-      { position: 'd8', color: 'light', piece: '' },
-      { position: 'e8', color: 'dark', piece: 'black_piece' },
-      { position: 'f8', color: 'light', piece: '' },
-      { position: 'g8', color: 'dark', piece: 'black_piece' },
-      { position: 'h8', color: 'light', piece: '' }
+      { position: '29', color: 'dark', piece: 'black_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '30', color: 'dark', piece: 'black_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '31', color: 'dark', piece: 'black_piece' },
+      { position: '', color: 'light', piece: '' },
+      { position: '32', color: 'dark', piece: 'black_piece' },
+      { position: '', color: 'light', piece: '' }
     ]);
 
     this.boardEntries = Array.from(this.board.entries());
   }
 
+  ngOnInit(): void {
+    console.log('ng init');
+    const gameId = this.route.snapshot.paramMap.get('id');
+    console.log(gameId);
+
+    if (!!gameId) {
+      console.log('loading game');
+    }
+  }
+
   clickBoard(square: Square): void {
     console.log(square);
+  }
+
+  newGame(): void {
+    this.checkersService.newGame('New Game', new Date()).subscribe((game_id: ApiResult<string>) => {
+      if (!!game_id) {
+        this.router.navigate([
+          '/',
+          game_id
+        ]);
+      }
+    });
   }
 }
