@@ -23,6 +23,14 @@
   }
 .chess-board .light { background: #eee; }
 .chess-board .dark { background: gray; }
+.chess-board .selected {
+  border: 2px solid red;
+  box-sizing: border-box;
+}
+
+.chess-board .none {
+  border: 1px solid gray;
+}
 
 .piece {
   height: 60px;

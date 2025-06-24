@@ -8,10 +8,12 @@ export class Board {
 
     private _board: Map<number, Square[]>;
     private started: boolean;
+    private selectedSquare: Square | null;
 
     constructor() {
         this._board = new Map<number, Square[]>();
         this.started = false;
+        this.selectedSquare = null;
 
         this.initialize();
     }
@@ -26,7 +28,11 @@ export class Board {
 
     public click(square: Square) : void {
         if (this.started) {
-            
+            if (!!this.selectedSquare) {
+                this.selectedSquare.unselect();
+            }
+            square.select();
+            this.selectedSquare = square;
         }
     }
 

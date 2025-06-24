@@ -4,11 +4,13 @@ export class Square {
     private _position : string;
     private _color: string;
     private _piece: Piece | null;
+    private _selected: boolean;
 
     constructor(pos: string, col: string, piece: Piece | null) {
         this._position = pos;
         this._color = col;
         this._piece = piece;
+        this._selected = false;
     }
 
     get position() {
@@ -21,5 +23,17 @@ export class Square {
 
     get piece() {
         return this._piece;
+    }
+
+    get isSelected() {
+        return this._selected;
+    }
+
+    select(): void {
+        this._selected = true;
+    }
+
+    unselect(): void {
+        this._selected = false;
     }
 }

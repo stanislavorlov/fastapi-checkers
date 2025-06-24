@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, Renderer2 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgFor, NgIf } from '@angular/common';
 import { Square } from './square';
@@ -19,29 +19,30 @@ export class AppComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  constructor(private checkersService: CheckersService) {
+  constructor(private renderer: Renderer2, private checkersService: CheckersService) {
     this.board = new Board();
   }
 
   ngOnInit(): void {
-    const gameId = this.route.snapshot.paramMap.get('id');
-
-    if (!!gameId) {
-      this.board.load();
-    }
+    this.route.queryParamMap.subscribe(params => {
+      const id = params.get('id');
+      
+      if (!!id) {
+        this.board.load();
+      }
+    });
   }
 
-  clickBoard(square: Square): void {
+  clickBoard(event: Event, square: Square): void {
     this.board.click(square);
   }
 
   newGame(): void {
     this.checkersService.newGame('New Game', new Date()).subscribe((game_id: ApiResult<string>) => {
       if (!!game_id) {
-        this.router.navigate([
-          '/',
-          game_id
-        ]);
+        this.router.navigate(['/'], {
+          queryParams: { id: game_id }
+        });
       }
     });
   }
