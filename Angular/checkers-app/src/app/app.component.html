@@ -186,38 +186,11 @@
                 <th>g</th>
                 <th>h</th>
             </tr>
-            <tr>
-              <th>1</th>
-              <td class="light"></td>
-              <td class="dark"></td>
-              <td class="light"></td>
-              <td class="dark"></td>
-              <td class="light"></td>
-              <td class="dark"></td>
-              <td class="light"></td>
-              <td class="dark"></td>
-            </tr>
-            <tr>
-              <th>2</th>
-              <td class="dark"></td>
-              <td class="light"></td>
-              <td class="dark"></td>
-              <td class="light"></td>
-              <td class="dark"></td>
-              <td class="light"></td>
-              <td class="dark"></td>
-              <td class="light"></td>
-            </tr>
-          <tr>
-              <th>3</th>
-              <td class="light"></td>
-              <td class="dark"></td>
-              <td class="light"></td>
-              <td class="dark"></td>
-              <td class="light"></td>
-              <td class="dark"></td>
-              <td class="light"></td>
-              <td class="dark"></td>
+            <tr *ngFor="let item of boardEntries">
+              <th>{{item[0]}}</th>
+              <td *ngFor="let sq of item[1]" (click)="clickBoard(sq)" class="{{sq.color}}">
+                <img *ngIf="sq.piece" src="./{{sq.piece}}.jpeg" class="piece" />
+              </td>
             </tr>
         </tbody>
     </table>
