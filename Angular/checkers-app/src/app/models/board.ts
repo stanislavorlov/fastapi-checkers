@@ -58,9 +58,6 @@ export class Board {
     }
 
     private canMove(from: Square, to: Square): boolean {
-        let isMan = from.piece && from.piece instanceof Piece;
-        let isQueen = from.piece && from.piece instanceof Queen;
-        
         if (this.turn !== from.piece?.color) {
             console.error(`It's not ${from.piece?.color} turn.`);
             return false;
@@ -69,13 +66,7 @@ export class Board {
         // Check if the destination square is empty and is a dark square
         if (from.piece && !to.piece && to.color === 'dark') {
             // Check if the move is diagonal and within one square
-            if (isMan) {
-                return from.piece.canMove(Number(from.position), Number(to.position));
-            } else {
-
-            }
-            
-            return false;
+            return from.piece.canMove(Number(from.position), Number(to.position));
         }
         return false;
     }
