@@ -29,6 +29,10 @@ export class Square {
         return this._selected;
     }
 
+    switchPiece(piece: Piece | null): void {
+        this._piece = piece;
+    }
+
     select(): void {
         this._selected = true;
     }
