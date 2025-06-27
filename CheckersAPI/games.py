@@ -6,6 +6,7 @@ class Game(BaseModel):
     started: datetime.datetime
 
 class History(BaseModel):
+    game_id: str
     played_id: str
     event_type: str
     from_: str

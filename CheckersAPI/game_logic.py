@@ -15,6 +15,7 @@ class GameLogic:
 
     def handle(self, event: GameEvent):
         history = History(
+            game_id=self.game_id,
             played_id=event.player_id,
             event_type=event.type,
             from_=event.from_,
