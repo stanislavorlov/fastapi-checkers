@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, Renderer2 } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, Renderer2 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgFor, NgIf } from '@angular/common';
 import { Square } from './square';
@@ -13,7 +13,7 @@ import { ActionType } from './models/action';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'checkers-app';
   board: Board;
   
@@ -35,6 +35,17 @@ export class AppComponent implements OnInit {
         this.connectWebSocket(id);
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.closeWebSocket();
+  }
+
+  closeWebSocket(): void {
+    if (this.webSocket) {
+      this.webSocket.close();
+      this.webSocket = undefined;
+    }
   }
 
   connectWebSocket(gameId: string): void {

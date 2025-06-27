@@ -1,4 +1,6 @@
 from collections import defaultdict
+from contextlib import asynccontextmanager
+
 from bson import ObjectId
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
@@ -7,7 +9,44 @@ from database import collection_name
 from schemas import list_games
 from games import Game
 
-app = FastAPI()
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: dict[str, list[WebSocket]] = defaultdict(list)
+
+    async def connect(self, game_id: str, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections[game_id].append(websocket)
+
+        for w in self.active_connections[game_id]:
+            print(w.application_state)
+
+    async def disconnect(self, game_id: str, websocket: WebSocket):
+        print('disconnect', game_id, websocket)
+        self.active_connections[game_id].remove(websocket)
+
+    async def broadcast(self, game_id: str, message: str):
+        if game_id in self.active_connections:
+            for websocket in self.active_connections[game_id]:
+                await websocket.send_text(message)
+
+    async def close_all(self):
+        print(self.active_connections)
+        for idx, game_id in enumerate(self.active_connections):
+            print(idx, game_id)
+            for ws in self.active_connections[game_id]:
+                await ws.close()
+            self.active_connections[game_id].clear()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # App startup
+    print("🚀 App started")
+    yield
+    # App shutdown
+    print("🛑 Shutting down. Closing all WebSocket connections...")
+    await manager.close_all()
+
+app = FastAPI(lifespan=lifespan)
 
 origins = [
     'http://localhost:4200'
@@ -20,22 +59,6 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*']
 )
-
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: dict[str, list[WebSocket]] = defaultdict(list)
-
-    async def connect(self, game_id: str, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections[game_id].append(websocket)
-
-    async def disconnect(self, game_id: str, websocket: WebSocket):
-        self.active_connections[game_id].remove(websocket)
-
-    async def broadcast(self, game_id: str, message: str):
-        if game_id in self.active_connections:
-            for websocket in self.active_connections[game_id]:
-                await websocket.send_text(message)
 
 manager = ConnectionManager()
 
@@ -67,6 +90,8 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
     try:
         while True:
             data = await websocket.receive_text()
+
+            print(data)
 
             await manager.broadcast(game_id, data)
     except WebSocketDisconnect:
