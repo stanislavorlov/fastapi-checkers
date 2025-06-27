@@ -1,11 +1,12 @@
+import json
 from collections import defaultdict
 from contextlib import asynccontextmanager
-
 from bson import ObjectId
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocket, WebSocketDisconnect
-from database import collection_name
+from game_logic import GameEvent, GameLogic
+from database import game_collection
 from schemas import list_games
 from games import Game
 
@@ -64,25 +65,25 @@ manager = ConnectionManager()
 
 @app.get('/api/')
 async def get_games():
-    games = list_games(collection_name.find())
+    games = list_games(game_collection.find())
 
     return games
 
 @app.post("/api/")
 async def post_game(game: Game):
-    inserted = collection_name.insert_one(dict(game))
+    inserted = game_collection.insert_one(dict(game))
 
     return str(inserted.inserted_id)
 
 @app.put("/api/{id}")
 async def put_game(id: str, game: Game):
-    collection_name.find_and_modify({"_id": ObjectId(id)}, {"$set":dict(game)})
+    game_collection.find_and_modify({"_id": ObjectId(id)}, {"$set":dict(game)})
 
     # ToDo: return
 
 @app.delete("/api/{id}")
 async def delete_game(id: str):
-    collection_name.find_one_and_delete({"_id": ObjectId(id)})
+    game_collection.find_one_and_delete({"_id": ObjectId(id)})
 
 @app.websocket("/ws/{game_id}")
 async def websocket_endpoint(websocket: WebSocket, game_id: str):
@@ -91,7 +92,19 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
         while True:
             data = await websocket.receive_text()
 
-            print(data)
+            try:
+                json_string = json.loads(data)
+                game_event = GameEvent(
+                    json_string['_playerId'],
+                    json_string['_type'],
+                    json_string['_from'],
+                    json_string['_to'])
+
+                game_logic = GameLogic(game_id)
+                game_logic.handle(game_event)
+
+            except json.decoder.JSONDecodeError:
+                print('Error decoding JSON')
 
             await manager.broadcast(game_id, data)
     except WebSocketDisconnect:

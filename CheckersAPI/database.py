@@ -13,4 +13,5 @@ client = MongoClient(DATABASE_URL, server_api=ServerApi('1'))
 
 #db = client.checkers
 db = client.get_database(DATABASE_NAME)
-collection_name = db["games"]
+game_collection = db["games"]
+history_collection = db["history"]
