@@ -3,6 +3,7 @@ import { Square } from "../square";
 import { Action, ActionType } from "./action";
 import { Move } from "./move";
 import { Piece, PieceColor, Queen } from "./piece";
+import { Game } from "./game";
 
 export class Board {
     // The standard 8x8 board has 32 squares used for play, numbered 1-32. 
@@ -30,15 +31,18 @@ export class Board {
         return Array.from(this._board.entries());
     }
 
-    public load() {
+    public load(game: Game) {
         this.started = true;
+
+        game.history.forEach(entry => {
+            this.reply(new Move(entry.from_, entry.to_, entry.player_id, null));
+
+            // ToDo: switch turn based on player_id
+        });
     }
 
     public getHistory() {
         return [...this.history]; // returns a shallow copy
-    }
-
-    public replyHistory() {
     }
 
     public reply(move: Move) {

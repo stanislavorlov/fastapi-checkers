@@ -1,5 +1,5 @@
 import json
-from game_logic import GameEvent
+from handlers import GameEvent
 
 class EventParser:
     def __init__(self):

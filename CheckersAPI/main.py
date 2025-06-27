@@ -9,7 +9,7 @@ from dto import HistoryDto
 from dto import GameDto
 from database import history_collection
 from event_parser import EventParser
-from game_logic import GameEvent, GameLogic
+from handlers import EventHandler
 from database import game_collection
 from schemas import list_games
 from games import Game
@@ -73,7 +73,7 @@ async def get_games():
 
     return games
 
-@app.get('/api/games/{game_id}')
+@app.get('/api/{game_id}')
 async def get_game(game_id: str):
     game = game_collection.find_one({'_id': ObjectId(game_id)})
     history = history_collection.find({ 'game_id': game_id })
@@ -109,8 +109,8 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
 
             try:
                 game_event = EventParser().parse(message_text)
-                game_logic = GameLogic(game_id)
-                game_logic.handle(game_event)
+                handler = EventHandler(game_id)
+                handler.handle(game_event)
 
             except json.decoder.JSONDecodeError:
                 print('Error decoding JSON')

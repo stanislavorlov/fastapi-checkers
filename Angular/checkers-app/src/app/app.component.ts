@@ -7,6 +7,7 @@ import { ApiResult } from './models/api-result';
 import { Board } from './models/board';
 import { ActionType } from './models/action';
 import { Move } from './models/move';
+import { Game } from './models/game';
 
 @Component({
   selector: 'app-root',
@@ -31,9 +32,15 @@ export class AppComponent implements OnInit, OnDestroy {
       const id = params.get('id');
       
       if (!!id) {
-        this.board.load();
-
-        this.connectWebSocket(id);
+        this.checkersService.loadGame(id).subscribe((result: Game) => {
+          if (!result) {
+            console.error('Game not found or invalid response');
+            return;
+          }
+          
+          this.board.load(result);
+          this.connectWebSocket(id);
+        });
       }
     });
   }
@@ -54,7 +61,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.webSocket.onopen = (ev: Event) => {
       console.log('WebSocket connection established');
-      console.log(ev);
     };
 
     this.webSocket.onmessage = (event) => {

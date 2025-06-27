@@ -9,14 +9,14 @@ class GameEvent:
         self.from_ = from_
         self.to_ = to_
 
-class GameLogic:
+class EventHandler:
     def __init__(self, game_id: str):
         self.game_id = game_id
 
     def handle(self, event: GameEvent):
         history = History(
             game_id=self.game_id,
-            played_id=event.player_id,
+            player_id=event.player_id,
             event_type=event.type,
             from_=event.from_,
             to_=event.to_
