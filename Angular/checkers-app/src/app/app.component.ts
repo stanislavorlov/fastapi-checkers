@@ -6,6 +6,7 @@ import { CheckersService } from './services/checkers.service';
 import { ApiResult } from './models/api-result';
 import { Board } from './models/board';
 import { ActionType } from './models/action';
+import { Move } from './models/move';
 
 @Component({
   selector: 'app-root',
@@ -51,14 +52,22 @@ export class AppComponent implements OnInit, OnDestroy {
   connectWebSocket(gameId: string): void {
     this.webSocket = new WebSocket(`ws://localhost:8000/ws/${gameId}`);
 
-    this.webSocket.onopen = () => {
+    this.webSocket.onopen = (ev: Event) => {
       console.log('WebSocket connection established');
+      console.log(ev);
     };
 
     this.webSocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       console.log('Received data:', data);
       // Handle incoming data and update the board as necessary
+      console.log('start replying to move');
+      
+      if (data._type === 'move') {
+        const move = new Move(data._from, data._to, data._playerId, data._piece);
+        
+        this.board.reply(move);
+      }
     };
 
     this.webSocket.onclose = () => {
@@ -83,13 +92,7 @@ export class AppComponent implements OnInit, OnDestroy {
       let move = this.board.getHistory().slice(-1)[0];
 
       if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-        const message = {
-          type: 'move',
-          from: move.from,
-          to: move.to,
-          piece: square.piece
-        };
-        this.webSocket.send(JSON.stringify(message));
+        this.webSocket.send(JSON.stringify(move));
       }
 
     } else if (action.type == ActionType.UNSELECT) {

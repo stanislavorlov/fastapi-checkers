@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid";
 import { Square } from "../square";
 import { Action, ActionType } from "./action";
 import { Move } from "./move";
@@ -8,6 +9,7 @@ export class Board {
     // Black pieces start on squares 1 to 12
     // White pieces start on squares 21 to 32
 
+    private playerId: string; // Player ID for the game
     private _board: Map<number, Square[]>;
     private started: boolean;
     private selectedSquare: Square | null;
@@ -18,6 +20,8 @@ export class Board {
         this._board = new Map<number, Square[]>();
         this.started = false;
         this.selectedSquare = null;
+        this.playerId = nanoid();
+        console.log(`Player ID: ${this.playerId}`);
 
         this.initialize();
     }
@@ -34,6 +38,40 @@ export class Board {
         return [...this.history]; // returns a shallow copy
     }
 
+    public replyHistory() {
+    }
+
+    public reply(move: Move) {
+        // Handle the reply for a move
+        console.log(`Replying to move from ${move.from} to ${move.to} with piece ${move.piece?.color}`);
+
+        if (move.playerId === this.playerId) {
+            console.log(`Move from player ${move.playerId} matches current player ID ${this.playerId}`);
+            return;
+        }
+
+        let from: Square | null = null;
+        let to: Square | null = null;
+        for (const [key, squares] of this._board.entries()) {
+            for (const square of squares) {
+                if (move.from === square.position) {
+                    from = square;
+                }
+                if (move.to === square.position) {
+                    to = square;
+                }
+            }
+        }
+
+        if (from && to) {
+            console.log(`Moving piece from ${from.position} to ${to.position}`);
+            to.switchPiece(from.piece);
+            from.switchPiece(null);
+
+            this.switchTurn();
+        }
+    }
+
     public click(square: Square) : Action {
         if (this.started) {
             if (!!this.selectedSquare) {
@@ -45,16 +83,16 @@ export class Board {
                 this.selectedSquare.unselect();
                 this.selectedSquare = null;
 
-                return new Action(ActionType.MOVE, square.position, square.piece);
+                return new Action(ActionType.MOVE, square.position, this.playerId, square.piece);
             } else {
                 square.select();
                 this.selectedSquare = square;
 
-                return new Action(ActionType.SELECT, square.position, square.piece);
+                return new Action(ActionType.SELECT, square.position, this.playerId, square.piece);
             }
         }
-        
-        return new Action(ActionType.UNSELECT, square.position, null);
+
+        return new Action(ActionType.UNSELECT, square.position, this.playerId, null);
     }
 
     private canMove(from: Square, to: Square): boolean {
@@ -77,7 +115,7 @@ export class Board {
             return;
         }
 
-        this.history.push(new Move(from.position, to.position, from.piece));
+        this.history.push(new Move(from.position, to.position, this.playerId, from.piece));
         this.switchTurn();
 
         to.switchPiece(from.piece);
