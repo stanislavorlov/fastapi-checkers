@@ -5,6 +5,7 @@ from bson import ObjectId
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocket, WebSocketDisconnect
+from event_parser import EventParser
 from game_logic import GameEvent, GameLogic
 from database import game_collection
 from schemas import list_games
@@ -90,22 +91,18 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
     await manager.connect(game_id, websocket)
     try:
         while True:
-            data = await websocket.receive_text()
+            message_text = await websocket.receive_text()
 
             try:
-                json_string = json.loads(data)
-                game_event = GameEvent(
-                    json_string['_playerId'],
-                    json_string['_type'],
-                    json_string['_from'],
-                    json_string['_to'])
-
+                game_event = EventParser().parse(message_text)
                 game_logic = GameLogic(game_id)
                 game_logic.handle(game_event)
 
             except json.decoder.JSONDecodeError:
                 print('Error decoding JSON')
 
-            await manager.broadcast(game_id, data)
+            # ToDo: validate per current game board
+            await manager.broadcast(game_id, message_text)
+
     except WebSocketDisconnect:
         await manager.disconnect(game_id, websocket)
