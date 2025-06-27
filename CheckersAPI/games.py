@@ -7,7 +7,7 @@ class Game(BaseModel):
 
 class History(BaseModel):
     game_id: str
-    played_id: str
+    player_id: str
     event_type: str
     from_: str
     to_: str

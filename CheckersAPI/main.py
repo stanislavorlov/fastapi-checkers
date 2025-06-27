@@ -5,6 +5,9 @@ from bson import ObjectId
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocket, WebSocketDisconnect
+from dto import HistoryDto
+from dto import GameDto
+from database import history_collection
 from event_parser import EventParser
 from game_logic import GameEvent, GameLogic
 from database import game_collection
@@ -69,6 +72,17 @@ async def get_games():
     games = list_games(game_collection.find())
 
     return games
+
+@app.get('/api/games/{game_id}')
+async def get_game(game_id: str):
+    game = game_collection.find_one({'_id': ObjectId(game_id)})
+    history = history_collection.find({ 'game_id': game_id })
+
+    history_dto = []
+    for history in history:
+        history_dto.append(HistoryDto(history))
+
+    return GameDto(game_id, game['name'], game['started'], history_dto)
 
 @app.post("/api/")
 async def post_game(game: Game):
