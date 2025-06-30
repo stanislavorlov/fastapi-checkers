@@ -10,17 +10,17 @@ export class Board {
     // Black pieces start on squares 1 to 12
     // White pieces start on squares 21 to 32
 
+    private _board: Square[][] = [[]];  // 2D array of squares, where each square is represented by a Square object
+    private _pieces: Map<Square, Piece> = new Map<Square, Piece>(); // Map of square ID to Piece object
+
     private playerId: string; // Player ID for the game
-    private _board: Map<string, [Square, Piece | null]>; // Map of square ID to Square object
     private started: boolean;
     private selectedSquare: Square | null;
     private history: Move[] = [];
     private turn: PieceColor = PieceColor.BLACK; // Black moves first
 
-    // create additional data structures 2d array with the reference to the squares
-
     constructor() {
-        this._board = new Map<string, [Square, Piece | null]>();
+        this._board = Array.from({ length: 8 }, () => new Array(8).fill(null)); // Initialize a 2D array for the board
         this.started = false;
         this.selectedSquare = null;
         this.playerId = nanoid();
@@ -29,34 +29,19 @@ export class Board {
         this.initialize();
     }
 
-    public getView() {
-        const result: Map<string, [Square, Piece | null][]> = new Map<string, [Square, Piece | null][]>();
-        const boardMap = this._board;
-        
-        for (let row = 1; row <= 8; row++) {
-            const cells: [Square, Piece | null][] = [];
-            for (let col = 1; col <= 8; col++) {
-                const isDark = (row + col) % 2 === 1;
-                let key = ((row - 1) * 4 + Math.floor((col - 1) / 2) + 1).toString();
-                if (!isDark) {
-                    key = (-key).toString(); // Negative for white squares
-                }
-                const square = boardMap.get(key);
-                if (square) {
-                    cells.push(square);
-                }
-            }
-            result.set(row.toString(), cells);
-        }
+    public get board(): Square[][] {
+        return this._board;
+    }
 
-        return Array.from(result.entries());
+    public get pieces(): Map<Square, Piece> {
+        return this._pieces;
     }
 
     public load(game: Game) {
         this.started = true;
 
         game.history.forEach(entry => {
-            //this.reply(new Move(entry.from_, entry.to_, entry.player_id, new Piece()));
+            this.reply(new Move(entry.from_, entry.to_, entry.player_id, new Piece(PieceColor.BLACK))); // Assuming all moves are black pieces for simplicity
 
             // ToDo: switch turn based on player_id
         });
@@ -75,22 +60,18 @@ export class Board {
             return;
         }
 
-        let from: [Square, Piece | null] | undefined = this._board.get(move.from);
-        let to: [Square, Piece | null] | undefined = this._board.get(move.to);
-
-        if (from && to) {
-            console.log(`Moving piece from ${from[0].id} to ${to[0].id}`);
-
-            from[1] = null; // Remove piece from the 'from' square
-            to[1] = move.piece; // Place piece on the 'to' square
-
-            this.switchTurn();
-        } else {
+        let from_square = this._board.flat().find(square => square.id === move.from);
+        let to_square = this._board.flat().find(square => square.id === move.to);
+        if (!from_square || !to_square) {
             console.error(`Invalid move: from ${move.from} or to ${move.to} not found on the board.`);
+            return;
         }
+        this.move_piece(from_square, to_square);
     }
 
     public click(square: Square) : Action {
+        //this._pieces.get(square)
+
         if (this.started && square.canSelect) {
             if (!!this.selectedSquare) {
                 const [from, to] = [this.selectedSquare, square];
@@ -120,25 +101,39 @@ export class Board {
     }
 
     private canMove(from: Square, to: Square): boolean {
-        /*if (this.turn !== from.piece?.color) {
-            console.error(`It's not ${from.piece?.color} turn.`);
-            return false;
+        let piece = this._pieces.get(from);
+        
+        if (!!piece) {
+            if (this.turn !== piece.color) {
+                console.error(`It's not ${piece.color} turn.`);
+                return false;
+            }
+
+            // Check if the destination square is empty and is a dark square
+            if (to.color === 'dark' && !this._pieces.has(to)) {
+                // Check if the move is diagonal and within one square
+                if (piece.canMove(Number(from.id), Number(to.id))) {
+                    return true;
+                } else {
+                    console.error(`Invalid move from ${from.id} to ${to.id}`);
+                    return false;
+                }
+            }
         }
 
-        // Check if the destination square is empty and is a dark square
-        if (from.piece && !to.piece && to.color === 'dark') {
-            // Check if the move is diagonal and within one square
-            return from.piece.canMove(Number(from.position), Number(to.position));
-        }*/
         return false;
     }
 
     private move_piece(from: Square, to: Square): void {
-        /*this.history.push(new Move(from.position, to.position, this.playerId, from.piece));
-        this.switchTurn();
+        let piece = this._pieces.get(from);
 
-        to.switchPiece(from.piece);
-        from.switchPiece(null);*/
+        if (!!piece) {
+            this.history.push(new Move(from.id, to.id, this.playerId, piece));
+            this.switchTurn();
+
+            this._pieces.set(to, piece);
+            this._pieces.delete(from); // Remove piece from the 'from' square
+        }
 
         /*if (from.piece && to.color === 'dark' && !to.piece) {
             to.piece = from.piece;
@@ -159,26 +154,32 @@ export class Board {
         let blackId = 1;
         let whiteId = -1;
 
-        for (let row = 1; row <= 8; row++) {
+        for (let row = 0; row <= 7; row++) {
+            this._board[row] = new Array(8).fill(0); // Initialize each row with 8 squares
             for (let col = 0; col < 8; col++) {
                 const isDark = (row + col) % 2 === 1;
 
                 let piece: Piece | null = null;
-                if (isDark) {
-                    if (row <= 3) {
-                        piece = new Piece(PieceColor.BLACK);
-                    } else if (row >= 6) {
-                        piece = new Piece(PieceColor.RED);
-                    }
-                }
+                let square: Square | null = null;
 
                 if (isDark) {
-                    this._board.set(blackId.toString(), [new BlackSquare(blackId.toString()), piece]);
+                    if (row <= 2) {
+                        piece = new Piece(PieceColor.BLACK);
+                    } else if (row >= 5) {
+                        piece = new Piece(PieceColor.RED);
+                    }
+
+                    square = new BlackSquare(blackId.toString());
+                    if (piece) {
+                        this._pieces.set(square, piece);
+                    }
                     blackId++;
                 } else {
-                    this._board.set(whiteId.toString(), [new WhiteSquare(whiteId.toString()), null]);
+                    square = new WhiteSquare(whiteId.toString());
                     whiteId--;
                 }
+
+                this._board[row][col] = square;
             }
         }
     }

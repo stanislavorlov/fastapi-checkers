@@ -8,6 +8,7 @@ import { Board } from './models/board';
 import { ActionType } from './models/action';
 import { Move } from './models/move';
 import { Game } from './models/game';
+import { Piece } from './models/piece';
 
 @Component({
   selector: 'app-root',
@@ -18,6 +19,7 @@ import { Game } from './models/game';
 export class AppComponent implements OnInit, OnDestroy {
   title = 'checkers-app';
   board: Board;
+  pieces: Map<Square, Piece>;
   
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -25,6 +27,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(private renderer: Renderer2, private checkersService: CheckersService) {
     this.board = new Board();
+    this.pieces = new Map<Square, Piece>();
   }
 
   ngOnInit(): void {
@@ -39,6 +42,8 @@ export class AppComponent implements OnInit, OnDestroy {
           }
           
           this.board.load(result);
+          this.pieces = this.board.pieces;
+
           this.connectWebSocket(id);
         });
       }
