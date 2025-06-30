@@ -1,5 +1,3 @@
-import { Piece } from "./piece";
-
 export abstract class Square {
     
     private _selected: boolean = false;
