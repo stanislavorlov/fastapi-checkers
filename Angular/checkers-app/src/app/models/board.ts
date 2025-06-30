@@ -6,13 +6,8 @@ import { Piece, PieceColor, Queen } from "./piece";
 import { Game } from "./game";
 
 export class Board {
-    // The standard 8x8 board has 32 squares used for play, numbered 1-32. 
-    // Black pieces start on squares 1 to 12
-    // White pieces start on squares 21 to 32
-
     private _board: Square[][] = [[]];  // 2D array of squares, where each square is represented by a Square object
     private _pieces: Map<Square, Piece> = new Map<Square, Piece>(); // Map of square ID to Piece object
-
     private playerId: string; // Player ID for the game
     private started: boolean;
     private selectedSquare: Square | null;
@@ -20,7 +15,7 @@ export class Board {
     private turn: PieceColor = PieceColor.BLACK; // Black moves first
 
     constructor() {
-        this._board = Array.from({ length: 8 }, () => new Array(8).fill(null)); // Initialize a 2D array for the board
+        this._board = Array.from({ length: 8 }, () => new Array(8).fill(null));
         this.started = false;
         this.selectedSquare = null;
         this.playerId = nanoid();
