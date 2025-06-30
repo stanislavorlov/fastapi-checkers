@@ -192,10 +192,6 @@
                   <div class="watermark" *ngIf="+sq.id > 0">{{sq.id}}</div>
                   <img *ngIf="board.pieces.get(sq)" src="./{{board.pieces.get(sq)?.image}}.png" class="piece" />
                 </td>
-              <!--<td *ngFor="let sq of row" (click)="clickBoard(sq)" class="{{sq.color}} {{ sq.selected ? 'selected' : 'none' }}">
-                <div class="watermark" *ngIf="+sq.id > 0">{{sq.id}}</div>
-                <img *ngIf="board.pieces.get(sq)" src="./{{board.pieces.get(sq)?.image}}.png" class="piece" />
-              </td>!-->
             </tr>
         </tbody>
     </table>
