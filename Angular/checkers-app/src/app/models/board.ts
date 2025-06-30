@@ -40,6 +40,8 @@ export class Board {
 
             // ToDo: switch turn based on player_id
         });
+
+        console.log('Current turn:', this.turn == PieceColor.BLACK ? 'Black' : 'Red');
     }
 
     public getHistory() {
@@ -99,7 +101,7 @@ export class Board {
                     square.unselect();
                     this.getAvailableMoves(this.selectedSquare, piece).forEach(sibling => sibling.unselect());
                     this.selectedSquare = null;
-                    
+
                     return new Action(ActionType.UNSELECT, square.id, this.playerId);
                 }
                 this.move_piece(this.selectedSquare, square);
@@ -112,6 +114,12 @@ export class Board {
                 return new Action(ActionType.MOVE, square.id, this.playerId);
             } else {
                 let piece = this._pieces.get(square);
+
+                if (!piece || piece.color !== this.turn) {
+                    console.error(`Cannot select square ${square.id} with piece color ${piece?.color}. It's ${this.turn} turn.`);
+                    return new Action(ActionType.UNSELECT, square.id, this.playerId);
+                }
+
                 square.select();
                 this.selectedSquare = square;
 
