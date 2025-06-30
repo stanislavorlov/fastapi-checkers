@@ -13,7 +13,6 @@ export class Board {
     private selectedSquare: Square | null;
     private history: Move[] = [];
     private turn: PieceColor = PieceColor.BLACK; // Black moves first
-    private availableMoves: Move[] = []; // List of available moves for the current piece
 
     constructor() {
         this._board = Array.from({ length: 8 }, () => new Array(8).fill(null));
@@ -80,7 +79,7 @@ export class Board {
                     this.selectedSquare = null;
 
                     return new Action(ActionType.UNSELECT, square.id, this.playerId);
-                    
+
                 } else if (piece && selectedPiece && piece.color === selectedPiece.color) {
                     // If a square is selected with the same color piece
                     this.selectedSquare.unselect();
@@ -140,6 +139,10 @@ export class Board {
         return false;
     }
 
+    private getAvailableMoves(square: Square): Move[] {
+        return [];
+    }
+
     private move_piece(from: Square, to: Square): void {
         let piece = this._pieces.get(from);
 
@@ -196,6 +199,20 @@ export class Board {
                 }
 
                 this._board[row][col] = square;
+            }
+        }
+
+        // Set siblings for each square
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const square = this._board[row][col];
+                if (square instanceof BlackSquare) {
+                    // Add siblings for dark squares
+                    if (row > 0 && col > 0) square.addSibling(this._board[row - 1][col - 1]);
+                    if (row > 0 && col < 7) square.addSibling(this._board[row - 1][col + 1]);
+                    if (row < 7 && col > 0) square.addSibling(this._board[row + 1][col - 1]);
+                    if (row < 7 && col < 7) square.addSibling(this._board[row + 1][col + 1]);
+                }
             }
         }
     }

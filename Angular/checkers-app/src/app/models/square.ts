@@ -3,6 +3,7 @@ export abstract class Square {
     private _selected: boolean = false;
     protected _id: string;
     protected _color: string;
+    protected _siblings: Square[] = [];
 
     constructor(id : string, color: string = 'light') {
         this._id = id;
@@ -21,6 +22,10 @@ export abstract class Square {
         return this._selected;
     }
 
+    get siblings(): Square[] {
+        return [...this._siblings];
+    }
+
     abstract get canSelect(): boolean;
 
     select(): void {
@@ -32,6 +37,12 @@ export abstract class Square {
     unselect(): void {
         if (this.canSelect) {
             this._selected = false;
+        }
+    }
+
+    addSibling(square: Square): void {
+        if (!this._siblings.includes(square)) {
+            this._siblings.push(square);
         }
     }
 }
