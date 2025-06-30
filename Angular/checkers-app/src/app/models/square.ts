@@ -43,7 +43,7 @@ export class WhiteSquare extends Square {
     }
 
     override get canSelect(): boolean {
-        return false; // White squares cannot be selected in checkers
+        return false;
     }
 }
 

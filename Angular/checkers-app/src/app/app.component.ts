@@ -25,7 +25,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private webSocket?: WebSocket;
 
-  constructor(private renderer: Renderer2, private checkersService: CheckersService) {
+  constructor(private checkersService: CheckersService) {
     this.board = new Board();
     this.pieces = new Map<Square, Piece>();
   }
