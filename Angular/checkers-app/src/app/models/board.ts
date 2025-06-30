@@ -76,6 +76,7 @@ export class Board {
                 if (this.selectedSquare.id === square.id) {
                     // Unselect the square if it's already selected
                     this.selectedSquare.unselect();
+                    this.getAvailableMoves(this.selectedSquare, piece).forEach(sibling => sibling.unselect());
                     this.selectedSquare = null;
 
                     return new Action(ActionType.UNSELECT, square.id, this.playerId);
@@ -83,6 +84,7 @@ export class Board {
                 } else if (piece && selectedPiece && piece.color === selectedPiece.color) {
                     // If a square is selected with the same color piece
                     this.selectedSquare.unselect();
+                    this.getAvailableMoves(this.selectedSquare, piece).forEach(sibling => sibling.unselect());
                     square.select();
                     this.selectedSquare = square;
 
@@ -95,6 +97,7 @@ export class Board {
 
                     this.selectedSquare.unselect();
                     square.unselect();
+                    this.getAvailableMoves(this.selectedSquare, piece).forEach(sibling => sibling.unselect());
 
                     return new Action(ActionType.UNSELECT, square.id, this.playerId);
                 }
@@ -105,8 +108,11 @@ export class Board {
 
                 return new Action(ActionType.MOVE, square.id, this.playerId);
             } else {
+                let piece = this._pieces.get(square);
                 square.select();
                 this.selectedSquare = square;
+
+                this.getAvailableMoves(square, piece).forEach(sibling => sibling.select());
 
                 return new Action(ActionType.SELECT, square.id, this.playerId);
             }
@@ -139,8 +145,15 @@ export class Board {
         return false;
     }
 
-    private getAvailableMoves(square: Square): Move[] {
-        return [];
+    private getAvailableMoves(square: Square, piece: Piece | undefined): Square[] {
+        if (!piece) return [];
+
+        if (piece.color === PieceColor.RED) {
+            // For RED pieces, they can only move forward (to lower row numbers)
+            return square.siblings.filter(sibling => !this._pieces.has(sibling) && Number(sibling.id) < Number(square.id));
+        }
+        // For BLACK pieces, they can move backward (to higher row numbers)
+        return square.siblings.filter(sibling => !this._pieces.has(sibling) && Number(sibling.id) > Number(square.id));
     }
 
     private move_piece(from: Square, to: Square): void {
