@@ -1,7 +1,7 @@
 import { Component, inject, OnDestroy, OnInit, Renderer2 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { NgFor, NgIf } from '@angular/common';
-import { Square } from './square';
+import { WhiteSquare, BlackSquare, Square } from './models/square';
 import { CheckersService } from './services/checkers.service';
 import { ApiResult } from './models/api-result';
 import { Board } from './models/board';
@@ -86,23 +86,26 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   clickBoard(square: Square): void {
-    let action = this.board.click(square);
 
-    if (action.type == ActionType.SELECT) {
-      // from:
-      // action.position
-    } else if (action.type == ActionType.MOVE) {
-      // to:
-      // action.position
+    if (square.canSelect) {
+      let action = this.board.click(square);
 
-      let move = this.board.getHistory().slice(-1)[0];
+      if (action.type == ActionType.SELECT) {
+        // from:
+        // action.position
+      } else if (action.type == ActionType.MOVE) {
+        // to:
+        // action.position
 
-      if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-        this.webSocket.send(JSON.stringify(move));
+        let move = this.board.getHistory().slice(-1)[0];
+
+        if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+          this.webSocket.send(JSON.stringify(move));
+        }
+
+      } else if (action.type == ActionType.UNSELECT) {
+        // clear selection
       }
-
-    } else if (action.type == ActionType.UNSELECT) {
-      // clear selection
     }
   }
 

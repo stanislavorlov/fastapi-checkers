@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Square } from "../square";
+import { BlackSquare, Square, WhiteSquare } from "./square";
 import { Action, ActionType } from "./action";
 import { Move } from "./move";
 import { Piece, PieceColor, Queen } from "./piece";
@@ -11,14 +11,16 @@ export class Board {
     // White pieces start on squares 21 to 32
 
     private playerId: string; // Player ID for the game
-    private _board: Map<number, Square[]>;
+    private _board: Map<string, [Square, Piece | null]>; // Map of square ID to Square object
     private started: boolean;
     private selectedSquare: Square | null;
     private history: Move[] = [];
     private turn: PieceColor = PieceColor.BLACK; // Black moves first
 
+    // create additional data structures 2d array with the reference to the squares
+
     constructor() {
-        this._board = new Map<number, Square[]>();
+        this._board = new Map<string, [Square, Piece | null]>();
         this.started = false;
         this.selectedSquare = null;
         this.playerId = nanoid();
@@ -28,14 +30,33 @@ export class Board {
     }
 
     public getView() {
-        return Array.from(this._board.entries());
+        const result: Map<string, [Square, Piece | null][]> = new Map<string, [Square, Piece | null][]>();
+        const boardMap = this._board;
+        
+        for (let row = 1; row <= 8; row++) {
+            const cells: [Square, Piece | null][] = [];
+            for (let col = 1; col <= 8; col++) {
+                const isDark = (row + col) % 2 === 1;
+                let key = ((row - 1) * 4 + Math.floor((col - 1) / 2) + 1).toString();
+                if (!isDark) {
+                    key = (-key).toString(); // Negative for white squares
+                }
+                const square = boardMap.get(key);
+                if (square) {
+                    cells.push(square);
+                }
+            }
+            result.set(row.toString(), cells);
+        }
+
+        return Array.from(result.entries());
     }
 
     public load(game: Game) {
         this.started = true;
 
         game.history.forEach(entry => {
-            this.reply(new Move(entry.from_, entry.to_, entry.player_id, null));
+            //this.reply(new Move(entry.from_, entry.to_, entry.player_id, new Piece()));
 
             // ToDo: switch turn based on player_id
         });
@@ -54,53 +75,52 @@ export class Board {
             return;
         }
 
-        let from: Square | null = null;
-        let to: Square | null = null;
-        for (const [key, squares] of this._board.entries()) {
-            for (const square of squares) {
-                if (move.from === square.position) {
-                    from = square;
-                }
-                if (move.to === square.position) {
-                    to = square;
-                }
-            }
-        }
+        let from: [Square, Piece | null] | undefined = this._board.get(move.from);
+        let to: [Square, Piece | null] | undefined = this._board.get(move.to);
 
         if (from && to) {
-            console.log(`Moving piece from ${from.position} to ${to.position}`);
-            to.switchPiece(from.piece);
-            from.switchPiece(null);
+            console.log(`Moving piece from ${from[0].id} to ${to[0].id}`);
+
+            from[1] = null; // Remove piece from the 'from' square
+            to[1] = move.piece; // Place piece on the 'to' square
 
             this.switchTurn();
+        } else {
+            console.error(`Invalid move: from ${move.from} or to ${move.to} not found on the board.`);
         }
     }
 
     public click(square: Square) : Action {
-        if (this.started) {
+        if (this.started && square.canSelect) {
             if (!!this.selectedSquare) {
-                // move piece only by black squares
-                if (!!square.position) {
-                    this.move_piece(this.selectedSquare, square);
+                const [from, to] = [this.selectedSquare, square];
+                if (!this.canMove(from, to)) {
+                    console.error(`Invalid move from ${from.id} to ${to.id}`);
+
+                    this.selectedSquare.unselect();
+                    square.unselect();
+
+                    return new Action(ActionType.UNSELECT, square.id, this.playerId);
                 }
+                this.move_piece(this.selectedSquare, square);
 
                 this.selectedSquare.unselect();
                 this.selectedSquare = null;
 
-                return new Action(ActionType.MOVE, square.position, this.playerId, square.piece);
+                return new Action(ActionType.MOVE, square.id, this.playerId);
             } else {
                 square.select();
                 this.selectedSquare = square;
 
-                return new Action(ActionType.SELECT, square.position, this.playerId, square.piece);
+                return new Action(ActionType.SELECT, square.id, this.playerId);
             }
         }
 
-        return new Action(ActionType.UNSELECT, square.position, this.playerId, null);
+        return new Action(ActionType.UNSELECT, square.id, this.playerId);
     }
 
     private canMove(from: Square, to: Square): boolean {
-        if (this.turn !== from.piece?.color) {
+        /*if (this.turn !== from.piece?.color) {
             console.error(`It's not ${from.piece?.color} turn.`);
             return false;
         }
@@ -109,21 +129,16 @@ export class Board {
         if (from.piece && !to.piece && to.color === 'dark') {
             // Check if the move is diagonal and within one square
             return from.piece.canMove(Number(from.position), Number(to.position));
-        }
+        }*/
         return false;
     }
 
     private move_piece(from: Square, to: Square): void {
-        if (!this.canMove(from, to)) {
-            console.error(`Invalid move from ${from.position} to ${to.position}`);
-            return;
-        }
-
-        this.history.push(new Move(from.position, to.position, this.playerId, from.piece));
+        /*this.history.push(new Move(from.position, to.position, this.playerId, from.piece));
         this.switchTurn();
 
         to.switchPiece(from.piece);
-        from.switchPiece(null);
+        from.switchPiece(null);*/
 
         /*if (from.piece && to.color === 'dark' && !to.piece) {
             to.piece = from.piece;
@@ -141,11 +156,10 @@ export class Board {
     }
 
     private initialize() {
-        let positionCounter = 1;
+        let blackId = 1;
+        let whiteId = -1;
 
         for (let row = 1; row <= 8; row++) {
-            const cells: Square[] = [];
-
             for (let col = 0; col < 8; col++) {
                 const isDark = (row + col) % 2 === 1;
 
@@ -158,13 +172,14 @@ export class Board {
                     }
                 }
 
-                const position = isDark ? positionCounter.toString() : '';
-                if (isDark) positionCounter++;
-
-                cells.push(new Square(position, isDark ? 'dark' : 'light', piece ));
+                if (isDark) {
+                    this._board.set(blackId.toString(), [new BlackSquare(blackId.toString()), piece]);
+                    blackId++;
+                } else {
+                    this._board.set(whiteId.toString(), [new WhiteSquare(whiteId.toString()), null]);
+                    whiteId--;
+                }
             }
-
-            this._board.set(row, cells);
         }
     }
 }
