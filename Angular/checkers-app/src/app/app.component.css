@@ -26,7 +26,11 @@
 .chess-board .selected {
   border: 2px solid red;
   box-sizing: border-box;
+  animation: blink 1s;
+  animation-iteration-count: 100;
 }
+
+@keyframes blink { 50% { border-color: hsl(120, 100%, 50%); }  }
 
 .chess-board .none {
   border: 1px solid gray;

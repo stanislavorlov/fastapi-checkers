@@ -13,6 +13,7 @@ export class Board {
     private selectedSquare: Square | null;
     private history: Move[] = [];
     private turn: PieceColor = PieceColor.BLACK; // Black moves first
+    private availableMoves: Move[] = []; // List of available moves for the current piece
 
     constructor() {
         this._board = Array.from({ length: 8 }, () => new Array(8).fill(null));
@@ -69,6 +70,25 @@ export class Board {
 
         if (this.started && square.canSelect) {
             if (!!this.selectedSquare) {
+                let piece = this._pieces.get(square);
+                let selectedPiece = this._pieces.get(this.selectedSquare);
+
+                // If a square is already selected, check if the clicked square is the same
+                if (this.selectedSquare.id === square.id) {
+                    // Unselect the square if it's already selected
+                    this.selectedSquare.unselect();
+                    this.selectedSquare = null;
+
+                    return new Action(ActionType.UNSELECT, square.id, this.playerId);
+                } else if (piece && selectedPiece && piece.color === selectedPiece.color) {
+                    // If a square is selected with the same color piece
+                    this.selectedSquare.unselect();
+                    square.select();
+                    this.selectedSquare = square;
+
+                    return new Action(ActionType.SELECT, square.id, this.playerId);
+                }
+
                 const [from, to] = [this.selectedSquare, square];
                 if (!this.canMove(from, to)) {
                     console.error(`Invalid move from ${from.id} to ${to.id}`);
