@@ -80,6 +80,7 @@ export class Board {
                     this.selectedSquare = null;
 
                     return new Action(ActionType.UNSELECT, square.id, this.playerId);
+                    
                 } else if (piece && selectedPiece && piece.color === selectedPiece.color) {
                     // If a square is selected with the same color piece
                     this.selectedSquare.unselect();
