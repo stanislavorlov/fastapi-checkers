@@ -98,12 +98,15 @@ export class Board {
                     this.selectedSquare.unselect();
                     square.unselect();
                     this.getAvailableMoves(this.selectedSquare, piece).forEach(sibling => sibling.unselect());
-
+                    this.selectedSquare = null;
+                    
                     return new Action(ActionType.UNSELECT, square.id, this.playerId);
                 }
                 this.move_piece(this.selectedSquare, square);
 
                 this.selectedSquare.unselect();
+                square.unselect();
+                this.getAvailableMoves(this.selectedSquare, piece).forEach(sibling => sibling.unselect());
                 this.selectedSquare = null;
 
                 return new Action(ActionType.MOVE, square.id, this.playerId);

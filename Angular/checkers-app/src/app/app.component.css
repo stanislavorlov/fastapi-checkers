@@ -30,6 +30,11 @@
   animation-iteration-count: 100;
 }
 
+.chess-board td {
+  border: 2px solid transparent;
+  box-sizing:content-box
+}
+
 @keyframes blink { 50% { border-color: hsl(120, 100%, 50%); }  }
 
 .chess-board .none {
