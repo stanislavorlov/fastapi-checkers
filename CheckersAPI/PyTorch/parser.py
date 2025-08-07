@@ -1,69 +1,49 @@
+import time
 import requests
 from bs4 import BeautifulSoup
 import re
 import json
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
+def create_session(retries=5, backoff_factor=1):
+    request_session = requests.Session()
+    retry = Retry(
+        total=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET", "POST"]
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    request_session.mount("https://", adapter)
 
+    return request_session
 
-with open("moves.json", "w") as f:
+with open("moves.json", "a") as f:
     f.write('[\n')
 
-    for page in range(1, 1508):
-        print("current page:", page)
+    for game_id in range(22282, 22620):
+        print(f'game id: {game_id}')
+        session = create_session(backoff_factor=3)
 
-        url = "https://www.checkercruncher.com/games?page=" + str(page)
+        game_response = session.get(f'https://www.checkercruncher.com/games/{game_id}', timeout=10)
+        game_response.raise_for_status()
 
-        response = requests.get(url)
-        response.raise_for_status()  # raise an error if request failed
-        html = response.text
+        game_text = game_response.text
+        game_soup = BeautifulSoup(game_text, 'html.parser')
+        scripts = game_soup.find_all("script")
+        script = scripts[2]
 
-        soup = BeautifulSoup(html, 'html.parser')
+        match = re.search(r'\[.*?]', script.string)
+        if match:
+            array_str = match.group(0)
+            moves = json.loads(array_str)
 
-        total_links = len(soup.find_all("a"))
-        print("total games:", total_links)
-        idx = 1
+            f.write(json.dumps(moves, ensure_ascii=False) + ',\n')
 
-        for link in soup.find_all("a"):
-            print("current link:", idx)
-            href = link.get("href")
-
-            if "games" in href:
-                response = requests.get('https://www.checkercruncher.com' + href)
-                response.raise_for_status()
-                game_page = response.text
-
-                page_soup = BeautifulSoup(game_page, 'html.parser')
-                tables = page_soup.find_all("table")
-
-                for table in tables:
-                    for row in table.find_all("tr"):
-                        cells = row.find_all(["td", "th"])
-                        cell = cells[0]
-                        hyperlink = cell.find("a")
-                        if hyperlink:
-                            game_ref = hyperlink.get("href")
-
-                            if game_ref and "games" in game_ref:
-                                game_response = requests.get('https://www.checkercruncher.com/' + game_ref)
-                                game_response.raise_for_status()
-
-                                game_text = game_response.text
-                                game_soup = BeautifulSoup(game_text, 'html.parser')
-                                scripts = game_soup.find_all("script")
-                                script = scripts[2]
-
-                                match = re.search(r'\[.*?]', script.string)
-                                if match:
-                                    array_str = match.group(0)
-                                    moves = json.loads(array_str)
-
-                                    f.write(json.dumps(moves, ensure_ascii=False) + ',\n')
-
-            idx += 1
+        if game_id % 15 == 0:
+            time.sleep(5)
 
     f.write(']')
 
-# https://www.checkercruncher.com/games
-# https://www.checkercruncher.com/games?page=2
-# https://www.checkercruncher.com/games/1
-# https://www.checkercruncher.com/games/16
+print("parsing is done")
