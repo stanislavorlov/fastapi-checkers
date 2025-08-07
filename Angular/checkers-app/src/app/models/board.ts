@@ -4,6 +4,7 @@ import { Action, ActionType } from "./action";
 import { Move } from "./move";
 import { Piece, PieceColor, Queen } from "./piece";
 import { Game } from "./game";
+import { Stack } from "./stack";
 
 export class Board {
     private _board: Square[][] = [[]];  // 2D array of squares, where each square is represented by a Square object
@@ -125,6 +126,8 @@ export class Board {
             this.selectedSquare = square;
 
             // Select available moves for the selected piece
+            console.log(`Available moves for square ${square.id}:` + this.getAvailableMoves(square, piece).map(s => s.id).join(', '));
+            console.log(`Capture moves for square ${square.id}:` + this.getCaptureMoves(square, piece).map(s => s.id).join(', '));
             this.getAvailableMoves(square, piece).concat(this.getCaptureMoves(square, piece)).forEach(sibling => sibling.select());
 
             return new Action(ActionType.SELECT, square.id, this.playerId);
@@ -168,20 +171,35 @@ export class Board {
 
     private getCaptureMoves(square: Square, piece: Piece | undefined): Square[] {
         if (!piece) return [];
+
+        // ToDo: use stack
+        let stack = new Stack<Square>();
+        
+
+        let siblings = [];
+        square.siblings.forEach(sibling => {
+            if (piece.color === PieceColor.RED && Number(sibling.id) < Number(square.id)) {
+                
+            } else if (piece.color === PieceColor.BLACK && Number(sibling.id) > Number(square.id)) {
+                
+            }
+        });
+
         let availableMoves: Square[] = [];
         square.siblings.forEach(sibling => {
             if (sibling.color === 'dark') {
                 // Check if the sibling square is empty and the piece can jump over an opponent's piece
-                let jumpSquare = sibling.siblings.filter(s => s.color === 'dark' && !this._pieces.has(s) && this._pieces.get(s)?.color !== piece.color);
-                if (jumpSquare) {
+                let jumpSquares = sibling.siblings.filter(s => s.color === 'dark' && !this._pieces.has(s) && this._pieces.get(s)?.color !== piece.color);
+                console.log(`Jump squares for ${square.id} to ${sibling.id}: ` + jumpSquares.map(s => s.id).join(', '));
+                if (jumpSquares) {
                     if (piece.color === PieceColor.RED) {
-                        for (let jump of jumpSquare) {
+                        for (let jump of jumpSquares) {
                             if (Number(jump.id) < Number(square.id)) {
                                 availableMoves.push(jump);
                             }
                         }
                     } else {
-                        for (let jump of jumpSquare) {
+                        for (let jump of jumpSquares) {
                             if (Number(jump.id) > Number(square.id)) {
                                 availableMoves.push(jump);
                             }
@@ -196,6 +214,8 @@ export class Board {
 
     private getAvailableMoves(square: Square, piece: Piece | undefined): Square[] {
         if (!piece) return [];
+
+        console.log(`Square ID: ${square.id}, Siblings: ${square.siblings.map(s => s.id).join(', ')}`);
 
         if (piece.color === PieceColor.RED) {
             // For RED pieces, they can only move forward (to lower row numbers)
