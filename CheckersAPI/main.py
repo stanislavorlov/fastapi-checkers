@@ -5,14 +5,14 @@ from bson import ObjectId
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocket, WebSocketDisconnect
-from dto import HistoryDto
-from dto import GameDto
-from database import history_collection
-from event_parser import EventParser
-from handlers import EventHandler
-from database import game_collection
-from schemas import list_games
-from games import Game
+from web.history_dto import HistoryDto
+from web.game_dto import GameDto
+from infrastructure.database import history_collection
+from infrastructure.event_parser import EventParser
+from application.handlers import EventHandler
+from infrastructure.database import game_collection
+from infrastructure.schemas import list_games
+from infrastructure.documents import Game
 
 class ConnectionManager:
     def __init__(self):
