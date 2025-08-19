@@ -5,6 +5,8 @@ import { Move } from "./move";
 import { Piece, PieceColor, Queen } from "./piece";
 import { Game } from "./game";
 import { Stack } from "./stack";
+import { Direction } from "./direction";
+import { TreeNode } from "./tree-node";
 
 export class Board {
     private _board: Square[][] = [[]];  // 2D array of squares, where each square is represented by a Square object
@@ -100,7 +102,14 @@ export class Board {
 
             // Attempt to move a piece
             const [from, to] = [this.selectedSquare, square];
-            let canMove = this.getCaptureMoves(from, piece).concat(this.getAvailableMoves(from, piece)).includes(to);
+            let canMove = false; 
+            let tree_of_moves = this.getAvailableMoves(from, piece);
+            tree_of_moves.toList().forEach(sibling => {
+                if (sibling.id === to.id) {
+                    canMove = true;
+                }
+            });
+            
             if (!canMove) {
                 console.error(`Invalid move from ${from.id} to ${to.id}`);
 
@@ -126,9 +135,9 @@ export class Board {
             this.selectedSquare = square;
 
             // Select available moves for the selected piece
-            console.log(`Available moves for square ${square.id}:` + this.getAvailableMoves(square, piece).map(s => s.id).join(', '));
-            console.log(`Capture moves for square ${square.id}:` + this.getCaptureMoves(square, piece).map(s => s.id).join(', '));
-            this.getAvailableMoves(square, piece).concat(this.getCaptureMoves(square, piece)).forEach(sibling => sibling.select());
+            //console.log(`Available moves for square ${square.id}:` + this.getAvailableMoves(square, piece).map(s => s.id).join(', '));
+            //console.log(`Capture moves for square ${square.id}:` + this.getCaptureMoves(square, piece).map(s => s.id).join(', '));
+            this.getAvailableMoves(square, piece).select();
 
             return new Action(ActionType.SELECT, square.id, this.playerId);
         }
@@ -137,7 +146,7 @@ export class Board {
     private clearSelection(square: Square, piece: Piece | undefined): void {
         square.unselect();
         square.siblings.forEach(sibling => sibling.unselect());
-        this.getCaptureMoves(square, piece).forEach(sibling => sibling.unselect());
+        this.getAvailableMoves(square, piece).unselect();
 
         // If the piece can capture, highlight the capture moves
         /*if (piece && piece.color === this.turn) {
@@ -145,84 +154,37 @@ export class Board {
         }*/
     }
 
-    /*private canMove(from: Square, to: Square): boolean {
-        let piece = this._pieces.get(from);
-        
-        if (!!piece) {
-            if (this.turn !== piece.color) {
-                console.error(`It's not ${piece.color} turn.`);
-                return false;
-            }
-
-            // Check if the destination square is empty and is a dark square
-            if (to.color === 'dark' && !this._pieces.has(to)) {
-                // Check if the move is diagonal and within one square
-                if (piece.canMove(Number(from.id), Number(to.id))) {
-                    return true;
-                } else {
-                    console.error(`Invalid move from ${from.id} to ${to.id}`);
-                    return false;
-                }
-            }
-        }
-
-        return false;
-    }*/
-
-    private getCaptureMoves(square: Square, piece: Piece | undefined): Square[] {
-        if (!piece) return [];
-
-        // ToDo: use stack
+    private getAvailableMoves(square: Square, piece: Piece | undefined): TreeNode {
         let stack = new Stack<Square>();
-        
+        stack.push(square);
+        let moves: TreeNode = new TreeNode(square);
 
-        let siblings = [];
-        square.siblings.forEach(sibling => {
-            if (piece.color === PieceColor.RED && Number(sibling.id) < Number(square.id)) {
-                
-            } else if (piece.color === PieceColor.BLACK && Number(sibling.id) > Number(square.id)) {
-                
-            }
-        });
+        if (!piece) return moves;
 
-        let availableMoves: Square[] = [];
-        square.siblings.forEach(sibling => {
-            if (sibling.color === 'dark') {
-                // Check if the sibling square is empty and the piece can jump over an opponent's piece
-                let jumpSquares = sibling.siblings.filter(s => s.color === 'dark' && !this._pieces.has(s) && this._pieces.get(s)?.color !== piece.color);
-                console.log(`Jump squares for ${square.id} to ${sibling.id}: ` + jumpSquares.map(s => s.id).join(', '));
-                if (jumpSquares) {
-                    if (piece.color === PieceColor.RED) {
-                        for (let jump of jumpSquares) {
-                            if (Number(jump.id) < Number(square.id)) {
-                                availableMoves.push(jump);
-                            }
-                        }
+        while (!stack.isEmpty()) {
+            let currentSquare = stack.pop();
+            let currentPiece = this._pieces.get(currentSquare!);
+
+            if (!currentSquare) break;
+
+            let siblings = currentSquare.filterSiblings(piece.color);
+
+            siblings.forEach(sibling => {
+                if (!this._pieces.has(sibling[1])) {
+                    // If the sibling square is empty, add it to the moves
+                    if (sibling[0] === Direction.UP_LEFT || sibling[0] === Direction.DOWN_LEFT) {
+                        moves.addLeft(new TreeNode(sibling[1]));
                     } else {
-                        for (let jump of jumpSquares) {
-                            if (Number(jump.id) > Number(square.id)) {
-                                availableMoves.push(jump);
-                            }
-                        }
+                        moves.addRight(new TreeNode(sibling[1]));
                     }
-                    
+                } else if (this._pieces.get(sibling[1])?.color !== currentPiece?.color) {
+                    // If the sibling square is occupied by an opponent's piece, push it to the stack
+                    stack.push(sibling[1]);
                 }
-            }
-        });
-        return availableMoves;
-    }
-
-    private getAvailableMoves(square: Square, piece: Piece | undefined): Square[] {
-        if (!piece) return [];
-
-        console.log(`Square ID: ${square.id}, Siblings: ${square.siblings.map(s => s.id).join(', ')}`);
-
-        if (piece.color === PieceColor.RED) {
-            // For RED pieces, they can only move forward (to lower row numbers)
-            return square.siblings.filter(sibling => !this._pieces.has(sibling) && Number(sibling.id) < Number(square.id));
+            });
         }
-        // For BLACK pieces, they can move backward (to higher row numbers)
-        return square.siblings.filter(sibling => !this._pieces.has(sibling) && Number(sibling.id) > Number(square.id));
+
+        return moves;
     }
 
     private move_piece(from: Square, to: Square): void {
@@ -290,10 +252,10 @@ export class Board {
                 const square = this._board[row][col];
                 if (square instanceof BlackSquare) {
                     // Add siblings for dark squares
-                    if (row > 0 && col > 0) square.addSibling(this._board[row - 1][col - 1]);
-                    if (row > 0 && col < 7) square.addSibling(this._board[row - 1][col + 1]);
-                    if (row < 7 && col > 0) square.addSibling(this._board[row + 1][col - 1]);
-                    if (row < 7 && col < 7) square.addSibling(this._board[row + 1][col + 1]);
+                    if (row > 0 && col > 0) square.addSibling(Direction.UP_LEFT, this._board[row - 1][col - 1]);
+                    if (row > 0 && col < 7) square.addSibling(Direction.UP_RIGHT, this._board[row - 1][col + 1]);
+                    if (row < 7 && col > 0) square.addSibling(Direction.DOWN_LEFT, this._board[row + 1][col - 1]);
+                    if (row < 7 && col < 7) square.addSibling(Direction.DOWN_RIGHT, this._board[row + 1][col + 1]);
                 }
             }
         }
