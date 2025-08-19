@@ -4,9 +4,8 @@ import { Action, ActionType } from "./action";
 import { Move } from "./move";
 import { Piece, PieceColor, Queen } from "./piece";
 import { Game } from "./game";
-import { Stack } from "./stack";
 import { Direction } from "./direction";
-import { TreeNode } from "./tree-node";
+import { AvailableMove, CapturedPiece } from "./available-move";
 
 export class Board {
     private _board: Square[][] = [[]];  // 2D array of squares, where each square is represented by a Square object
@@ -70,7 +69,7 @@ export class Board {
             console.error(`Invalid move: from ${move.from} or to ${move.to} not found on the board.`);
             return;
         }
-        this.move_piece(from_square, to_square);
+        this.move_piece(from_square, to_square, null);
     }
 
     public click(square: Square) : Action {
@@ -102,15 +101,9 @@ export class Board {
 
             // Attempt to move a piece
             const [from, to] = [this.selectedSquare, square];
-            let canMove = false; 
-            let tree_of_moves = this.getAvailableMoves(from, piece);
-            tree_of_moves.toList().forEach(sibling => {
-                if (sibling.id === to.id) {
-                    canMove = true;
-                }
-            });
+            let availableMoves = this.getAvailableMoves(from, selectedPiece!);
             
-            if (!canMove) {
+            if (!availableMoves.has(to)) {
                 console.error(`Invalid move from ${from.id} to ${to.id}`);
 
                 this.clearSelection(this.selectedSquare, piece);
@@ -119,9 +112,11 @@ export class Board {
                 return new Action(ActionType.UNSELECT, square.id, this.playerId);
             }
 
-            this.move_piece(this.selectedSquare, square);
+            this.move_piece(this.selectedSquare, square, availableMoves.get(to)?.piece?.square || null);
             this.clearSelection(this.selectedSquare, piece);
             this.selectedSquare = null;
+
+            // ToDo: while jumps are available, the player should be able to select the next jump
 
             return new Action(ActionType.MOVE, square.id, this.playerId);
         } else {
@@ -134,10 +129,9 @@ export class Board {
             square.select();
             this.selectedSquare = square;
 
-            // Select available moves for the selected piece
-            //console.log(`Available moves for square ${square.id}:` + this.getAvailableMoves(square, piece).map(s => s.id).join(', '));
-            //console.log(`Capture moves for square ${square.id}:` + this.getCaptureMoves(square, piece).map(s => s.id).join(', '));
-            this.getAvailableMoves(square, piece).select();
+            for (let move of this.getAvailableMoves(square, piece)) {
+                move[0].select();
+            }
 
             return new Action(ActionType.SELECT, square.id, this.playerId);
         }
@@ -146,48 +140,44 @@ export class Board {
     private clearSelection(square: Square, piece: Piece | undefined): void {
         square.unselect();
         square.siblings.forEach(sibling => sibling.unselect());
-        this.getAvailableMoves(square, piece).unselect();
 
-        // If the piece can capture, highlight the capture moves
-        /*if (piece && piece.color === this.turn) {
-            this.getAvailableMoves(square, piece).forEach(sibling => sibling.select());
-        }*/
+        if (piece) {
+            for (let move of this.getAvailableMoves(square, piece)) {
+                move[0].unselect();
+            }
+        }
     }
 
-    private getAvailableMoves(square: Square, piece: Piece | undefined): TreeNode {
-        let stack = new Stack<Square>();
-        stack.push(square);
-        let moves: TreeNode = new TreeNode(square);
+    private getAvailableMoves(square: Square, piece: Piece): Map<Square, AvailableMove> {
+        let moves: Map<Square, AvailableMove> = new Map<Square, AvailableMove>();
+        let [left, right] = [square.leftSibling(piece.color), square.rightSibling(piece.color)];
 
-        if (!piece) return moves;
-
-        while (!stack.isEmpty()) {
-            let currentSquare = stack.pop();
-            let currentPiece = this._pieces.get(currentSquare!);
-
-            if (!currentSquare) break;
-
-            let siblings = currentSquare.filterSiblings(piece.color);
-
-            siblings.forEach(sibling => {
-                if (!this._pieces.has(sibling[1])) {
-                    // If the sibling square is empty, add it to the moves
-                    if (sibling[0] === Direction.UP_LEFT || sibling[0] === Direction.DOWN_LEFT) {
-                        moves.addLeft(new TreeNode(sibling[1]));
-                    } else {
-                        moves.addRight(new TreeNode(sibling[1]));
-                    }
-                } else if (this._pieces.get(sibling[1])?.color !== currentPiece?.color) {
-                    // If the sibling square is occupied by an opponent's piece, push it to the stack
-                    stack.push(sibling[1]);
+        if (left) {
+            if (!this._pieces.has(left)) {
+                moves.set(left, new AvailableMove(square, left, undefined));
+            } else if (this._pieces.get(left)?.color !== piece.color) {
+                let jumpSquare = left.leftSibling(piece.color);
+                if (jumpSquare && !this._pieces.has(jumpSquare)) {
+                    moves.set(jumpSquare, new AvailableMove(square, jumpSquare, new CapturedPiece(left, this._pieces.get(left)!)));
                 }
-            });
+            }
+        }
+
+        if (right) {
+            if (!this._pieces.has(right)) {
+                moves.set(right, new AvailableMove(square, right, undefined));
+            } else if (this._pieces.get(right)?.color !== piece.color) {
+                let jumpSquare = right.rightSibling(piece.color);
+                if (jumpSquare && !this._pieces.has(jumpSquare)) {
+                    moves.set(jumpSquare, new AvailableMove(square, jumpSquare, new CapturedPiece(right, this._pieces.get(right)!)));
+                }
+            }
         }
 
         return moves;
     }
 
-    private move_piece(from: Square, to: Square): void {
+    private move_piece(from: Square, to: Square, captured: Square | null): void {
         let piece = this._pieces.get(from);
 
         if (!!piece) {
@@ -196,6 +186,10 @@ export class Board {
 
             this._pieces.set(to, piece);
             this._pieces.delete(from); // Remove piece from the 'from' square
+
+            if (captured) {
+                this._pieces.delete(captured); // Remove captured piece from the board
+            }
         }
 
         /*if (from.piece && to.color === 'dark' && !to.piece) {

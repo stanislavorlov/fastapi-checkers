@@ -42,6 +42,28 @@ export abstract class Square {
         }
     }
 
+    leftSibling(pieceColor: PieceColor): Square | undefined {
+        switch (pieceColor) {
+            case PieceColor.RED:
+                return this._siblings.get(Direction.UP_LEFT);
+            case PieceColor.BLACK:
+                return this._siblings.get(Direction.DOWN_LEFT);
+            default:
+                return undefined;
+        }
+    }
+
+    rightSibling(pieceColor: PieceColor): Square | undefined {
+        switch (pieceColor) {
+            case PieceColor.RED:
+                return this._siblings.get(Direction.UP_RIGHT);
+            case PieceColor.BLACK:
+                return this._siblings.get(Direction.DOWN_RIGHT);
+            default:
+                return undefined;
+        }
+    }
+
     select(): void {
         if (this.canSelect) {
             this._selected = true;
