@@ -194,29 +194,25 @@ export class Board2 {
 
         let [left, right] = [square.leftSibling(piece.color), square.rightSibling(piece.color)];
 
-        if (left) {
-            if (!this._pieces.has(left)) {
-                moves.set(left, new AvailableMove(square, left));
-            } else if (this._pieces.get(left)?.color !== piece.color) {
-                let jumpSquare = left.leftSibling(piece.color);
-                if (jumpSquare && !this._pieces.has(jumpSquare)) {
-                    moves.set(jumpSquare, new AvailableJump(square, jumpSquare, new CapturedPiece(left, this._pieces.get(left)!)));
-                }
-            }
+        if (!!left) {
+            this.checkSibling(piece, moves, square, left, (color) => square.leftSibling(color)?.leftSibling(color));
         }
-
-        if (right) {
-            if (!this._pieces.has(right)) {
-                moves.set(right, new AvailableMove(square, right));
-            } else if (this._pieces.get(right)?.color !== piece.color) {
-                let jumpSquare = right.rightSibling(piece.color);
-                if (jumpSquare && !this._pieces.has(jumpSquare)) {
-                    moves.set(jumpSquare, new AvailableJump(square, jumpSquare, new CapturedPiece(right, this._pieces.get(right)!)));
-                }
-            }
+        if (!!right) {
+            this.checkSibling(piece, moves, square, right, (color) => square.rightSibling(color)?.rightSibling(color));
         }
 
         return moves;
+    }
+
+    private checkSibling(piece: Piece, moves: Map<Square, AvailableMove>, square: Square, sibling: Square, get_sibling: (color: PieceColor) => Square | undefined): void {
+        if (!this._pieces.has(sibling)) {
+            moves.set(sibling, new AvailableMove(square, sibling));
+        } else if (this._pieces.get(sibling)?.color !== piece.color) {
+            let jumpSquare = get_sibling(piece.color);
+            if (jumpSquare && !this._pieces.has(jumpSquare)) {
+                moves.set(jumpSquare, new AvailableJump(square, jumpSquare, new CapturedPiece(sibling, this._pieces.get(sibling)!)));
+            }
+        }
     }
 
     private getSquareById(id: string): Square | undefined {
