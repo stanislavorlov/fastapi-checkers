@@ -195,24 +195,32 @@ export class Board2 {
         let [left, right] = [square.leftSibling(piece.color), square.rightSibling(piece.color)];
 
         if (!!left) {
-            this.checkSibling(piece, moves, square, left, (color) => square.leftSibling(color)?.leftSibling(color));
+            let move = this.checkSiblingsAvailablity(piece, square, left, (color) => square.leftSibling(color)?.leftSibling(color));
+            if (move) {
+                moves.set(move.to, move);
+            }
         }
         if (!!right) {
-            this.checkSibling(piece, moves, square, right, (color) => square.rightSibling(color)?.rightSibling(color));
+            let move = this.checkSiblingsAvailablity(piece, square, right, (color) => square.rightSibling(color)?.rightSibling(color));
+            if (move) {
+                moves.set(move.to, move);
+            }
         }
 
         return moves;
     }
 
-    private checkSibling(piece: Piece, moves: Map<Square, AvailableMove>, square: Square, sibling: Square, get_sibling: (color: PieceColor) => Square | undefined): void {
+    private checkSiblingsAvailablity(piece: Piece, square: Square, sibling: Square, get_sibling: (color: PieceColor) => Square | undefined): AvailableMove {
         if (!this._pieces.has(sibling)) {
-            moves.set(sibling, new AvailableMove(square, sibling));
+            return new AvailableMove(square, sibling);
         } else if (this._pieces.get(sibling)?.color !== piece.color) {
             let jumpSquare = get_sibling(piece.color);
             if (jumpSquare && !this._pieces.has(jumpSquare)) {
-                moves.set(jumpSquare, new AvailableJump(square, jumpSquare, new CapturedPiece(sibling, this._pieces.get(sibling)!)));
+                return new AvailableJump(square, jumpSquare, new CapturedPiece(sibling, this._pieces.get(sibling)!));
             }
         }
+
+        return null as any;
     }
 
     private getSquareById(id: string): Square | undefined {
