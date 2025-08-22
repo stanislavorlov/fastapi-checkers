@@ -47,7 +47,7 @@ export class Board2 {
 
     public load(game: Game) {
         game.history = [];
-        game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '10', to_: '14' }); // Initial empty move
+        /*game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '10', to_: '14' }); // Initial empty move
         game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '22', to_: '18' });
         game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '11', to_: '16' });
         game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '24', to_: '20' });
@@ -55,7 +55,7 @@ export class Board2 {
         game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '21', to_: '17' });
         game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '2', to_: '7' });
         game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '27', to_: '24' });
-        game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '10', to_: '15' });
+        game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '10', to_: '15' });*/
 
         game.history.forEach((move: HistoryEntry) => {
             let [from_square, to_square] = this.getMoveSquaresById(move.from_, move.to_);
@@ -66,12 +66,15 @@ export class Board2 {
                 switch (move.event_type) {
                     case ActionType.MOVE:
                         this.move_piece(from_square, to_square, move.player_id);
+                        this.recordAction(new Action(ActionType.MOVE, to_square.id, move.player_id));
                         break;
                     case ActionType.CAPTURE:
                         this.capture_piece(to_square, move.player_id);
+                        this.recordAction(new Action(ActionType.CAPTURE, to_square.id, move.player_id));
                         break;
                     case ActionType.PROMOTE:
                         this.promote_piece(from_square, to_square, move.player_id);
+                        this.recordAction(new Action(ActionType.PROMOTE, to_square.id, move.player_id));
                         break;
                 }
             }
@@ -109,20 +112,23 @@ export class Board2 {
                     let [from_square, to_square] = this.getMoveSquaresById(last_action.square, square.id);
 
                     let moves = this.getAvailableMoves(from_square!);
+                    let move = moves.get(to_square!);
 
-                    if (moves.has(to_square!)) {
-                        let move = moves.get(to_square!);
-                        
+                    if (!!move) {
                         if (move instanceof AvailableJump) {
                             this.capture_piece(move.captured?.square!, this._playerId);
                             current_action = new Action(ActionType.CAPTURE, square.id, this._playerId);
 
                         } else if (move instanceof AvailableMove) {
                             current_action = new Action(ActionType.MOVE, square.id, this._playerId);
+                        }
 
-                            // Unselect both the destination and origin squares
-                            square.unselect();
-                            from_square?.unselect();
+                        if (!!from_square) {
+                            from_square.unselect();
+                            
+                            for (let [moveSquare, move] of moves) {
+                                moveSquare.unselect();
+                            }
                         }
 
                         this.move_piece(from_square!, to_square!, this._playerId);
@@ -137,6 +143,15 @@ export class Board2 {
                 to_square?.unselect();
 
                 this.switch_turn();
+
+                square.select();
+                current_action = new Action(ActionType.SELECT, square.id, this._playerId);
+
+                let moves = this.getAvailableMoves(square);
+                for (let [moveSquare, move] of moves) {
+                    moveSquare.select();
+                }
+
                 break;
             }
             case null:
@@ -157,14 +172,21 @@ export class Board2 {
                 let [from_square, to_square] = this.getMoveSquaresById(last_action.square, square.id);
 
                 let moves = this.getAvailableMoves(from_square!);
+                console.log(`Available moves : ${from_square?.id}`);
+                console.log(moves);
                 let move = moves.get(to_square!);
+                console.log(move);
 
                 if (!!move && move instanceof AvailableJump) {
                     this.capture_piece(move.captured?.square!, this._playerId);
                     current_action = new Action(ActionType.CAPTURE, square.id, this._playerId);
                     this.move_piece(from_square!, to_square!, this._playerId);
                 } else {
-                    current_action = new Action(ActionType.UNSELECT, square.id, this._playerId);
+                    current_action = new Action(ActionType.SELECT, square.id, this._playerId);
+                    let moves = this.getAvailableMoves(square);
+                    for (let [moveSquare, move] of moves) {
+                        moveSquare.select();
+                    }
                 }
                 
                 break;
@@ -194,10 +216,10 @@ export class Board2 {
 
         let directions = [square.leftSibling, square.rightSibling];
 
-        for (let direct of directions) {
-            let sibling = direct.call(square, piece.color);
+        for (let direction of directions) {
+            let sibling = direction.call(square, piece.color);
             if (!!sibling) {
-                let jumpSquare = direct.call(sibling, piece.color);
+                let jumpSquare = direction.call(sibling, piece.color);
 
                 let move = this.checkSiblingsAvailablity(piece, square, sibling, jumpSquare);
                 if (move) {
