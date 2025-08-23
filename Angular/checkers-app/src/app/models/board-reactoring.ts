@@ -172,10 +172,10 @@ export class Board2 {
                 let [from_square, to_square] = this.getMoveSquaresById(last_action.square, square.id);
 
                 let moves = this.getAvailableMoves(from_square!);
-                console.log(`Available moves : ${from_square?.id}`);
-                console.log(moves);
+                //console.log(`Available moves : ${from_square?.id}`);
+                //console.log(moves);
                 let move = moves.get(to_square!);
-                console.log(move);
+                //console.log(move);
 
                 if (!!move && move instanceof AvailableJump) {
                     this.capture_piece(move.captured?.square!, this._playerId);
@@ -199,6 +199,8 @@ export class Board2 {
                 current_action = new Action(ActionType.UNSELECT, square.id, this._playerId);
                 break;
         }
+
+        console.log(current_action?.type);
 
         this.recordAction(current_action!);
 

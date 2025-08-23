@@ -31,17 +31,6 @@ export abstract class Square {
 
     abstract get canSelect(): boolean;
 
-    filterSiblings(pieceColor: PieceColor): [Direction, Square][] {
-        switch (pieceColor) {
-            case PieceColor.RED:
-                return [...Array.from(this._siblings).filter(sibling => sibling[0] == Direction.UP_LEFT || sibling[0] == Direction.UP_RIGHT)];
-            case PieceColor.BLACK:
-                return [...Array.from(this._siblings).filter(sibling => sibling[0] == Direction.DOWN_LEFT || sibling[0] == Direction.DOWN_RIGHT)];
-            default:
-                return [];
-        }
-    }
-
     leftSibling(pieceColor: PieceColor): Square | undefined {
         switch (pieceColor) {
             case PieceColor.RED:

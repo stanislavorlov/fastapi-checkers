@@ -202,10 +202,18 @@
     <div class="divider" role="separator" aria-label="Divider"></div>
     <div class="right-side">
       <div class="pill-group">
-          <button class="pill btn" (click)="newGame()">
-            <span>New Game</span>
-          </button>
-        </div>
+        <button class="pill btn" (click)="newGame()">
+          <span>New Game</span>
+        </button>
+      </div>
+      <div class="history">
+        <h2>Game History</h2>
+        <ul>
+          <li *ngFor="let move of board.getHistory()">
+            {{ move.type }} {{ move.square }}
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 </main>
