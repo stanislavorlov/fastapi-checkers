@@ -4,7 +4,7 @@ import { AvailableJump, AvailableMove, CapturedPiece } from "./available-move";
 import { Direction } from "./direction";
 import { Game, HistoryEntry } from "./game";
 import { Move } from "./move";
-import { Piece, PieceColor } from "./piece";
+import { Piece, PieceColor, Queen } from "./piece";
 import { BlackSquare, Square, WhiteSquare } from "./square";
 import { Stack } from "./stack";
 
@@ -46,7 +46,7 @@ export class Board2 {
     }
 
     public load(game: Game) {
-        game.history = [];
+        //game.history = [];
         /*game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '10', to_: '14' }); // Initial empty move
         game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '22', to_: '18' });
         game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '11', to_: '16' });
@@ -73,7 +73,7 @@ export class Board2 {
                         this.recordAction(new Action(ActionType.CAPTURE, to_square.id, move.player_id));
                         break;
                     case ActionType.PROMOTE:
-                        this.promote_piece(from_square, to_square, move.player_id);
+                        this.promote_piece(to_square, move.player_id);
                         this.recordAction(new Action(ActionType.PROMOTE, to_square.id, move.player_id));
                         break;
                 }
@@ -121,6 +121,10 @@ export class Board2 {
                         }
 
                         this.move_piece(from_square!, to_square!, this._playerId);
+
+                        if (this.checkPromotionAvailability(from_square!, to_square!)) {
+                            this.promote_piece(to_square!, this._playerId);
+                        }
                     }
                 }
                 break;
@@ -167,6 +171,10 @@ export class Board2 {
                     this.capture_piece(move.captured?.square!, this._playerId);
                     current_action = new Action(ActionType.CAPTURE, square.id, this._playerId);
                     this.move_piece(from_square!, to_square!, this._playerId);
+
+                    if (this.checkPromotionAvailability(from_square!, to_square!)) {
+                        this.promote_piece(to_square!, this._playerId);
+                    }
                 } else {
                     current_action = new Action(ActionType.SELECT, square.id, this._playerId);
                     let moves = this.getAvailableMoves(square);
@@ -228,8 +236,15 @@ export class Board2 {
         return null as any;
     }
 
-    private checkPromotionAvailability(from: Square, to: Square) {
+    private checkPromotionAvailability(from: Square, to: Square) : boolean {
+        let piece = this._pieces.get(to);
 
+        if (!piece) {
+            return false;
+        }
+
+        return piece.color === PieceColor.BLACK && ['29','30','31','32'].includes(to.id) ||
+            piece.color === PieceColor.RED && ['1','2','3','4'].includes(to.id);
     }
 
     private getSquareById(id: string): Square | undefined {
@@ -249,8 +264,11 @@ export class Board2 {
         this._pieces.delete(square);
     }
 
-    private promote_piece(from: Square, to: Square, player_id: string): void {
-        
+    private promote_piece(square: Square, player_id: string): void {
+        if (this._pieces.has(square)) {
+            let piece = this._pieces.get(square);
+            this._pieces.set(square, new Queen(piece!.color));
+        }
     }
 
     private recordAction(action: Action): void {
