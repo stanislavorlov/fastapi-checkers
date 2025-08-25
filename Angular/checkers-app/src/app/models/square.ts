@@ -25,32 +25,16 @@ export abstract class Square {
         return this._selected;
     }
 
-    get siblings(): Map<Direction, Square> {
-        return this._siblings;
+    siblings(directions: Direction[]): [Direction, Square][] {
+        return directions
+            .filter(dir => this._siblings.get(dir) !== undefined)
+            .map(dir => [dir, this._siblings.get(dir) as Square]);
     }
 
     abstract get canSelect(): boolean;
 
-    leftSibling(pieceColor: PieceColor): Square | undefined {
-        switch (pieceColor) {
-            case PieceColor.RED:
-                return this._siblings.get(Direction.UP_LEFT);
-            case PieceColor.BLACK:
-                return this._siblings.get(Direction.DOWN_LEFT);
-            default:
-                return undefined;
-        }
-    }
-
-    rightSibling(pieceColor: PieceColor): Square | undefined {
-        switch (pieceColor) {
-            case PieceColor.RED:
-                return this._siblings.get(Direction.UP_RIGHT);
-            case PieceColor.BLACK:
-                return this._siblings.get(Direction.DOWN_RIGHT);
-            default:
-                return undefined;
-        }
+    sibling(direction: Direction): Square | undefined {
+        return this._siblings.get(direction);
     }
 
     select(): void {

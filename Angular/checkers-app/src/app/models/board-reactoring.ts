@@ -81,17 +81,6 @@ export class Board2 {
         });
     }
 
-    //select
-    //move
-    //select
-    //move
-    //select
-    //move
-    //capture
-    //select
-    //move
-    //capture
-
     public click(square: Square): Action {
         let last_action = this._history.peek();
         let current_action : Action | null = null;
@@ -172,10 +161,7 @@ export class Board2 {
                 let [from_square, to_square] = this.getMoveSquaresById(last_action.square, square.id);
 
                 let moves = this.getAvailableMoves(from_square!);
-                //console.log(`Available moves : ${from_square?.id}`);
-                //console.log(moves);
                 let move = moves.get(to_square!);
-                //console.log(move);
 
                 if (!!move && move instanceof AvailableJump) {
                     this.capture_piece(move.captured?.square!, this._playerId);
@@ -216,17 +202,14 @@ export class Board2 {
             return moves;
         }
 
-        let directions = [square.leftSibling, square.rightSibling];
+        //let directions = [square.leftSibling, square.rightSibling];
+        let directions = square.siblings(piece.moveDirections);
+        for (let [direction, sibling] of directions) {
+            let jumpSquare = sibling.sibling(direction);
 
-        for (let direction of directions) {
-            let sibling = direction.call(square, piece.color);
-            if (!!sibling) {
-                let jumpSquare = direction.call(sibling, piece.color);
-
-                let move = this.checkSiblingsAvailablity(piece, square, sibling, jumpSquare);
-                if (move) {
-                    moves.set(move.to, move);
-                }
+            let move = this.checkSiblingsAvailablity(piece, square, sibling, jumpSquare);
+            if (move) {
+                moves.set(move.to, move);
             }
         }
 
@@ -243,6 +226,10 @@ export class Board2 {
         }
 
         return null as any;
+    }
+
+    private checkPromotionAvailability(from: Square, to: Square) {
+
     }
 
     private getSquareById(id: string): Square | undefined {

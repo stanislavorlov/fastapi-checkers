@@ -158,7 +158,7 @@ export class Board {
 
     private clearSelection(square: Square, piece: Piece | undefined): void {
         square.unselect();
-        square.siblings.forEach(sibling => sibling.unselect());
+        //square.siblings.forEach(sibling => sibling.unselect());
 
         if (piece) {
             for (let move of this.getAvailableMoves(square, piece)) {
@@ -169,26 +169,28 @@ export class Board {
 
     private getAvailableMoves(square: Square, piece: Piece): Map<Square, AvailableMove> {
         let moves: Map<Square, AvailableMove> = new Map<Square, AvailableMove>();
-        let [left, right] = [square.leftSibling(piece.color), square.rightSibling(piece.color)];
+        //let [left, right] = [square.leftSibling(piece.color), square.rightSibling(piece.color)];
+        let siblings = square.siblings(piece.moveDirections);
+        let [left, right] = [siblings[0], siblings[1]];
 
         if (left) {
-            if (!this._pieces.has(left)) {
-                moves.set(left, new AvailableMove(square, left));
-            } else if (this._pieces.get(left)?.color !== piece.color) {
-                let jumpSquare = left.leftSibling(piece.color);
+            if (!this._pieces.has(left[1])) {
+                moves.set(left[1], new AvailableMove(square, left[1]));
+            } else if (this._pieces.get(left[1])?.color !== piece.color) {
+                let jumpSquare = left[1].sibling(left[0]);
                 if (jumpSquare && !this._pieces.has(jumpSquare)) {
-                    moves.set(jumpSquare, new AvailableJump(square, jumpSquare, new CapturedPiece(left, this._pieces.get(left)!)));
+                    moves.set(jumpSquare, new AvailableJump(square, jumpSquare, new CapturedPiece(left[1], this._pieces.get(left[1])!)));
                 }
             }
         }
 
         if (right) {
-            if (!this._pieces.has(right)) {
-                moves.set(right, new AvailableMove(square, right));
-            } else if (this._pieces.get(right)?.color !== piece.color) {
-                let jumpSquare = right.rightSibling(piece.color);
+            if (!this._pieces.has(right[1])) {
+                moves.set(right[1], new AvailableMove(square, right[1]));
+            } else if (this._pieces.get(right[1])?.color !== piece.color) {
+                let jumpSquare = right[1].sibling(right[0]);
                 if (jumpSquare && !this._pieces.has(jumpSquare)) {
-                    moves.set(jumpSquare, new AvailableJump(square, jumpSquare, new CapturedPiece(right, this._pieces.get(right)!)));
+                    moves.set(jumpSquare, new AvailableJump(square, jumpSquare, new CapturedPiece(right[1], this._pieces.get(right[1])!)));
                 }
             }
         }
