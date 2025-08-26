@@ -6,8 +6,8 @@
 .chess-board tr:last-child td { border-bottom: 1px solid; }
 .chess-board th:empty { border: none; }
 .chess-board td { 
-  width: 2em; 
-  height: 2em; 
+  width: 67px; 
+  height: 67px; 
   text-align: center; 
   font-size: 32px;
   line-height: 0; 
@@ -30,6 +30,11 @@
   box-sizing: border-box;
   animation: blink 1s;
   animation-iteration-count: 100;
+}
+
+.chess-board td img {
+  height: 50px;
+  width: 50px;
 }
 
 @keyframes blink { 50% { border-color: hsl(120, 100%, 50%); }  }
