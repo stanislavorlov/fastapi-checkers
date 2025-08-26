@@ -1,9 +1,12 @@
+import { Direction } from "./direction";
+import { PieceColor } from "./piece";
+
 export abstract class Square {
     
     private _selected: boolean = false;
     protected _id: string;
     protected _color: string;
-    protected _siblings: Square[] = [];
+    protected _siblings: Map<Direction, Square> = new Map<Direction, Square>();
 
     constructor(id : string, color: string = 'light') {
         this._id = id;
@@ -22,11 +25,17 @@ export abstract class Square {
         return this._selected;
     }
 
-    get siblings(): Square[] {
-        return [...this._siblings];
+    siblings(directions: Direction[]): [Direction, Square][] {
+        return directions
+            .filter(dir => this._siblings.get(dir) !== undefined)
+            .map(dir => [dir, this._siblings.get(dir) as Square]);
     }
 
     abstract get canSelect(): boolean;
+
+    sibling(direction: Direction): Square | undefined {
+        return this._siblings.get(direction);
+    }
 
     select(): void {
         if (this.canSelect) {
@@ -40,10 +49,8 @@ export abstract class Square {
         }
     }
 
-    addSibling(square: Square): void {
-        if (!this._siblings.includes(square)) {
-            this._siblings.push(square);
-        }
+    addSibling(direction: Direction, square: Square): void {
+        this._siblings.set(direction, square);
     }
 }
 

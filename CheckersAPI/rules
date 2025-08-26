@@ -1,0 +1,7 @@
+12 pieces draughts
+Captures are mandatory if available
+Multiple Captures
+A king can move and capture diagonally forward and backward (1 square)
+
+'11x18' describes the checker on square 11 capturing the piece on square 15 and landing on square 18.
+'11x25' describes the checker on 11 landing on 25 and capturing pieces on 15 and 22.

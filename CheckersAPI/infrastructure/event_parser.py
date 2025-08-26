@@ -1,5 +1,5 @@
 import json
-from handlers import GameEvent
+from domain.events import GameEvent
 
 class EventParser:
     def __init__(self):
