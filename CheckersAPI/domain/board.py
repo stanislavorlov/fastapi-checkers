@@ -1,8 +1,10 @@
+from collections import defaultdict
 from enum import Enum
-from typing import Optional, Dict
 import numpy as np
 from domain.color import Color
+from domain.legal_move import LegalMove
 from domain.move import Move
+from domain.node import Node
 from domain.piece import Piece
 from domain.queen import Queen
 
@@ -26,41 +28,6 @@ def position_to_square(row: int, col: int) -> int:
         raise ValueError("Invalid position: not a playable square")
     index_in_row = col // 2
     return row * 4 + index_in_row + 1
-
-class Node:
-    def __init__(self, square: int):
-        self._square = square
-        self._piece : Optional['Piece'] = None
-        self._neighbors: Dict[Directions, 'Node'] = {}
-
-    @property
-    def piece(self):
-        return self._piece
-
-    @piece.setter
-    def piece(self, piece):
-        self._piece = piece
-
-    @property
-    def square(self):
-        return self._square
-
-    def add_neighbor(self, direction: Directions, neighbor: 'Node'):
-        self._neighbors[direction] = neighbor
-
-    def get_neighbors(self, direction: Directions):
-        if direction in self._neighbors:
-            return self._neighbors[direction]
-        return None
-
-    def get_neighbor_square(self, color: Color):
-        if color == Color.Black:
-            return [self.get_neighbors(Directions.DOWN_LEFT), self.get_neighbors(Directions.DOWN_RIGHT)]
-
-        elif color == Color.Red:
-            return [self.get_neighbors(Directions.UP_LEFT), self.get_neighbors(Directions.UP_RIGHT)]
-
-        return []
 
 
 class Board:
@@ -89,23 +56,6 @@ class Board:
                         node.add_neighbor(direction, neighbor)
                     except ValueError:
                         pass  # skip invalid (non-playable) squares
-
-    def print_board(self):
-        for square in self._board.keys():
-            node = self._board[square]
-            print(f"Node {node.square}:")
-
-            if node.get_neighbors(Directions.UP_LEFT) is not None:
-                print(f"UP LEFT {node.get_neighbors(Directions.UP_LEFT).square}")
-            if node.get_neighbors(Directions.UP_RIGHT) is not None:
-                print(f"UP RIGHT {node.get_neighbors(Directions.UP_RIGHT).square}")
-            if node.get_neighbors(Directions.DOWN_LEFT) is not None:
-                print(f"DOWN LEFT {node.get_neighbors(Directions.DOWN_LEFT).square}")
-            if node.get_neighbors(Directions.DOWN_RIGHT) is not None:
-                print(F"DOWN RIGHT {node.get_neighbors(Directions.DOWN_RIGHT).square}")
-
-            print(f"  Piece:   {node.piece}")
-            print()
 
     def display(self):
         board_view = [["⬜" if (r + c) % 2 == 0 else "⬛" for c in range(8)] for r in range(8)]
@@ -218,8 +168,13 @@ class Board:
 
         return None
 
-    def get_legal_moves(self, player: Color) -> list[Move]:
-        moves = {}
+    def get_legal_moves(self, player: Color) -> list[LegalMove]:
+        # ToDo: bitboards https://3dkingdoms.com/checkers/bitboards.htm
+
+        moves : dict[str, list] = defaultdict(list)
+
+        # 2x11x18
+        # 10-14
 
         piece_nodes = {
             i : n for i, n in self._board.items()
@@ -227,43 +182,50 @@ class Board:
         }
 
         for square, node in piece_nodes.items():
-            is_king = isinstance(node.piece, Queen)
+            neighbors = node.get_neighbor_squares()
+            #squares = [n.square for n in neighbors if n and not n.piece]
 
-            if is_king:
-                pass
+            def check_neighbors(neighbor_node):
+                if not neighbor_node:
+                    return
+                if not neighbor_node.piece:
+                    moves[square].append(neighbor[1].square)
+                else:
+                    if neighbor_node.piece.color != player:
+                        pass
 
-            neighbors = node.get_neighbor_square(player)
-            squares = [n.square for n in neighbors if n and not n.piece]
+            for neighbor in neighbors:
+                check_neighbors(neighbor)
 
-            if len(neighbors):
-                left_neighbor = neighbors[0]
-                right_neighbor = neighbors[1]
-
-                #capture squares
-                if player == Color.Black:
-                    if left_neighbor:
-                        down_left_neighbor = left_neighbor.get_neighbors(Directions.DOWN_LEFT)
-                        if left_neighbor.piece and left_neighbor.piece.color == Color.Red and down_left_neighbor and down_left_neighbor.piece is None:
-                            squares.append(down_left_neighbor.square)
-
-                    if right_neighbor:
-                        down_right_neighbor = right_neighbor.get_neighbors(Directions.DOWN_RIGHT)
-                        if right_neighbor.piece and right_neighbor.piece.color == Color.Red and down_right_neighbor and down_right_neighbor.piece is None:
-                            squares.append(down_right_neighbor.square)
-
-                elif player == Color.Red:
-                    if left_neighbor:
-                        up_left_neighbor = left_neighbor.get_neighbors(Directions.UP_LEFT)
-                        if left_neighbor.piece and left_neighbor.piece.color == Color.Black and up_left_neighbor and up_left_neighbor.piece is None:
-                            squares.append(up_left_neighbor.square)
-
-                    if right_neighbor:
-                        up_right_neighbor = right_neighbor.get_neighbors(Directions.UP_RIGHT)
-                        if right_neighbor.piece and right_neighbor.piece.color == Color.Black and up_right_neighbor and up_right_neighbor.piece is None:
-                            squares.append(up_right_neighbor.square)
-
-            if len(squares):
-                moves[square] = squares
+            # if len(neighbors):
+            #     left_neighbor = neighbors[0]
+            #     right_neighbor = neighbors[1]
+            #
+            #     #capture squares
+            #     if player == Color.Black:
+            #         if left_neighbor:
+            #             down_left_neighbor = left_neighbor.get_neighbors(Directions.DOWN_LEFT)
+            #             if left_neighbor.piece and left_neighbor.piece.color == Color.Red and down_left_neighbor and down_left_neighbor.piece is None:
+            #                 squares.append(down_left_neighbor.square)
+            #
+            #         if right_neighbor:
+            #             down_right_neighbor = right_neighbor.get_neighbors(Directions.DOWN_RIGHT)
+            #             if right_neighbor.piece and right_neighbor.piece.color == Color.Red and down_right_neighbor and down_right_neighbor.piece is None:
+            #                 squares.append(down_right_neighbor.square)
+            #
+            #     elif player == Color.Red:
+            #         if left_neighbor:
+            #             up_left_neighbor = left_neighbor.get_neighbors(Directions.UP_LEFT)
+            #             if left_neighbor.piece and left_neighbor.piece.color == Color.Black and up_left_neighbor and up_left_neighbor.piece is None:
+            #                 squares.append(up_left_neighbor.square)
+            #
+            #         if right_neighbor:
+            #             up_right_neighbor = right_neighbor.get_neighbors(Directions.UP_RIGHT)
+            #             if right_neighbor.piece and right_neighbor.piece.color == Color.Black and up_right_neighbor and up_right_neighbor.piece is None:
+            #                 squares.append(up_right_neighbor.square)
+            #
+            # if len(squares):
+            #     moves[square] = squares
 
         return moves
 
