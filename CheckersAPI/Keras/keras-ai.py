@@ -1,5 +1,6 @@
 import json
 
+import keras
 from sympy.solvers.ode.lie_group import lie_heuristics
 
 EMPTY = 0
@@ -11,9 +12,6 @@ P2_KING = -2
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers, models
-
-# === Board representation ===
-EMPTY, P1_MAN, P1_KING, P2_MAN, P2_KING = 0, 1, 2, -1, -2
 
 def initial_board():
     """Standard 8x8 checkers setup with 32 playable squares."""
@@ -97,20 +95,23 @@ print("Unique moves:", len(move_to_idx))
 num_squares = 32
 num_moves = len(move_to_idx)
 
-model = models.Sequential([
-    layers.Input(shape=(num_squares,)),
-    layers.Embedding(input_dim=5, output_dim=8, input_length=num_squares),  # -2..2 → 0..4 remap needed
-    layers.Flatten(),
-    layers.Dense(128, activation="relu"),
-    layers.Dense(128, activation="relu"),
-    layers.Dense(num_moves, activation="softmax")
-])
-
-model.compile(optimizer="adam",
-              loss="sparse_categorical_crossentropy",
-              metrics=["accuracy"])
-
-model.fit(X, y, batch_size=32, epochs=10, validation_split=0.1)
+# model = models.Sequential([
+#     layers.Input(shape=(num_squares,)),
+#     layers.Embedding(input_dim=5, output_dim=8, input_length=num_squares),  # -2..2 → 0..4 remap needed
+#     layers.Flatten(),
+#     layers.Dense(128, activation="relu"),
+#     layers.Dense(128, activation="relu"),
+#     layers.Dense(num_moves, activation="softmax")
+# ])
+#
+# model.compile(optimizer="adam",
+#               loss="sparse_categorical_crossentropy",
+#               metrics=["accuracy"])
+#
+# model.fit(X, y, batch_size=32, epochs=10, validation_split=0.1)
+#
+# model.save('model.keras')
+model = keras.models.load_model('model.keras')
 
 # men: 1,-1 kings: 2,-2
 board = X[0].reshape(1, -1)
