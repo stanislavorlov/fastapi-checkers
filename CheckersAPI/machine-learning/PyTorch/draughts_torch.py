@@ -124,7 +124,7 @@ if __name__ == "__main__":
     # ]
 
     games = []
-    with open('moves.json', 'r') as f:
+    with open('../moves.json', 'r') as f:
         for line in f:
             if line[0] != '[' and line[0] != ']':
                 games.append(line)
@@ -156,10 +156,10 @@ if __name__ == "__main__":
     print("Training finished.")
 
     # save trained model into file
-    torch.save(model.state_dict(), './trained_model.pth')
+    torch.save(model.state_dict(), 'trained_model.pth')
 
     # read trained model from files
-    model.load_state_dict(torch.load('./trained_model.pth'))
+    model.load_state_dict(torch.load('trained_model.pth'))
     model.eval()
 
     # 5. Example prediction after training

@@ -1,7 +1,4 @@
-import json
-
 import keras
-from sympy.solvers.ode.lie_group import lie_heuristics
 
 EMPTY = 0
 P1_MAN = 1
@@ -10,8 +7,7 @@ P2_MAN = -1
 P2_KING = -2
 
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras import layers, models
+
 
 def initial_board():
     """Standard 8x8 checkers setup with 32 playable squares."""

@@ -24,7 +24,7 @@ def js_to_json(js_text):
     js_text = js_text.replace("null", "null")
     return js_text
 
-with open("games.csv", "a") as f:
+with open("../games.csv", "a") as f:
     for game_id in range(22338, 22620):
 
         print(f'game id: {game_id}')
