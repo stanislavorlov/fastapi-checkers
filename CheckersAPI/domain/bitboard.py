@@ -128,36 +128,37 @@ class BitboardCheckers:
         directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
         for row in range(8):
             for col in range(8):
-                sq = board[row][col]
-                if sq == 0: continue
-                MOVE_MAP[sq] = []
-                CAPTURE_MAP[sq] = []
+                square = board[row][col]
+                if square == 0: continue
+                MOVE_MAP[square] = []
+                CAPTURE_MAP[square] = []
                 for dr, dc in directions:
                     nr, nc = row + dr, col + dc
                     if 0 <= nr < 8 and 0 <= nc < 8 and board[nr][nc] != 0:
-                        MOVE_MAP[sq].append((board[nr][nc], None))
+                        MOVE_MAP[square].append((board[nr][nc], None))
                     jr, jc = row + 2 * dr, col + 2 * dc
                     if (0 <= jr < 8 and 0 <= jc < 8
                             and board[nr][nc] != 0 and board[jr][jc] != 0):
-                        CAPTURE_MAP[sq].append((board[nr][nc], board[jr][jc]))
+                        CAPTURE_MAP[square].append((board[nr][nc], board[jr][jc]))
         return MOVE_MAP, CAPTURE_MAP
 
-board = BitboardCheckers()
+if __name__=='__main__':
+    board = BitboardCheckers()
 
-for sq in range(1, 13):   # white men
-    board.set_piece(sq, "b")
-for sq in range(21, 33):  # black men
-    board.set_piece(sq, "w")
+    for sq in range(1, 13):   # white men
+        board.set_piece(sq, "b")
+    for sq in range(21, 33):  # black men
+        board.set_piece(sq, "w")
 
-board.move_piece(10, 14, "b")
-board.move_piece(23, 19, "w")
-board.move_piece(11, 15, "b")
-board.move_piece(9, 13, "b")
-board.move_piece(5, 9, "b")
-board.move_piece(1, 5, "b")
-board.move_piece(12, 16, "b")
+    board.move_piece(10, 14, "b")
+    board.move_piece(23, 19, "w")
+    board.move_piece(11, 15, "b")
+    board.move_piece(9, 13, "b")
+    board.move_piece(5, 9, "b")
+    board.move_piece(1, 5, "b")
+    board.move_piece(12, 16, "b")
 
-board.print_board()
+    board.print_board()
 
-print("Moves (white):", board.generate_moves("white"))
-print("Captures (white):", board.generate_captures("white"))
+    print("Moves (white):", board.generate_moves("white"))
+    print("Captures (white):", board.generate_captures("white"))
