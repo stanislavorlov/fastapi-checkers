@@ -85,7 +85,7 @@ class Game:
         return f"{turn}:{black_pieces.rstrip(",")}:{white_pieces.rstrip(",")}"
 
     def board_to_tensor(self):
-        """Converts checkers board in SDFEN format into compact tensor shape (8,8,5).
+        """Converts checkers board in SDFEN format into compact tensor shape (8,4,5).
         In case of AlphaZero CNN architecture, a full tensor shape (8,8,C) to be used.
         Channels: black man, black king, white man, white king, side-to-move.
         Example SDFEN: B:b1,b2,b3,b4,b5,b6,b7,b8,b9,b10,b11,b12:w21,w22,w23,w24,w25,w26,w27,w28,w29,w30,w31,w32"""
@@ -94,16 +94,16 @@ class Game:
             if not 1 <= sq <= 32:
                 return None
 
-            index = sq - 1
-            row = index // 4
-            col = 2 * (index % 4) + (row % 2 == 0)
+            """Convert square index 1–32 into (row, col) in (8,4) grid"""
+            row = (sq - 1) // 4
+            col = (sq - 1) % 4
 
             return (row, col)
 
         side, black_pieces, white_pieces = self.get_sdfen().split(":")
 
-        # ToDo: game result
-        tensor = np.zeros([8, 8, 5])
+        # 8 rows * 4 cells and 5 channels [black_man, black_king, white_man, white_king, side_to_move]
+        tensor = np.zeros([8, 4, 5])
 
         for piece in black_pieces.split(","):
             if piece:
@@ -128,6 +128,7 @@ class Game:
         return tensor
 
 if __name__ == '__main__':
+
     df = pd.read_csv('../games.csv', sep=';')
 
     for index, row in df.iterrows():
