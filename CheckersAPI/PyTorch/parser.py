@@ -1,4 +1,3 @@
-import time
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -19,10 +18,15 @@ def create_session(retries=5, backoff_factor=1):
 
     return request_session
 
-with open("moves.json", "a") as f:
-    f.write('[\n')
+def js_to_json(js_text):
+    js_text = js_text.replace("false", "false")  # JSON compatible
+    js_text = js_text.replace("true", "true")
+    js_text = js_text.replace("null", "null")
+    return js_text
 
-    for game_id in range(22282, 22620):
+with open("games.csv", "a") as f:
+    for game_id in range(22338, 22620):
+
         print(f'game id: {game_id}')
         session = create_session(backoff_factor=3)
 
@@ -34,16 +38,49 @@ with open("moves.json", "a") as f:
         scripts = game_soup.find_all("script")
         script = scripts[2]
 
-        match = re.search(r'\[.*?]', script.string)
-        if match:
-            array_str = match.group(0)
-            moves = json.loads(array_str)
+        gon_dict = {}
 
-            f.write(json.dumps(moves, ensure_ascii=False) + ',\n')
+        pattern = re.compile(r'gon\.(\w+)\s*=\s*(.*?);', re.DOTALL)
+        for key, value in pattern.findall(script.string):
+            value = value.strip()
+            # If value starts with { or [, treat as JSON
+            if value.startswith('{') or value.startswith('['):
+                # Make JSON compatible
+                value_json = js_to_json(value)
+                gon_dict[key] = json.loads(value_json)
+            else:
+                # Remove quotes for strings
+                if value.startswith('"') and value.endswith('"'):
+                    gon_dict[key] = value[1:-1]
+                elif value in ["true", "false"]:
+                    gon_dict[key] = value == "true"
+                else:
+                    # numbers
+                    try:
+                        gon_dict[key] = int(value)
+                    except ValueError:
+                        try:
+                            gon_dict[key] = float(value)
+                        except ValueError:
+                            gon_dict[key] = value
 
-        if game_id % 15 == 0:
-            time.sleep(5)
+        print(gon_dict['moves'])
+        print(gon_dict['game']['black_win'])
+        print(gon_dict['game']['white_win'])
+        print(gon_dict['position']['board'])    ######rrrrrrrr#rrrr0000#0000wwww#wwwwwwww#####
+        print(gon_dict['position']['white_to_play'])
 
-    f.write(']')
+        game_result = 'draw'
+        if gon_dict['game']['black_win']:
+            game_result = 'black_win'
+        if gon_dict['game']['white_win']:
+            game_result = 'white_win'
+
+        moves = gon_dict['moves']
+        result_string = ",".join(moves)
+        board = gon_dict['position']['board']
+
+        f.write(f"{game_id};{game_result};{result_string};{board}\n")
+        f.flush()
 
 print("parsing is done")
