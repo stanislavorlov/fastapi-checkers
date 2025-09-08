@@ -1,12 +1,14 @@
 # ToDo: board into Tensor (32 cells array)
 # Predict next movement based on current position (FEN) and game result
-import dataclasses
+
 from collections import defaultdict
 from enum import Enum
-from typing import List
-
+import tensorflow as tf
+from keras import Model
+from keras.layers import Dense, Input, Dropout, Flatten
 import numpy as np
 import pandas as pd
+from keras.src.layers import Conv2D, Softmax
 
 
 class GameResult(Enum):
@@ -127,6 +129,48 @@ class Game:
 
         return tensor
 
+def build_checkers_model(input_shape=(8, 4, 5), policy_size=256):
+    """
+    AlphaZero-style network for checkers.
+    input_shape: (8, 4, 5)
+    policy_size: number of possible moves in fixed action space
+    """
+
+    inputs = Input(shape=input_shape)
+
+    # Shared convolutional trunk
+    x = Conv2D(64, (3, 3), padding="same", activation="relu")(inputs)
+    x = Conv2D(64, (3, 3), padding="same", activation="relu")(x)
+    x = Conv2D(128, (3, 3), padding="same", activation="relu")(x)
+    x = Flatten()(x)
+    x = Dense(256, activation="relu")(x)
+
+    # Policy head
+    policy_logits = Dense(policy_size, activation=None, name="policy")(x)
+    policy_out = Softmax(name="policy_output")(policy_logits)
+
+    # Value head
+    v = Dense(64, activation="relu")(x)
+    value_out = Dense(1, activation="tanh", name="value_output")(v)
+
+    # Model
+    model = Model(inputs=inputs, outputs=[policy_out, value_out])
+
+    # Losses: categorical for policy, MSE for value
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(1e-3),
+        loss={
+            "policy_output": "categorical_crossentropy",
+            "value_output": "mean_squared_error"
+        },
+        loss_weights={
+            "policy_output": 1.0,
+            "value_output": 1.0
+        }
+    )
+
+    return model
+
 if __name__ == '__main__':
 
     df = pd.read_csv('../games.csv', sep=';')
@@ -146,6 +190,9 @@ if __name__ == '__main__':
         moves = str(row['moves']).split(',')
         for m in moves:
             game.register_move(m)
+
+        model = build_checkers_model(input_shape=(8, 4, 5), policy_size=256)
+        model.summary()
 
         if index == 5:
             break
