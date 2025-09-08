@@ -39,6 +39,30 @@ def captured_square(start: int, end: int):
 
     return coords_to_square(rm, cm)
 
+# ==== Move helpers ====
+
+policy_size = 32 * 32  # from→to pairs
+
+def move_to_index(src, dst):
+    return src * 32 + dst
+
+def index_to_move(index):
+    return index // 32, index % 32
+
+def parse_pdn_move(move_str):
+    """Parse '11-15', '25x18', '26x17x10x1' → (src,dst) in 0..31"""
+    parts = move_str.replace("-", "x").split("x")
+    src = int(parts[0]) - 1
+    dst = int(parts[-1]) - 1
+    return src, dst
+
+def move_to_onehot(move_str):
+    src, dst = parse_pdn_move(move_str)
+    idx = move_to_index(src, dst)
+    onehot = np.zeros(policy_size, dtype=np.float32)
+    onehot[idx] = 1.0
+    return onehot
+
 class Game:
     def __init__(self, game_id: int, result: GameResult):
         self._id = game_id
@@ -154,10 +178,10 @@ def build_checkers_model(input_shape=(8, 4, 5), policy_size=256):
     value_out = Dense(1, activation="tanh", name="value_output")(v)
 
     # Model
-    model = Model(inputs=inputs, outputs=[policy_out, value_out])
+    grouped_layers_model = Model(inputs=inputs, outputs=[policy_out, value_out])
 
     # Losses: categorical for policy, MSE for value
-    model.compile(
+    grouped_layers_model.compile(
         optimizer=tf.keras.optimizers.Adam(1e-3),
         loss={
             "policy_output": "categorical_crossentropy",
@@ -169,12 +193,12 @@ def build_checkers_model(input_shape=(8, 4, 5), policy_size=256):
         }
     )
 
-    return model
+    return grouped_layers_model
 
-if __name__ == '__main__':
-
+def game_csv_to_dataset():
     df = pd.read_csv('../games.csv', sep=';')
 
+    x_, y_policy_, y_value_ = [], [], []
     for index, row in df.iterrows():
         print(f"{row['game_id']}\t{row['result']}\t{row['moves']}")
 
@@ -188,11 +212,57 @@ if __name__ == '__main__':
 
         game = Game(row['game_id'], game_result)
         moves = str(row['moves']).split(',')
-        for m in moves:
-            game.register_move(m)
 
-        model = build_checkers_model(input_shape=(8, 4, 5), policy_size=256)
-        model.summary()
+        for mv in moves:
+            game.register_move(mv)
+            x_.append(game.board_to_tensor())
+            y_policy_.append(move_to_onehot(mv))
+            y_value_.append(game_result.value)
 
         if index == 5:
             break
+
+    x_ = np.stack(x_).astype(np.float32)
+    y_policy_ = np.stack(y_policy_).astype(np.float32)
+    y_value_ = np.stack(y_value_).astype(np.float32).reshape(-1,1)
+
+    return x_, y_policy_, y_value_
+
+if __name__ == '__main__':
+
+    # ==== 1. Build the model ====
+    model = build_checkers_model(input_shape=(8, 4, 5), policy_size=1024)
+    model.summary()
+
+    # ==== 2. Prepare your training data ====
+    # Suppose you parsed PDN into these three arrays:
+    # X        -> shape (N, 8, 4, 5), board tensors
+    # y_policy -> shape (N, policy_size), one-hot of chosen moves
+    # y_value  -> shape (N, 1), game result (+1 win, -1 loss, 0 draw)
+
+    # ==== 3. Train the model ====
+    X, y_policy, y_value = game_csv_to_dataset()
+
+    print("Board tensors:", X.shape)            # (266, 8, 4, 5)
+    print("Policy labels:", y_policy.shape)     # (266, 1024)
+    print("Value labels:", y_value.shape)       # (266, 1)
+
+    model.fit(
+        X,
+        {"policy_output": y_policy, "value_output": y_value},
+        batch_size=64,
+        epochs=10,
+        validation_split=0.1,
+    )
+
+    # ==== 4. Predict next move for a new board ====
+    board_tensor = np.random.randint(0, 2, (1, 8, 4, 5)).astype(np.float32)
+
+    policy_pred, value_pred = model.predict(board_tensor)
+
+    # policy_pred[0] -> probabilities for each move (size = policy_size)
+    # value_pred[0][0] -> win prediction for side-to-move in [-1,1]
+
+    best_move_idx = np.argmax(policy_pred[0])
+    print("Predicted best move index:", best_move_idx)
+    print("Predicted win chance (side to move):", value_pred[0][0])
