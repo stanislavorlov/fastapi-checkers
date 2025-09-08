@@ -266,3 +266,4 @@ if __name__ == '__main__':
     best_move_idx = np.argmax(policy_pred[0])
     print("Predicted best move index:", best_move_idx)
     print("Predicted win chance (side to move):", value_pred[0][0])
+    print("Decoded index to move", index_to_move(best_move_idx))
