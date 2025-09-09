@@ -126,6 +126,11 @@ class Board:
 
     def copy(self):
         new_board = Board()
+        new_board._turn = self._turn
+        new_board.black_men = self.black_men
+        new_board.black_kings = self.black_kings
+        new_board.white_men = self.white_men
+        new_board.white_kings = self.white_kings
 
         return new_board
 
