@@ -1,13 +1,7 @@
-from collections import defaultdict
-from enum import Enum
 from typing import List
-
 import numpy as np
 from domain.color import Color
 from domain.legal_move import LegalMove, CapturedMove
-from domain.move import Move
-from domain.piece import Piece
-from domain.queen import Queen
 
 # Map 1–32 to board positions (row, col)
 def square_to_position(square: int) -> tuple[int, int]:
