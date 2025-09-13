@@ -1,5 +1,5 @@
 from typing import List
-from application.board_helper import captured_square
+from application.board_helper import BoardHelper
 from domain.color import Color
 from domain.legal_move import LegalMove, CapturedMove
 
@@ -69,7 +69,7 @@ class Board:
 
         # detect captures
         if abs(from_square - to_square) > 5:
-            captured = captured_square(from_square, to_square)
+            captured = BoardHelper.captured_square(from_square, to_square)
             self.remove_piece(captured)
 
         # detect promotions
