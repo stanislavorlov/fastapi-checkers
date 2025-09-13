@@ -3,6 +3,7 @@ import random
 import numpy as np
 import functools  # For memoization
 
+from application.board_helper import board_to_8_8_3_tensor
 from application.monte_carlo_tree import MCTS
 from application.neural_network import NeuralNetwork
 from domain.board import Board
@@ -31,7 +32,8 @@ def self_play_training(num_games : int, num_simulations_per_move : int, neural_n
                 print("No legal moves found during MCTS. Breaking game.")
                 break
 
-            board_state_nn = board.get_state_representation()
+            # board_state_nn = board.get_state_representation()
+            board_state_nn = board_to_8_8_3_tensor(board)
             game_history.append((board_state_nn, simulation_result.policy, simulation_result.best_move))
 
             board.move_piece(simulation_result.best_move)

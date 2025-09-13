@@ -3,20 +3,18 @@ import numpy as np
 from domain.color import Color
 from domain.legal_move import LegalMove, CapturedMove
 
-# Map 1–32 to board positions (row, col)
-def square_to_position(square: int) -> tuple[int, int]:
-    if not 1 <= square <= 32:
-        raise ValueError("Square must be in 1..32")
-    row = (square - 1) // 4
-    col = 2 * ((square - 1) % 4) + ((row + 1) % 2)
-    return row, col
-
-# Reverse mapping
-def position_to_square(row: int, col: int) -> int:
-    if (row + col) % 2 == 0:
-        raise ValueError("Invalid position: not a playable square")
-    index_in_row = col // 2
-    return row * 4 + index_in_row + 1
+# def square_to_position(square: int) -> tuple[int, int]:
+#     if not 1 <= square <= 32:
+#         raise ValueError("Square must be in 1..32")
+#     row = (square - 1) // 4
+#     col = 2 * ((square - 1) % 4) + ((row + 1) % 2)
+#     return row, col
+#
+# def position_to_square(row: int, col: int) -> int:
+#     if (row + col) % 2 == 0:
+#         raise ValueError("Invalid position: not a playable square")
+#     index_in_row = col // 2
+#     return row * 4 + index_in_row + 1
 
 
 class Board:
@@ -134,29 +132,29 @@ class Board:
 
         return new_board
 
-    def get_state_representation(self):
-        state = np.zeros((8, 8, 3), dtype=np.float32)
-
-        for i in range(1, 32):
-            # 1->0,1, 2->0,3, 5->1,0, 6->1,2
-            r = (i - 1) // 4
-            c = 2 * ((i - 1) % 4) + (1 if r % 2 == 0 else 0)
-
-            piece = self.piece_at(i)
-            if len(piece):
-                match piece:
-                    case 'b':
-                        state[r, c, 1] = 1.0
-                    case 'B':
-                        state[r, c, 1] = 1.0
-                        state[r, c, 2] = 1.0
-                    case 'w':
-                        state[r, c, 0] = 1.0
-                    case 'W':
-                        state[r, c, 0] = 1.0
-                        state[r, c, 2] = 1.0
-
-        return state
+    # def get_state_representation(self):
+    #     state = np.zeros((8, 8, 3), dtype=np.float32)
+    #
+    #     for i in range(1, 32):
+    #         # 1->0,1, 2->0,3, 5->1,0, 6->1,2
+    #         r = (i - 1) // 4
+    #         c = 2 * ((i - 1) % 4) + (1 if r % 2 == 0 else 0)
+    #
+    #         piece = self.piece_at(i)
+    #         if len(piece):
+    #             match piece:
+    #                 case 'b':
+    #                     state[r, c, 1] = 1.0
+    #                 case 'B':
+    #                     state[r, c, 1] = 1.0
+    #                     state[r, c, 2] = 1.0
+    #                 case 'w':
+    #                     state[r, c, 0] = 1.0
+    #                 case 'W':
+    #                     state[r, c, 0] = 1.0
+    #                     state[r, c, 2] = 1.0
+    #
+    #     return state
 
     def is_game_over(self) -> bool:
 

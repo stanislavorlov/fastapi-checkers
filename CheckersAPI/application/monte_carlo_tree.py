@@ -2,6 +2,8 @@
 import random
 from typing import Dict
 import numpy as np
+
+from application.board_helper import board_to_8_8_3_tensor
 from domain.board import Board
 from domain.color import Color
 from domain.move import Move
@@ -85,7 +87,8 @@ class MCTS:
                     best_child : MCTSNode = MCTSNode(next_board, parent=node, parent_action=move_to_expand)
                     node.children[move_to_expand] = best_child
 
-                    board_state_nn = next_board.get_state_representation()
+                    #board_state_nn = next_board.get_state_representation()
+                    board_state_nn = board_to_8_8_3_tensor(next_board)
                     policy_probs, value = self.nn.predict(board_state_nn)
                     best_child.policy_prior = 1.0 / (
                                 len(node.unexplored_moves) + 1) if node.unexplored_moves else 1.0  # Placeholder
@@ -108,7 +111,8 @@ class MCTS:
 
             # 2. Expansion
             if node.is_leaf() and not node.is_game_over():
-                board_state_nn = node.board.get_state_representation()
+                #board_state_nn = node.board.get_state_representation()
+                board_state_nn = board_to_8_8_3_tensor(node.board)
                 policy_probs, value = self.nn.predict(board_state_nn)
             elif node.is_game_over():
                 winner = node.board.get_winner()
