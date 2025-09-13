@@ -1,5 +1,17 @@
 import numpy as np
 from domain.board import Board
+from domain.color import Color
+
+
+def captured_square(start: int, end: int):
+    """Return the captured square between start and end (single jump)."""
+    r1, c1 = square_to_position(start)
+    r2, c2 = square_to_position(end)
+
+    # midpoint of the diagonal
+    rm, cm = (r1 + r2) // 2, (c1 + c2) // 2
+
+    return position_to_square(rm, cm)
 
 def board_to_8_8_3_tensor(board: Board):
     tensor = np.zeros([8, 8, 3])
@@ -58,3 +70,21 @@ def position_to_square(row: int, col: int) -> int:
         raise ValueError("Invalid position: not a playable square")
     index_in_row = col // 2
     return row * 4 + index_in_row + 1
+
+def board_as_sdfen(board: Board):
+    turn = "B" if board.turn == Color.Black else "W"
+    black_pieces = ''
+    white_pieces = ''
+
+    for i in range(1, 33):
+        match board.piece_at(i):
+            case 'b':
+                black_pieces += f"b{i},"
+            case 'B':
+                black_pieces += f"B{i},"
+            case 'w':
+                white_pieces += f"w{i},"
+            case 'W':
+                white_pieces += f"W{i},"
+
+    return f"{turn}:{black_pieces.rstrip(",")}:{white_pieces.rstrip(",")}"

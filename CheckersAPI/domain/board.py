@@ -1,21 +1,7 @@
 from typing import List
-import numpy as np
+from application.board_helper import captured_square
 from domain.color import Color
 from domain.legal_move import LegalMove, CapturedMove
-
-# def square_to_position(square: int) -> tuple[int, int]:
-#     if not 1 <= square <= 32:
-#         raise ValueError("Square must be in 1..32")
-#     row = (square - 1) // 4
-#     col = 2 * ((square - 1) % 4) + ((row + 1) % 2)
-#     return row, col
-#
-# def position_to_square(row: int, col: int) -> int:
-#     if (row + col) % 2 == 0:
-#         raise ValueError("Invalid position: not a playable square")
-#     index_in_row = col // 2
-#     return row * 4 + index_in_row + 1
-
 
 class Board:
 
@@ -69,29 +55,30 @@ class Board:
         if self.black_kings & mask: return "B"
         if self.white_men & mask: return "w"
         if self.white_kings & mask: return "W"
+
         return None
 
+    # ToDo: if multiple capture moves, do not update the Turn
     def move_piece(self, from_square: int, to_square: int):
         piece = self.piece_at(from_square)
+
+        if not piece:
+            return
+
         self.remove_piece(from_square)
+
+        # detect captures
+        if abs(from_square - to_square) > 5:
+            captured = captured_square(from_square, to_square)
+            self.remove_piece(captured)
+
+        # detect promotions
+        if piece == "b" and 29 <= to_square <= 32:
+            piece = "B"
+        elif piece == "w" and 1 <= to_square <= 4:
+            piece = "W"
+
         self.set_piece(to_square, piece)
-
-        # ToDo: detect capture and promotion
-
-        # if abs(sr - er) == 2:
-        #     captured_r, captured_c = (sr + er) // 2, (sc + ec) // 2
-        #     captured_piece = self.get_piece(captured_r, captured_c)
-        #
-        #     self.board[captured_r][captured_c] = EMPTY
-        #     if captured_piece == BLACK_PIECE or captured_piece == BLACK_KING:
-        #         self.black_pieces -= 1
-        #     elif captured_piece == RED_PIECE or captured_piece == RED_KING:
-        #         self.red_pieces -= 1
-        #
-        # if piece == RED_PIECE and er == 7:
-        #     self.board[er][ec] = RED_KING
-        # elif piece == BLACK_PIECE and er == 0:
-        #     self.board[er][ec] = BLACK_KING
 
         self._turn = Color.Black if self._turn == Color.Red else Color.Red
 
@@ -131,30 +118,6 @@ class Board:
         new_board.white_kings = self.white_kings
 
         return new_board
-
-    # def get_state_representation(self):
-    #     state = np.zeros((8, 8, 3), dtype=np.float32)
-    #
-    #     for i in range(1, 32):
-    #         # 1->0,1, 2->0,3, 5->1,0, 6->1,2
-    #         r = (i - 1) // 4
-    #         c = 2 * ((i - 1) % 4) + (1 if r % 2 == 0 else 0)
-    #
-    #         piece = self.piece_at(i)
-    #         if len(piece):
-    #             match piece:
-    #                 case 'b':
-    #                     state[r, c, 1] = 1.0
-    #                 case 'B':
-    #                     state[r, c, 1] = 1.0
-    #                     state[r, c, 2] = 1.0
-    #                 case 'w':
-    #                     state[r, c, 0] = 1.0
-    #                 case 'W':
-    #                     state[r, c, 0] = 1.0
-    #                     state[r, c, 2] = 1.0
-    #
-    #     return state
 
     def is_game_over(self) -> bool:
 
