@@ -11,7 +11,7 @@ class TensorHelper:
 
         for i in range(1, 33):
             piece = board.piece_at(i)
-            if len(piece):
+            if piece:
                 r = (i - 1) // 4
                 c = 2 * ((i - 1) % 4) + (1 if r % 2 == 0 else 0)
 

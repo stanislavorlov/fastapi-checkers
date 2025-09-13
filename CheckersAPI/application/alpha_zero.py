@@ -2,10 +2,9 @@ import copy
 import random
 import numpy as np
 import functools  # For memoization
-
-from application.board_helper import board_to_8_8_3_tensor
 from application.monte_carlo_tree import MCTS
 from application.neural_network import NeuralNetwork
+from application.tansor_helper import TensorHelper
 from domain.board import Board
 from domain.color import Color
 from domain.move import Move
@@ -33,10 +32,10 @@ def self_play_training(num_games : int, num_simulations_per_move : int, neural_n
                 break
 
             # board_state_nn = board.get_state_representation()
-            board_state_nn = board_to_8_8_3_tensor(board)
+            board_state_nn = TensorHelper.board_to_8_8_3_tensor(board)
             game_history.append((board_state_nn, simulation_result.policy, simulation_result.best_move))
 
-            board.move_piece(simulation_result.best_move)
+            board.move_piece(simulation_result.best_move.from_, simulation_result.best_move.to_)
 
         game_winner = board.get_winner()
         game_result = 0
@@ -83,7 +82,7 @@ if __name__ == "__main__":
             if red_moves:
                 chosen_move : Move = random.choice(red_moves)
                 print(f"Red chooses move: {chosen_move}")
-                game_board.move_piece(chosen_move)
+                game_board.move_piece(chosen_move.from_, chosen_move.to)
             else:
                 print("Red has no legal moves. Game Over.")
                 break
@@ -96,7 +95,7 @@ if __name__ == "__main__":
 
             if ai_best_move:
                 print(f"AI (Black) makes move: {ai_best_move}")
-                game_board.move_piece(ai_best_move)
+                game_board.move_piece(ai_best_move.from_, ai_best_move.to_)
             else:
                 print("AI (Black) has no legal moves. Game Over.")
                 break
