@@ -58,8 +58,19 @@ class Board:
 
         return None
 
-    # ToDo: if multiple capture moves, do not update the Turn
-    def move_piece(self, from_square: int, to_square: int):
+    def move_piece(self, from_square: int, to_square: int, move_is_over: bool = True):
+        """
+        Moves a piece on the board from one square to another.
+        If captures is performed, it calculates the captured square and removes the piece.
+
+        Args:
+            from_square (int): The starting square index of the piece
+            to_square (int): The target square index where the piece should move
+            move_is_over (bool, optional): Indicates whether the move ends the turn.
+                If multiple captures are performed, then this parameter should be set to False.
+                It Indicates whether player turn is over or expects another move in case multiple captures are performed.
+                Defaults to True.
+        """
         piece = self.piece_at(from_square)
 
         if not piece:
@@ -80,7 +91,8 @@ class Board:
 
         self.set_piece(to_square, piece)
 
-        self._turn = Color.Black if self._turn == Color.Red else Color.Red
+        if move_is_over:
+            self._turn = Color.Black if self._turn == Color.Red else Color.Red
 
     def occupancy(self) -> int:
         """Return bitboard of all occupied squares."""
