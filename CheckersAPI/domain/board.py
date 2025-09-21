@@ -58,7 +58,7 @@ class Board:
 
         return None
 
-    def move_piece(self, from_square: int, to_square: int, move_is_over: bool = True):
+    def move_piece(self, from_square: int, to_square: int):
         """
         Moves a piece on the board from one square to another.
         If captures is performed, it calculates the captured square and removes the piece.
@@ -66,33 +66,52 @@ class Board:
         Args:
             from_square (int): The starting square index of the piece
             to_square (int): The target square index where the piece should move
-            move_is_over (bool, optional): Indicates whether the move ends the turn.
-                If multiple captures are performed, then this parameter should be set to False.
-                It Indicates whether player turn is over or expects another move in case multiple captures are performed.
-                Defaults to True.
         """
         piece = self.piece_at(from_square)
 
         if not piece:
             return
 
+        legal_moves = self.get_legal_moves(self._turn)
+
+        legal_move = next((m for m in legal_moves if m.from_ == from_square and (m.from_ < m.to_ if self._turn == Color.Black else m.from_ > m.to_)), None)
+
         self.remove_piece(from_square)
 
-        # detect captures
-        if abs(from_square - to_square) > 5:
-            captured = BoardHelper.captured_square(from_square, to_square)
-            self.remove_piece(captured)
+        if isinstance(legal_move, CapturedMove):
+            print(f'captured piece: {legal_move.jumped}')
+            self.remove_piece(legal_move.jumped)
+
+        player = Color.Black if piece == "b" or piece == "B" else Color.Red
 
         # detect promotions
+        promotion = False
         if piece == "b" and 29 <= to_square <= 32:
             piece = "B"
+            promotion = True
         elif piece == "w" and 1 <= to_square <= 4:
             piece = "W"
+            promotion = True
 
         self.set_piece(to_square, piece)
 
-        if move_is_over:
-            self._turn = Color.Black if self._turn == Color.Red else Color.Red
+        if promotion:
+            print('switching turn')
+            self.switch_turn()
+        else:
+            legal_moves = self.get_legal_moves(player)
+
+            filtered = [m for m in legal_moves if m.from_ == to_square and (m.to_ < m.from_ if self._turn == Color.Black else m.to_ > m.from_)]
+
+            print(filtered)
+
+            # if no legal moves for the current piece (no future capturing), update the turn
+            if all(not isinstance(m, CapturedMove) for m in filtered):
+                print('switching turn')
+                self.switch_turn()
+
+    def switch_turn(self):
+        self._turn = Color.Black if self._turn == Color.Red else Color.Red
 
     def occupancy(self) -> int:
         """Return bitboard of all occupied squares."""

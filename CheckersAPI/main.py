@@ -107,6 +107,8 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
         while True:
             message_text = await websocket.receive_text()
 
+            print(f"message received: {message_text}")
+
             try:
                 game_event = EventParser().parse(message_text)
                 handler = EventHandler(game_id)

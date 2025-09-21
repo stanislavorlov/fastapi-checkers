@@ -96,11 +96,13 @@ export class AppComponent implements OnInit, OnDestroy {
     if (square.canSelect) {
       let action = this.board.click(square);
 
-      if (action.type == ActionType.MOVE) {
-        let move = this.board.getHistory().slice(-1)[0];
+      if (action.type == ActionType.MOVE || action.type == ActionType.CAPTURE || action.type == ActionType.PROMOTE) {
+        let from = this.board.getHistory().slice(-2)[0];
+        let to = this.board.getHistory().slice(-2)[1];
 
         if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-          //this.webSocket.send(JSON.stringify(move));
+          debugger;
+          this.webSocket.send(JSON.stringify({ _playerId: action.playerId, _type: action.type, _from: from.square, to: to.square }));
         }
       }
     }

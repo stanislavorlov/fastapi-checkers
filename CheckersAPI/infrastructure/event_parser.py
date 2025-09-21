@@ -1,5 +1,6 @@
 import json
-from domain.events import GameEvent
+from domain.events import GameEvent, EventType
+
 
 class EventParser:
     def __init__(self):
@@ -9,13 +10,12 @@ class EventParser:
     def parse(message_text: str) -> GameEvent:
         json_string = json.loads(message_text)
 
-        if json_string['_type'] == 'move':
-            print('move event')
+        print(json_string)
 
         game_event = GameEvent(
             json_string['_playerId'],
-            json_string['_type'],
+            EventType.parse(json_string['_type']),
             json_string['_from'],
-            json_string['_to'])
+            json_string['to'])
 
         return game_event
