@@ -74,12 +74,13 @@ class Board:
 
         legal_moves = self.get_legal_moves(self._turn)
 
-        legal_move = next((m for m in legal_moves if m.from_ == from_square and (m.from_ < m.to_ if self._turn == Color.Black else m.from_ > m.to_)), None)
+        direction = 1 if self._turn == Color.Black else -1
+        condition = lambda m: m.from_ == from_square and (m.from_ - m.to_) * direction < 0
+        legal_move = next((m for m in legal_moves if condition(m)), None)
 
         self.remove_piece(from_square)
 
         if isinstance(legal_move, CapturedMove):
-            print(f'captured piece: {legal_move.jumped}')
             self.remove_piece(legal_move.jumped)
 
         player = Color.Black if piece == "b" or piece == "B" else Color.Red
@@ -96,18 +97,14 @@ class Board:
         self.set_piece(to_square, piece)
 
         if promotion:
-            print('switching turn')
             self.switch_turn()
         else:
             legal_moves = self.get_legal_moves(player)
 
-            filtered = [m for m in legal_moves if m.from_ == to_square and (m.to_ < m.from_ if self._turn == Color.Black else m.to_ > m.from_)]
-
-            print(filtered)
+            filtered = [m for m in legal_moves if condition(m)]
 
             # if no legal moves for the current piece (no future capturing), update the turn
             if all(not isinstance(m, CapturedMove) for m in filtered):
-                print('switching turn')
                 self.switch_turn()
 
     def switch_turn(self):
