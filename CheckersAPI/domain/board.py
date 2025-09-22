@@ -1,10 +1,14 @@
 from typing import List
 from domain.color import Color
+from domain.kernel.domain_event import PieceMovedEvent, PieceCapturedEvent, TurnSwitchedEvent
+from domain.kernel.entity import Entity
 from domain.legal_move import LegalMove, CapturedMove
 
-class Board:
+class Board(Entity):
 
     def __init__(self):
+        super().__init__()
+
         self._turn = Color.Black
         # bitboards (integers) for different piece types
         self.black_men = 0
@@ -89,6 +93,8 @@ class Board:
             print(f'Captured move, removing piece at {legal_move.jumped}')
             self.remove_piece(legal_move.jumped)
 
+            self.raise_event(PieceCapturedEvent(captured_at=legal_move.jumped))
+
         # detect promotions
         promotion = False
         if piece == "b" and 29 <= to_square <= 32:
@@ -100,8 +106,12 @@ class Board:
 
         self.set_piece(to_square, piece)
 
+        super().raise_event(PieceMovedEvent(moved_from=from_square, moved_to=to_square))
+
         if promotion:
             self.switch_turn()
+
+            super().raise_event(TurnSwitchedEvent(current_turn=self._turn))
         else:
             legal_moves = self.get_legal_moves(self._turn)
 
@@ -110,6 +120,8 @@ class Board:
             # if no legal moves for the current piece (no future capturing), update the turn
             if all(not isinstance(m, CapturedMove) for m in filtered):
                 self.switch_turn()
+
+                super().raise_event(TurnSwitchedEvent(current_turn=self._turn))
 
     def switch_turn(self):
         self._turn = Color.Black if self._turn == Color.Red else Color.Red

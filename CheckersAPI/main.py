@@ -1,10 +1,10 @@
 import json
-from collections import defaultdict
 from contextlib import asynccontextmanager
 from bson import ObjectId
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocket, WebSocketDisconnect
+from infrastructure.connnection_manager import ConnectionManager
 from web.history_dto import HistoryDto
 from web.game_dto import GameDto
 from infrastructure.database import history_collection
@@ -14,33 +14,6 @@ from infrastructure.database import game_collection
 from infrastructure.schemas import list_games
 from infrastructure.documents import Game
 
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: dict[str, list[WebSocket]] = defaultdict(list)
-
-    async def connect(self, game_id: str, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections[game_id].append(websocket)
-
-        for w in self.active_connections[game_id]:
-            print(w.application_state)
-
-    async def disconnect(self, game_id: str, websocket: WebSocket):
-        print('disconnect', game_id, websocket)
-        self.active_connections[game_id].remove(websocket)
-
-    async def broadcast(self, game_id: str, message: str):
-        if game_id in self.active_connections:
-            for websocket in self.active_connections[game_id]:
-                await websocket.send_text(message)
-
-    async def close_all(self):
-        print(self.active_connections)
-        for idx, game_id in enumerate(self.active_connections):
-            print(idx, game_id)
-            for ws in self.active_connections[game_id]:
-                await ws.close()
-            self.active_connections[game_id].clear()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -111,14 +84,11 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
 
             try:
                 game_event = EventParser().parse(message_text)
-                handler = EventHandler(game_id)
-                handler.handle(game_event)
+                handler = EventHandler(game_id, manager)
+                await handler.handle(game_event)
 
             except json.decoder.JSONDecodeError:
                 print('Error decoding JSON')
-
-            # ToDo: validate per current game board
-            await manager.broadcast(game_id, message_text)
 
     except WebSocketDisconnect:
         await manager.disconnect(game_id, websocket)
