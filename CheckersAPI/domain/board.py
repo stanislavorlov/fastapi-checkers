@@ -1,5 +1,4 @@
 from typing import List
-from application.board_helper import BoardHelper
 from domain.color import Color
 from domain.legal_move import LegalMove, CapturedMove
 
@@ -72,6 +71,12 @@ class Board:
         if not piece:
             return
 
+        if (piece == "b" or piece == "B") and self._turn != Color.Black:
+            return
+
+        if (piece == "w" or piece == "W") and self._turn != Color.Red:
+            return
+
         legal_moves = self.get_legal_moves(self._turn)
 
         direction = 1 if self._turn == Color.Black else -1
@@ -81,9 +86,8 @@ class Board:
         self.remove_piece(from_square)
 
         if isinstance(legal_move, CapturedMove):
+            print(f'Captured move, removing piece at {legal_move.jumped}')
             self.remove_piece(legal_move.jumped)
-
-        player = Color.Black if piece == "b" or piece == "B" else Color.Red
 
         # detect promotions
         promotion = False
@@ -99,7 +103,7 @@ class Board:
         if promotion:
             self.switch_turn()
         else:
-            legal_moves = self.get_legal_moves(player)
+            legal_moves = self.get_legal_moves(self._turn)
 
             filtered = [m for m in legal_moves if condition(m)]
 
