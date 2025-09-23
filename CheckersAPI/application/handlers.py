@@ -1,6 +1,5 @@
 import json
 from dataclasses import asdict
-
 from domain.board import Board
 from infrastructure.database import history_collection
 from infrastructure.documents import History
@@ -30,11 +29,15 @@ class EventHandler:
             parsed_to = int(history_dto.to_)
             board.move_piece(parsed_from, parsed_to)
 
+        # clearing events queue before processing future moves
+        board.flush_events()
+
         print(f"from: {event.from_}, to: {event.to_}")
 
         board.move_piece(int(event.from_), int(event.to_))
 
-        for board_event in board.events:
+        for board_event in board.flush_events():
+            # noinspection PyDataclass
             await self.manager.broadcast(self.game_id, json.dumps(asdict(board_event)))
 
         history = History(

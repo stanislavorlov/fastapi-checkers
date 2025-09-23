@@ -72,9 +72,19 @@ export class AppComponent implements OnInit, OnDestroy {
     this.webSocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       console.log('Received data:', data);
-      // Handle incoming data and update the board as necessary
-      console.log('start replying to move');
       
+      switch (data.event_type) {
+        case 'captured':
+          let capturedSquare = data.captured_at;
+          break;
+        case 'moved':
+          let [from, to] = [data.moved_from, data.moved_to];
+          break;
+        case 'turn':
+          let turn = data.current_turn;
+          break;
+      }
+
       if (data._type === 'move') {
         const move = new Move(data._from, data._to, data._playerId, data._piece);
         
@@ -101,7 +111,6 @@ export class AppComponent implements OnInit, OnDestroy {
         let to = this.board.getHistory().slice(-2)[1];
 
         if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-          debugger;
           this.webSocket.send(JSON.stringify({ _playerId: action.playerId, _type: action.type, _from: from.square, to: to.square }));
         }
       }

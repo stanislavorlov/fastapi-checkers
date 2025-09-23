@@ -7,9 +7,12 @@ class Entity:
     def __init__(self):
         self._events: List[DomainEvent] = []
 
-    @property
-    def events(self) -> List[DomainEvent]:
-        return self._events
+    def flush_events(self) -> List[DomainEvent]:
+        copy = self._events.copy()
+
+        self._events = []
+
+        return copy
 
     def raise_event(self, event: DomainEvent):
         self._events.append(event)
