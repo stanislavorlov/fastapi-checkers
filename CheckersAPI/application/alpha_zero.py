@@ -39,9 +39,9 @@ def self_play_training(num_games : int, num_simulations_per_move : int, neural_n
 
         game_winner = board.get_winner()
         game_result = 0
-        if game_winner == Side.Black:
+        if game_winner == Side.Dark:
             game_result = 1
-        elif game_winner == Side.Red:
+        elif game_winner == Side.Light:
             game_result = -1
 
         for board_state_nn, mcts_policy_dict, move_made in game_history:
@@ -76,9 +76,9 @@ if __name__ == "__main__":
     #game_board.display()
 
     while not game_board.is_game_over():
-        if game_board.turn == Side.Red:
+        if game_board.turn == Side.Light:
             print("\nRed's Turn (Human Player - Random Move)")
-            red_moves = game_board.get_legal_moves(Side.Red)
+            red_moves = game_board.get_legal_moves(Side.Light)
             if red_moves:
                 chosen_move : Move = random.choice(red_moves)
                 print(f"Red chooses move: {chosen_move}")
@@ -103,9 +103,9 @@ if __name__ == "__main__":
         game_board.display()
 
     winner = game_board.get_winner()
-    if winner == Side.Red:
+    if winner == Side.Light:
         print("\nGame Over! Red Wins!")
-    elif winner == Side.Black:
+    elif winner == Side.Dark:
         print("\nGame Over! Black Wins!")
     else:
         print("\nGame Over! It's a Draw (no more moves for current player).")

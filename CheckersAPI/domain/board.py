@@ -1,4 +1,5 @@
-from typing import List, Optional
+from typing import List
+from application.board_helper import BoardHelper
 from domain.king import King
 from domain.man import Man
 from domain.piece import Piece
@@ -14,7 +15,7 @@ class Board(Entity):
         super().__init__()
 
         self._turn = Side.Dark
-        self.MOVE_MAP, self.CAPTURE_MAP = self._generate_maps()
+        self.MOVE_MAP, self.CAPTURE_MAP = BoardHelper.generate_maps()
 
         # bitboards (integers) for different piece types
         self.bitboards : dict[str, int] = {}
@@ -35,7 +36,7 @@ class Board(Entity):
     @staticmethod
     def bit(square: int) -> int:
         """Return bit mask for square (1–32)."""
-        return 1 << square
+        return 1 << (square - 1)
 
     def set_piece(self, square: int, piece: Piece):
         """Place a piece on the board."""
@@ -47,7 +48,7 @@ class Board(Entity):
         mask = ~self.bit(square)
 
         for bitboard in self.bitboards:
-            self.bitboards[bitboard] &= ~mask
+            self.bitboards[bitboard] &= mask
 
     def piece_at(self, square: int) -> Piece | None:
         """Return the piece at a square."""
@@ -71,9 +72,13 @@ class Board(Entity):
         piece = self.piece_at(from_square)
 
         if not piece:
+            print(f"Piece at {from_square} not found in the board")
+
             return
 
         if piece.color != self._turn:
+            print(f"It is not {self._turn}'s turn")
+
             return
 
         legal_moves = self.get_legal_moves(self._turn)
@@ -225,37 +230,27 @@ class Board(Entity):
 
         return moves
 
-    def _generate_maps(self):
-        """Generate MOVE_MAP and CAPTURE_MAP automatically for 32 squares."""
-        MOVE_MAP, CAPTURE_MAP = {}, {}
-        board = [[0] * 8 for _ in range(8)]
-        square = 1
-        for row in range(8):
-            for col in range(8):
-                if (row + col) % 2 == 1:  # dark square
-                    board[row][col] = square
-                    square += 1
-
-        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
-        for row in range(8):
-            for col in range(8):
-                square = board[row][col]
-                if square == 0: continue
-                MOVE_MAP[square] = []
-                CAPTURE_MAP[square] = []
-                for dr, dc in directions:
-                    nr, nc = row + dr, col + dc
-                    if 0 <= nr < 8 and 0 <= nc < 8 and board[nr][nc] != 0:
-                        MOVE_MAP[square].append((board[nr][nc], None))
-                    jr, jc = row + 2 * dr, col + 2 * dc
-                    if (0 <= jr < 8 and 0 <= jc < 8
-                            and board[nr][nc] != 0 and board[jr][jc] != 0):
-                        CAPTURE_MAP[square].append((board[nr][nc], board[jr][jc]))
-
-        return MOVE_MAP, CAPTURE_MAP
-
 board = Board()
-#board.move_piece(10, 14)
-#board.move_piece(23, 19)
+
+board.move_piece(12, 16)
+board.move_piece(24, 20)
+board.move_piece(9, 14)
+board.move_piece(23, 18)
+board.move_piece(6, 9)
+board.move_piece(27, 23)
+board.move_piece(9, 13)
+board.move_piece(23, 19)
+board.move_piece(8, 12)
+board.move_piece(28, 24)
+board.move_piece(10, 15)
+board.move_piece(26, 23)
+board.move_piece(1, 6)
+board.move_piece(32, 28)
+board.move_piece(5, 9)
+board.move_piece(31, 26)
+board.move_piece(3, 8)
+board.move_piece(21, 17)
+
+
 #board.display()
-print(board.get_legal_moves(Side.Dark))
+#print(board.get_legal_moves(Side.Light))

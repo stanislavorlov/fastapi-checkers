@@ -29,3 +29,34 @@ class BoardHelper:
             raise ValueError("Invalid position: not a playable square")
         index_in_row = col // 2
         return row * 4 + index_in_row + 1
+
+    # noinspection PyChainedComparisons
+    @staticmethod
+    def generate_maps():
+        """Generate MOVE_MAP and CAPTURE_MAP automatically for 32 squares."""
+        move_map, capture_map = {}, {}
+        board = [[0] * 8 for _ in range(8)]
+        square = 1
+        for row in range(8):
+            for col in range(8):
+                if (row + col) % 2 == 1:  # dark square
+                    board[row][col] = square
+                    square += 1
+
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        for row in range(8):
+            for col in range(8):
+                square = board[row][col]
+                if square == 0: continue
+                move_map[square] = []
+                capture_map[square] = []
+                for dr, dc in directions:
+                    nr, nc = row + dr, col + dc
+                    if 0 <= nr < 8 and 0 <= nc < 8 and board[nr][nc] != 0:
+                        move_map[square].append((board[nr][nc], None))
+                    jr, jc = row + 2 * dr, col + 2 * dc
+                    if (0 <= jr < 8 and 0 <= jc < 8
+                            and board[nr][nc] != 0 and board[jr][jc] != 0):
+                        capture_map[square].append((board[nr][nc], board[jr][jc]))
+
+        return move_map, capture_map

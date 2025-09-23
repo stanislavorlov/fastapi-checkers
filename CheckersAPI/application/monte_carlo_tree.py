@@ -116,9 +116,9 @@ class MCTS:
                 policy_probs, value = self.nn.predict(board_state_nn)
             elif node.is_game_over():
                 winner = node.board.get_winner()
-                if winner == Side.Black:
+                if winner == Side.Dark:
                     value = 1.0
-                elif winner == Side.Red:
+                elif winner == Side.Light:
                     value = -1.0
                 else:
                     value = 0.0
@@ -128,7 +128,7 @@ class MCTS:
             # 3. Backpropagation
             for node_on_path in reversed(path):
                 node_on_path.visits += 1
-                if node_on_path.board.turn == Side.Black:
+                if node_on_path.board.turn == Side.Dark:
                     node_on_path.value_sum += value
                 else:
                     node_on_path.value_sum -= value

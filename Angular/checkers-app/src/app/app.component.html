@@ -210,7 +210,7 @@
         <h2>Game History</h2>
         <ul>
           <li *ngFor="let move of board.getHistory()">
-            {{ move.type }} {{ move.square }}
+            {{ move.type }} to {{ move.square }}
           </li>
         </ul>
       </div>
