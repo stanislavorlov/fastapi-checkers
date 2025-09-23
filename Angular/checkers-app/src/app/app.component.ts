@@ -8,7 +8,7 @@ import { ActionType } from './models/action';
 import { Move } from './models/move';
 import { Game } from './models/game';
 import { Piece } from './models/piece';
-import { Board2 } from './models/board-reactoring';
+import { Board } from './models/board';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +18,7 @@ import { Board2 } from './models/board-reactoring';
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'checkers-app';
-  board: Board2;
+  board: Board;
   pieces: Map<Square, Piece>;
   
   private readonly route = inject(ActivatedRoute);
@@ -26,7 +26,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private webSocket?: WebSocket;
 
   constructor(private checkersService: CheckersService) {
-    this.board = new Board2();
+    this.board = new Board();
     this.pieces = new Map<Square, Piece>();
   }
 

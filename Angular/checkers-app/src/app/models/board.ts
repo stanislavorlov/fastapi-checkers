@@ -8,7 +8,7 @@ import { Piece, PieceColor, Queen } from "./piece";
 import { BlackSquare, Square, WhiteSquare } from "./square";
 import { Stack } from "./stack";
 
-export class Board2 {
+export class Board {
     private _boardMatrix: Square[][] = [[]];  // 2D array of squares, where each square is represented by a Square object
     private _boardMap: Map<string, Square> = new Map<string, Square>(); // Map of square ID to Square object
     private _pieces: Map<Square, Piece> = new Map<Square, Piece>(); // Map of Square to Piece object
