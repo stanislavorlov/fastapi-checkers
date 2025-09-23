@@ -9,17 +9,19 @@ import { BlackSquare, Square, WhiteSquare } from "./square";
 import { Stack } from "./stack";
 
 export class Board2 {
-
     private _boardMatrix: Square[][] = [[]];  // 2D array of squares, where each square is represented by a Square object
     private _boardMap: Map<string, Square> = new Map<string, Square>(); // Map of square ID to Square object
     private _pieces: Map<Square, Piece> = new Map<Square, Piece>(); // Map of Square to Piece object
     private _history: Stack<Action>;
     private _turn: PieceColor = PieceColor.BLACK; // Black moves first
     private _playerId: string;
+    private _started: boolean;
 
     constructor() {
         this._history = new Stack<Action>();
         this._playerId = nanoid();
+        this._started = false;
+
         console.log(`Player ID: ${this._playerId}`);
 
         this.initialize();
@@ -56,6 +58,8 @@ export class Board2 {
         game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '2', to_: '7' });
         game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '27', to_: '24' });
         game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '10', to_: '15' });*/
+
+        this._started = true;
 
         game.history.forEach((move: HistoryEntry) => {
             let [from_square, to_square] = this.getMoveSquaresById(move.from_, move.to_);
@@ -276,7 +280,7 @@ export class Board2 {
     }
 
     private switch_turn(): void {
-        // Logic to switch the turn between players
+        this._turn = this._turn === PieceColor.BLACK ? PieceColor.RED : PieceColor.BLACK;
     }
 
     private initialize() {

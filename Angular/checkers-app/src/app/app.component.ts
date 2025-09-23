@@ -4,7 +4,6 @@ import { NgFor, NgIf } from '@angular/common';
 import { Square } from './models/square';
 import { CheckersService } from './services/checkers.service';
 import { ApiResult } from './models/api-result';
-import { Board } from './models/board';
 import { ActionType } from './models/action';
 import { Move } from './models/move';
 import { Game } from './models/game';
