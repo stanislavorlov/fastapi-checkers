@@ -53,7 +53,7 @@ class TensorHelper:
 
     @staticmethod
     def board_as_sdfen(board: Board):
-        turn = "B" if board.turn == Side.Black else "W"
+        turn = "B" if board.turn == Side.Dark else "W"
         black_pieces = ''
         white_pieces = ''
 
