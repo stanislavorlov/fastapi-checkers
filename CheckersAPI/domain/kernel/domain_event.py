@@ -1,5 +1,5 @@
 import dataclasses
-from domain.color import Color
+from domain.side import Side
 
 
 class DomainEvent:
@@ -19,5 +19,5 @@ class PieceMovedEvent(DomainEvent):
 
 @dataclasses.dataclass(frozen=True)
 class TurnSwitchedEvent(DomainEvent):
-    current_turn: Color
+    current_turn: Side
     event_type: str = dataclasses.field(default='turn')

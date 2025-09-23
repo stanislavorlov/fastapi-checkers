@@ -1,8 +1,8 @@
-from domain.color import Color
+from domain.side import Side
 
 
-class Piece:
-    def __init__(self, color: Color):
+class Man:
+    def __init__(self, color: Side):
         self._color = color
 
     @property

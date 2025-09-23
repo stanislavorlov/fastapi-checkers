@@ -6,7 +6,7 @@ from application.monte_carlo_tree import MCTS
 from application.neural_network import NeuralNetwork
 from application.tansor_helper import TensorHelper
 from domain.board import Board
-from domain.color import Color
+from domain.side import Side
 from domain.move import Move
 
 
@@ -39,9 +39,9 @@ def self_play_training(num_games : int, num_simulations_per_move : int, neural_n
 
         game_winner = board.get_winner()
         game_result = 0
-        if game_winner == Color.Black:
+        if game_winner == Side.Black:
             game_result = 1
-        elif game_winner == Color.Red:
+        elif game_winner == Side.Red:
             game_result = -1
 
         for board_state_nn, mcts_policy_dict, move_made in game_history:
@@ -76,9 +76,9 @@ if __name__ == "__main__":
     #game_board.display()
 
     while not game_board.is_game_over():
-        if game_board.turn == Color.Red:
+        if game_board.turn == Side.Red:
             print("\nRed's Turn (Human Player - Random Move)")
-            red_moves = game_board.get_legal_moves(Color.Red)
+            red_moves = game_board.get_legal_moves(Side.Red)
             if red_moves:
                 chosen_move : Move = random.choice(red_moves)
                 print(f"Red chooses move: {chosen_move}")
@@ -103,9 +103,9 @@ if __name__ == "__main__":
         game_board.display()
 
     winner = game_board.get_winner()
-    if winner == Color.Red:
+    if winner == Side.Red:
         print("\nGame Over! Red Wins!")
-    elif winner == Color.Black:
+    elif winner == Side.Black:
         print("\nGame Over! Black Wins!")
     else:
         print("\nGame Over! It's a Draw (no more moves for current player).")

@@ -1,6 +1,6 @@
 import numpy as np
 from domain.board import Board
-from domain.color import Color
+from domain.side import Side
 
 
 class TensorHelper:
@@ -53,7 +53,7 @@ class TensorHelper:
 
     @staticmethod
     def board_as_sdfen(board: Board):
-        turn = "B" if board.turn == Color.Black else "W"
+        turn = "B" if board.turn == Side.Black else "W"
         black_pieces = ''
         white_pieces = ''
 

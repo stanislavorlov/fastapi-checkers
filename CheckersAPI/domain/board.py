@@ -1,5 +1,5 @@
 from typing import List
-from domain.color import Color
+from domain.side import Side
 from domain.kernel.domain_event import PieceMovedEvent, PieceCapturedEvent, TurnSwitchedEvent
 from domain.kernel.entity import Entity
 from domain.legal_move import LegalMove, CapturedMove
@@ -9,7 +9,7 @@ class Board(Entity):
     def __init__(self):
         super().__init__()
 
-        self._turn = Color.Black
+        self._turn = Side.Black
         # bitboards (integers) for different piece types
         self.black_men = 0
         self.black_kings = 0
@@ -75,15 +75,15 @@ class Board(Entity):
         if not piece:
             return
 
-        if (piece == "b" or piece == "B") and self._turn != Color.Black:
+        if (piece == "b" or piece == "B") and self._turn != Side.Black:
             return
 
-        if (piece == "w" or piece == "W") and self._turn != Color.Red:
+        if (piece == "w" or piece == "W") and self._turn != Side.Red:
             return
 
         legal_moves = self.get_legal_moves(self._turn)
 
-        direction = 1 if self._turn == Color.Black else -1
+        direction = 1 if self._turn == Side.Black else -1
         condition = lambda m: m.from_ == from_square and (m.from_ - m.to_) * direction < 0
         legal_move = next((m for m in legal_moves if condition(m)), None)
 
@@ -124,7 +124,7 @@ class Board(Entity):
                 super().raise_event(TurnSwitchedEvent(current_turn=self._turn))
 
     def switch_turn(self):
-        self._turn = Color.Black if self._turn == Color.Red else Color.Red
+        self._turn = Side.Black if self._turn == Side.Red else Side.Red
 
     def occupancy(self) -> int:
         """Return bitboard of all occupied squares."""
@@ -166,10 +166,10 @@ class Board(Entity):
     def is_game_over(self) -> bool:
 
         match self._turn:
-            case Color.Black:
+            case Side.Black:
                 if self.black_men == 0 and self.black_kings == 0:
                     return True
-            case Color.Red:
+            case Side.Red:
                 if self.white_men == 0 and self.white_kings == 0:
                     return True
 
@@ -180,20 +180,20 @@ class Board(Entity):
 
     def get_winner(self):
         if self.black_men == 0 and self.black_kings == 0:
-            return Color.Red
+            return Side.Red
 
         if self.white_men == 0 and self.white_kings == 0:
-            return Color.Black
+            return Side.Black
 
         if not self.get_legal_moves(self._turn):
-            return Color.Black if self._turn == Color.Red else Color.Black
+            return Side.Black if self._turn == Side.Red else Side.Black
 
         return None
 
-    def get_legal_moves(self, player: Color) -> list[LegalMove]:
+    def get_legal_moves(self, player: Side) -> list[LegalMove]:
         # Generate all legal non-capturing moves for given color.
         moves : List[LegalMove] = []
-        if player == Color.Black:
+        if player == Side.Black:
             men, kings = self.black_men, self.black_kings
             forward_dirs = [(-1, -1), (-1, 1)]  # downwards
         else:
@@ -215,7 +215,7 @@ class Board(Entity):
                     moves.append(LegalMove(sq, neigh))
 
         # Generate all legal capturing moves for given color.
-        if player == Color.Black:
+        if player == Side.Black:
             men, kings = self.black_men, self.black_kings
             my_pieces = men | kings
             opp_pieces = self.white_men | self.white_kings
@@ -266,4 +266,4 @@ board = Board()
 board.move_piece(10, 14)
 board.move_piece(23, 19)
 board.display()
-print(board.get_legal_moves(Color.Black))
+print(board.get_legal_moves(Side.Black))

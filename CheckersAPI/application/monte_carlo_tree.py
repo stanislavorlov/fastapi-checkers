@@ -5,7 +5,7 @@ import numpy as np
 
 from application.tansor_helper import TensorHelper
 from domain.board import Board
-from domain.color import Color
+from domain.side import Side
 from domain.move import Move
 from neural_network import NeuralNetwork
 
@@ -116,9 +116,9 @@ class MCTS:
                 policy_probs, value = self.nn.predict(board_state_nn)
             elif node.is_game_over():
                 winner = node.board.get_winner()
-                if winner == Color.Black:
+                if winner == Side.Black:
                     value = 1.0
-                elif winner == Color.Red:
+                elif winner == Side.Red:
                     value = -1.0
                 else:
                     value = 0.0
@@ -128,7 +128,7 @@ class MCTS:
             # 3. Backpropagation
             for node_on_path in reversed(path):
                 node_on_path.visits += 1
-                if node_on_path.board.turn == Color.Black:
+                if node_on_path.board.turn == Side.Black:
                     node_on_path.value_sum += value
                 else:
                     node_on_path.value_sum -= value
