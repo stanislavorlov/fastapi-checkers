@@ -170,9 +170,61 @@
 </style>
 
 <main class="main">
-  <div class="content">
+  <div class="content game-menu" *ngIf="gameMenu">
+    <div *ngIf="!gameMode">
+      <ul>
+        <li style="flex-direction: column">
+          <h1>Game Mode</h1>
+        </li>
+        <li style="flex-direction: column">
+          <button class="pill btn" (click)="choosePlayMode('single')">Single Player (AI bot)</button>
+        </li>
+        <li style="flex-direction: column">
+          <button class="pill btn" (click)="choosePlayMode('multi')">Two Players (Local)</button>
+        </li>
+        <li style="flex-direction: column">
+          <button class="pill btn" (click)="choosePlayMode('online')">Play Online</button>
+        </li>
+      </ul>
+    </div>
+    <!-- <div *ngIf="gameMode === 'single'">
+      <h3>Choose your side</h3>
+      <div>
+        <button class="pill btn" style="display: inline-block;" (click)="singleModeColor('black')"><img src="./black_piece.png" alt="Black Piece" height="40" /></button>
+        <button class="pill btn" style="display: inline-block;" (click)="singleModeColor('red')"><img src="./red_piece.png" alt="Red Piece" height="40" /></button>
+      </div>
+      <button class="pill btn" (click)="gameMode = undefined">Back</button>
+      <button class="pill btn">Start Game</button>
+    </div>-->
+    <table *ngIf="gameMode">
+      <tr *ngIf="gameMode === 'single'">
+        <td colspan="2">
+          <h3>Choose your side</h3>
+        </td>
+      </tr>
+      <tr *ngIf="gameMode === 'single'">
+        <td>
+          <button class="pill btn" style="display: inline-block;" (click)="singleModeColor('black')"><img src="./black_piece.png" alt="Black Piece" height="40" /></button>
+        </td>
+        <td>
+          <button class="pill btn" style="display: inline-block;" (click)="singleModeColor('red')"><img src="./red_piece.png" alt="Red Piece" height="40" /></button>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <button class="pill btn" (click)="backMenu()">Back</button>
+        </td>
+        <td>
+          <button class="pill btn" (click)="newGame()">Start Game</button>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div *ngIf="gameMenu">
+    <img src="./Draughts.png" alt="Checkers" width="90%" />
+  </div>
+  <div class="content" *ngIf="!gameMenu">
     <div class="left-side">
-      <h1>Hello, {{ title }}</h1>
       <div>
         <p>Current Turn: {{ board.turn }}</p>
       </div>
@@ -202,7 +254,7 @@
     <div class="divider" role="separator" aria-label="Divider"></div>
     <div class="right-side">
       <div class="pill-group">
-        <button class="pill btn" (click)="newGame()">
+        <button class="pill btn" (click)="backMenu()">
           <span>New Game</span>
         </button>
       </div>

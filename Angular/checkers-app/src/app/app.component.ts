@@ -17,9 +17,11 @@ import { Board } from './models/board';
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit, OnDestroy {
-  title = 'checkers-app';
   board: Board;
   pieces: Map<Square, Piece>;
+  gameMenu: boolean;
+  gameMode?: 'single' | 'multi' | 'online' | null;
+  singleSide?: 'red' | 'black' | null;
   
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -28,6 +30,7 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(private checkersService: CheckersService) {
     this.board = new Board();
     this.pieces = new Map<Square, Piece>();
+    this.gameMenu = true;
   }
 
   ngOnInit(): void {
@@ -40,6 +43,8 @@ export class AppComponent implements OnInit, OnDestroy {
             console.error('Game not found or invalid response');
             return;
           }
+
+          this.gameMenu = false;
           
           this.board.load(result);
           this.pieces = this.board.pieces;
@@ -52,6 +57,14 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.closeWebSocket();
+  }
+
+  choosePlayMode(mode: 'single' | 'multi' | 'online'): void {
+    this.gameMode = mode;
+  }
+
+  singleModeColor(color: 'red' | 'black'): void {
+    this.singleSide = color;
   }
 
   closeWebSocket(): void {
@@ -116,8 +129,17 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  backMenu(): void {
+    this.gameMenu = true;
+    this.gameMode = null;
+    this.singleSide = null;
+
+    this.router.navigate(['/'], { queryParams: {} });
+    this.closeWebSocket();
+  }
+
   newGame(): void {
-    this.checkersService.newGame('New Game', new Date()).subscribe((game_id: ApiResult<string>) => {
+    this.checkersService.newGame('New Game', new Date(), this.gameMode!, this.singleSide!).subscribe((game_id: ApiResult<string>) => {
       if (!!game_id) {
         this.router.navigate(['/'], {
           queryParams: { id: game_id }

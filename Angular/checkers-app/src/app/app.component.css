@@ -1,3 +1,16 @@
+.game-menu{
+  background-color: azure;
+}
+
+.game-menu ul {
+  list-style: none;
+  padding: 0;
+}
+
+.game-menu li {
+  margin: 20px 0;
+}
+
 .chess-board { border-spacing: 0; border-collapse: collapse; }
 .chess-board th { padding: .5em; }
 .chess-board th + th { border-bottom: 1px solid #000; }
