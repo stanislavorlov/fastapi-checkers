@@ -11,10 +11,12 @@ export class CheckersService {
   constructor(private httpClient: HttpClient) {
   }
 
-  newGame(name: string, started: Date) {
+  newGame(name: string, started: Date, mode: string, single_side?: 'red' | 'black') {
     return this.httpClient.post<ApiResult<string>>('/api/', {
       name: name,
-      started: started
+      started: started,
+      mode: mode,
+      single_side: single_side
     });
   }
 

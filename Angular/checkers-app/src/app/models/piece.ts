@@ -1,4 +1,3 @@
-import { Dir } from "fs";
 import { Direction } from "./direction";
 
 export enum PieceColor {
