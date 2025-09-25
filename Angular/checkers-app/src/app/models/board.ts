@@ -16,6 +16,7 @@ export class Board {
     private _history: Stack<Action>;
     private _turn: PieceColor = PieceColor.BLACK; // Black moves first
     private _playerId: string;
+    private _playerColor?: PieceColor;
     private _gameId: string;
     private _started: boolean;
 
@@ -36,8 +37,16 @@ export class Board {
         return this._turn === PieceColor.BLACK ? 'Black' : 'Red';
     }
 
-    public get board(): Square[][] {
-        return this._boardMatrix;
+    *[Symbol.iterator]() {
+        if (this._playerColor == PieceColor.RED || !this._playerColor) {
+            for (let row = 0; row < 8; row++) {
+                yield { row, squares: this._boardMatrix[row] };
+            }
+        } else {
+            for (let row = 7; row >= 0; row--) {
+                yield { row, squares: this._boardMatrix[row] };
+            }
+        }
     }
 
     public get pieces(): Map<Square, Piece> {
@@ -56,7 +65,9 @@ export class Board {
         this._started = true;
 
         if (this._playerId === game.dark_player) {
-            // ToDo: reverse board for dark player
+            this._playerColor = PieceColor.BLACK;
+        } else {
+            this._playerColor = PieceColor.RED;
         }
 
         game.history.forEach((move: HistoryEntry) => {
