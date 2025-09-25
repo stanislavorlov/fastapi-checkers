@@ -1,6 +1,5 @@
 import { Component, inject, OnDestroy, OnInit, Renderer2 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { NgFor, NgIf } from '@angular/common';
+import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
 import { Square } from './models/square';
 import { CheckersService } from './services/checkers.service';
 import { ApiResult } from './models/api-result';
@@ -9,32 +8,45 @@ import { Move } from './models/move';
 import { Game } from './models/game';
 import { Piece } from './models/piece';
 import { Board } from './models/board';
+import { BoardService } from './services/board.service';
+import { SessionStorageService } from './services/session-storage.service';
+import { PlayerId } from './models/player-id';
 
 @Component({
   selector: 'app-root',
-  imports: [NgFor, NgIf],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit, OnDestroy {
-  board: Board;
-  pieces: Map<Square, Piece>;
-  gameMenu: boolean;
+  //board: Board;
+  //pieces: Map<Square, Piece>;
+  /*gameMenu: boolean;
   gameMode?: 'single' | 'multi' | 'online' | null;
-  singleSide?: 'red' | 'black' | null;
+  singleSide?: 'red' | 'black' | null;*/
+  //playerId: string = '';
   
-  private readonly route = inject(ActivatedRoute);
+  //private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private webSocket?: WebSocket;
+  //private webSocket?: WebSocket;
 
-  constructor(private checkersService: CheckersService) {
-    this.board = new Board();
-    this.pieces = new Map<Square, Piece>();
-    this.gameMenu = true;
+  constructor(private sessionService: SessionStorageService) {
+    //this.board = new Board();
+    //this.pieces = new Map<Square, Piece>();
+    //this.gameMenu = true;
+
+    //this._playerId = nanoid();
   }
 
   ngOnInit(): void {
-    this.route.queryParamMap.subscribe(params => {
+
+    const playerId = this.sessionService.getItem(SessionStorageService.PLAYER_ID_KEY);
+    if (!playerId) {
+      const newId = PlayerId.generate();
+      this.sessionService.setItem(SessionStorageService.PLAYER_ID_KEY, newId.id);
+    }
+
+    /*this.route.queryParamMap.subscribe(params => {
       const id = params.get('id');
       
       if (!!id) {
@@ -44,37 +56,37 @@ export class AppComponent implements OnInit, OnDestroy {
             return;
           }
 
-          this.gameMenu = false;
+          //this.gameMenu = false;
           
-          this.board.load(result);
-          this.pieces = this.board.pieces;
+          //this.board.load(result);
+          //this.pieces = this.board.pieces;
 
           this.connectWebSocket(id);
         });
       }
-    });
+    });*/
   }
 
   ngOnDestroy(): void {
-    this.closeWebSocket();
+    //this.closeWebSocket();
   }
 
-  choosePlayMode(mode: 'single' | 'multi' | 'online'): void {
+  /*choosePlayMode(mode: 'single' | 'multi' | 'online'): void {
     this.gameMode = mode;
   }
 
   singleModeColor(color: 'red' | 'black'): void {
     this.singleSide = color;
-  }
+  }*/
 
-  closeWebSocket(): void {
+  /*closeWebSocket(): void {
     if (this.webSocket) {
       this.webSocket.close();
       this.webSocket = undefined;
     }
-  }
+  }*/
 
-  connectWebSocket(gameId: string): void {
+  /*connectWebSocket(gameId: string): void {
     this.webSocket = new WebSocket(`ws://localhost:8000/ws/${gameId}`);
 
     this.webSocket.onopen = (ev: Event) => {
@@ -100,7 +112,7 @@ export class AppComponent implements OnInit, OnDestroy {
       if (data._type === 'move') {
         const move = new Move(data._from, data._to, data._playerId, data._piece);
         
-        this.board.reply(move);
+        //this.board.reply(move);
       }
     };
 
@@ -111,9 +123,9 @@ export class AppComponent implements OnInit, OnDestroy {
     this.webSocket.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
-  }
+  }*/
 
-  clickBoard(square: Square): void {
+  /*clickBoard(square: Square): void {
 
     if (square.canSelect) {
       let action = this.board.click(square);
@@ -127,24 +139,26 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       }
     }
-  }
+  }*/
 
   backMenu(): void {
-    this.gameMenu = true;
+    /*this.gameMenu = true;
     this.gameMode = null;
-    this.singleSide = null;
+    this.singleSide = null;*/
 
     this.router.navigate(['/'], { queryParams: {} });
-    this.closeWebSocket();
+    //this.closeWebSocket();
   }
 
-  newGame(): void {
-    this.checkersService.newGame('New Game', new Date(), this.gameMode!, this.singleSide!).subscribe((game_id: ApiResult<string>) => {
+  /*newGame(): void {
+    //sessionStorage.getItem('player_id');
+
+    this.checkersService.newGame('New Game', new Date(), this.gameMode!, this.playerId, this.singleSide ?? '').subscribe((game_id: ApiResult<string>) => {
       if (!!game_id) {
         this.router.navigate(['/'], {
           queryParams: { id: game_id }
         });
       }
     });
-  }
+  }*/
 }

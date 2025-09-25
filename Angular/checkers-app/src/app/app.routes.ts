@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import { AppComponent } from './app.component';
 
 export const routes: Routes = [
-    { path: '', component: AppComponent },
+    { path: '', loadComponent: () => import('./start/start.component').then(m => m.StartComponent) },
+    { path: ':id', loadComponent: () => import('./play/play.component').then(m => m.PlayComponent) }
 ];

@@ -1,12 +1,20 @@
-import datetime
-
+from datetime import datetime
+from pydantic import BaseModel
 from web.history_dto import HistoryDto
 
 
-class GameDto:
+class ReadGameDto(BaseModel):
+    game_id: str
+    name: str
+    started: datetime
+    mode: str
+    light_player: str
+    dark_player: str
+    history: list[HistoryDto]
 
-    def __init__(self, game_id: str, name: str, started: datetime, history: list[HistoryDto]):
-        self.game_id = game_id
-        self.name = name
-        self.started = started
-        self.history = history
+class WriteGameDto(BaseModel):
+    name: str
+    started: datetime
+    mode: str
+    light_player: str
+    dark_player: str

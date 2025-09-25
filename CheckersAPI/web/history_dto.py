@@ -1,9 +1,8 @@
-from infrastructure.documents import History
+from pydantic import BaseModel
 
 
-class HistoryDto:
-    def __init__(self, history: History):
-        self.player_id : str = history['player_id']
-        self.event_type : str = history['event_type']
-        self.from_ : str = history['from_']
-        self.to_ : str = history['to_']
+class HistoryDto(BaseModel):
+    #player_id: str
+    event_type: str
+    from_: str
+    to_: str

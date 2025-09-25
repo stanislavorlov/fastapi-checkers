@@ -1,5 +1,5 @@
 import { Direction } from "./direction";
-import { PieceColor } from "./piece";
+import { PieceColor } from "./piece-color";
 
 export abstract class Square {
     

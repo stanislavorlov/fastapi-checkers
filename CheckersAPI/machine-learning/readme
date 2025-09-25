@@ -1,0 +1,23 @@
+Keras - deep learning framework
+AlphaZero - a self-play reinforcement learning algorithm. It combines:
+    - Neural Network:
+        Policy head
+        Value head
+    - Monte Carlo Tree Search (uses neural network predictions to explore the game tree)
+    - Self-Play + Training loop (the agent plays against itself using MCTS guided moves).
+    The Neural Network is updated to better match outcomes
+
+In Keras-based AlphaZero implementation, the Neural Network is built with Keras:
+    - Input: board state (tensor)
+    - Shared Layers: convolutions
+    - Two Outputs:
+        Policy head - probabilities over legal moves
+        Value head - scalar game outcome (-1 loss, 0 draw, 1 win)
+
+The Keras model provides:
+    Policy priors (probabilities over moves)
+    Value estimates (how good the position is)
+The MCTS uses those priors + values to search the game tree more deeply
+
+https://blog.paperspace.com/building-a-checkers-gaming-agent-using-neural-networks-and-reinforcement-learning/
+

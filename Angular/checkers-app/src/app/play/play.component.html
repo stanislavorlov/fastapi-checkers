@@ -1,0 +1,46 @@
+<div class="content">
+    <div class="left-side">
+      <div>
+        <p>Player ID: {{ board.playerId }}</p>
+        <p>Current Turn: {{ board.turn }}</p>
+      </div>
+      <table class="chess-board">
+        <tbody>
+          <tr>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+            <tr *ngFor="let row of board.board">
+                <th>{{board.board.indexOf(row)+1}}</th>
+                <td *ngFor="let sq of row" (click)="clickBoard(sq)" class="{{sq.color}} {{ sq.selected ? 'selected' : 'none' }}">
+                  <div class="watermark" *ngIf="+sq.id > 0">{{sq.id}}</div>
+                  <img *ngIf="board.pieces.get(sq)" src="./{{board.pieces.get(sq)?.image}}.png" class="piece" />
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+    <div class="divider" role="separator" aria-label="Divider"></div>
+    <div class="right-side">
+      <div class="pill-group">
+        <button class="pill btn" (click)="backMenu()">
+          <span>New Game</span>
+        </button>
+      </div>
+      <div class="history">
+        <h2>Game History</h2>
+        <ul>
+          <li *ngFor="let move of board.getHistory()">
+            {{ move.type }} to {{ move.square }}
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>

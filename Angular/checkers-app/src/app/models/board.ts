@@ -4,7 +4,8 @@ import { AvailableJump, AvailableMove, CapturedPiece } from "./available-move";
 import { Direction } from "./direction";
 import { Game, HistoryEntry } from "./game";
 import { Move } from "./move";
-import { Piece, PieceColor, Queen } from "./piece";
+import { Piece, Queen } from "./piece";
+import { PieceColor } from "./piece-color";
 import { BlackSquare, Square, WhiteSquare } from "./square";
 import { Stack } from "./stack";
 
@@ -15,16 +16,20 @@ export class Board {
     private _history: Stack<Action>;
     private _turn: PieceColor = PieceColor.BLACK; // Black moves first
     private _playerId: string;
+    private _gameId: string;
     private _started: boolean;
 
-    constructor() {
+    constructor(playerId: string, gameId: string) {
         this._history = new Stack<Action>();
-        this._playerId = nanoid();
+        this._playerId = playerId;
+        this._gameId = gameId;
         this._started = false;
 
-        console.log(`Player ID: ${this._playerId}`);
-
         this.initialize();
+    }
+
+    public get playerId(): string {
+        return this._playerId;
     }
 
     public get turn(): string {
