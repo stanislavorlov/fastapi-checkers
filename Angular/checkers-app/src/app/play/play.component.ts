@@ -28,6 +28,7 @@ export class PlayComponent implements OnInit, OnDestroy {
   gameMode?: 'single' | 'multi' | 'online' | null;
   singleSide?: 'red' | 'black' | null;
   playerId: string = '';
+  playerSide?: 'red' | 'black';
 
   constructor(private checkersService: CheckersService, protected sessionStorage: SessionStorageService) {
     this.gameMenu = true;
@@ -44,6 +45,16 @@ export class PlayComponent implements OnInit, OnDestroy {
       this.checkersService.loadGame(this.gameId).subscribe((result: Game) => {
         if (!result) {
           console.error('Game not found or invalid response');
+          return;
+        }
+
+        // ToDo: display the payer side based on playerId and game data
+        if (this.playerId === result.light_player) {
+          this.playerSide = 'red';
+        } else if (this.playerId === result.dark_player) {
+          this.playerSide = 'black';
+        } else {
+          console.error('Player not part of this game');
           return;
         }
         

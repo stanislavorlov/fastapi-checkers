@@ -53,18 +53,11 @@ export class Board {
     }
 
     public load(game: Game) {
-        //game.history = [];
-        /*game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '10', to_: '14' }); // Initial empty move
-        game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '22', to_: '18' });
-        game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '11', to_: '16' });
-        game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '24', to_: '20' });
-        game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '7', to_: '10' });
-        game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '21', to_: '17' });
-        game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '2', to_: '7' });
-        game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '27', to_: '24' });
-        game.history.push({ player_id: '', event_type: ActionType.MOVE, from_: '10', to_: '15' });*/
-
         this._started = true;
+
+        if (this._playerId === game.dark_player) {
+            // ToDo: reverse board for dark player
+        }
 
         game.history.forEach((move: HistoryEntry) => {
             let [from_square, to_square] = this.getMoveSquaresById(move.from_, move.to_);
