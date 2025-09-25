@@ -29,6 +29,8 @@ export class PlayComponent implements OnInit, OnDestroy {
   singleSide?: 'red' | 'black' | null;
   playerId: string = '';
   playerSide?: 'red' | 'black';
+  opponentId?: string;
+  opponentSide?: 'red' | 'black';
 
   constructor(private checkersService: CheckersService, protected sessionStorage: SessionStorageService) {
     this.gameMenu = true;
@@ -51,8 +53,12 @@ export class PlayComponent implements OnInit, OnDestroy {
         // ToDo: display the payer side based on playerId and game data
         if (this.playerId === result.light_player) {
           this.playerSide = 'red';
+          this.opponentSide = 'black';
+          this.opponentId = result.dark_player;
         } else if (this.playerId === result.dark_player) {
           this.playerSide = 'black';
+          this.opponentSide = 'red';
+          this.opponentId = result.light_player;
         } else {
           console.error('Player not part of this game');
           return;
