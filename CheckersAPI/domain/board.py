@@ -1,8 +1,7 @@
 from typing import List
-from application.board_helper import BoardHelper
+from domain.bitboard import BitboardCheckers
 from domain.king import King
 from domain.man import Man
-from domain.piece import Piece
 from domain.piece_factory import PieceFactory
 from domain.side import Side
 from domain.kernel.domain_event import PieceMovedEvent, PieceCapturedEvent, TurnSwitchedEvent
@@ -13,52 +12,17 @@ class Board(Entity):
 
     def __init__(self):
         super().__init__()
-
         self._turn = Side.Dark
-        self.MOVE_MAP, self.CAPTURE_MAP = BoardHelper.generate_maps()
-
-        # bitboards (integers) for different piece types
-        self.bitboards : dict[str, int] = {}
-        pieces = [Man(Side.Dark), Man(Side.Light), King(Side.Dark), King(Side.Light)]
-
-        for piece in pieces:
-            self.bitboards[piece.acronym] = 0
+        self._bitboard = BitboardCheckers()
 
         for sq in range(1, 13):  # white men
-            self.set_piece(sq, Man(Side.Dark))
+            self._bitboard.set_piece(sq, Man(Side.Dark).acronym)
         for sq in range(21, 33):  # black men
-            self.set_piece(sq, Man(Side.Light))
+            self._bitboard.set_piece(sq, Man(Side.Light).acronym)
 
     @property
     def turn(self):
         return self._turn
-
-    @staticmethod
-    def bit(square: int) -> int:
-        """Return bit mask for square (1–32)."""
-        return 1 << (square - 1)
-
-    def set_piece(self, square: int, piece: Piece):
-        """Place a piece on the board."""
-        mask = self.bit(square)
-        self.bitboards[piece.acronym] |= mask
-
-    def remove_piece(self, square: int):
-        """Remove any piece from square."""
-        mask = ~self.bit(square)
-
-        for bitboard in self.bitboards:
-            self.bitboards[bitboard] &= mask
-
-    def piece_at(self, square: int) -> Piece | None:
-        """Return the piece at a square."""
-        mask = self.bit(square)
-
-        for key, bitboard in self.bitboards.items():
-            if bitboard & mask:
-                return PieceFactory.get_piece(key)
-
-        return None
 
     def move_piece(self, from_square: int, to_square: int):
         """
@@ -69,7 +33,8 @@ class Board(Entity):
             from_square (int): The starting square index of the piece
             to_square (int): The target square index where the piece should move
         """
-        piece = self.piece_at(from_square)
+        piece_bit = self._bitboard.piece_at(from_square)
+        piece = PieceFactory.get_piece(piece_bit)
 
         if not piece:
             print(f"Piece at {from_square} not found in the board")
@@ -82,16 +47,16 @@ class Board(Entity):
             return
 
         legal_moves = self.get_legal_moves(self._turn)
+        legal_move = next((m for m in legal_moves if m.from_ == from_square and m.to_ == to_square), None)
 
-        direction = 1 if self._turn == Side.Dark else -1
-        condition = lambda m: m.from_ == from_square and (m.from_ - m.to_) * direction < 0
-        legal_move = next((m for m in legal_moves if condition(m)), None)
+        self._bitboard.remove_piece(from_square)
 
-        self.remove_piece(from_square)
-
+        was_captured_move = False
         if isinstance(legal_move, CapturedMove):
             print(f'Captured move, removing piece at {legal_move.jumped}')
-            self.remove_piece(legal_move.jumped)
+            self._bitboard.remove_piece(legal_move.jumped)
+
+            was_captured_move = True
 
             self.raise_event(PieceCapturedEvent(captured_at=legal_move.jumped))
 
@@ -104,7 +69,7 @@ class Board(Entity):
             piece = King(piece.color)
             promotion = True
 
-        self.set_piece(to_square, piece)
+        self._bitboard.set_piece(to_square, piece.acronym)
 
         super().raise_event(PieceMovedEvent(moved_from=from_square, moved_to=to_square))
 
@@ -113,28 +78,29 @@ class Board(Entity):
 
             super().raise_event(TurnSwitchedEvent(current_turn=self._turn))
         else:
-            legal_moves = self.get_legal_moves(self._turn)
-
-            filtered = [m for m in legal_moves if condition(m)]
-
-            # if no legal moves for the current piece (no future capturing), update the turn
-            if all(not isinstance(m, CapturedMove) for m in filtered):
+            if not was_captured_move:
                 self.switch_turn()
 
                 super().raise_event(TurnSwitchedEvent(current_turn=self._turn))
+            else:
+                legal_moves = self.get_legal_moves(self._turn)
+                filtered = [m for m in legal_moves if m.from_ == to_square]
+
+                # if no legal moves for the current piece (no future capturing), update the turn
+                if all(not isinstance(m, CapturedMove) for m in filtered):
+                    self.switch_turn()
+
+                    super().raise_event(TurnSwitchedEvent(current_turn=self._turn))
 
     def switch_turn(self):
         self._turn = Side.Dark if self._turn == Side.Light else Side.Light
-
-    def occupancy(self) -> int:
-        """Return bitboard of all occupied squares."""
-        return self.bitboards[Side.Dark.value.lower()] | self.bitboards[Side.Dark.value] | self.bitboards[Side.Light.value.lower()] | self.bitboards[Side.Light.value]
 
     def display(self):
         """Pretty print board in 8x8 format."""
         mapping = {None: "."}
         for sq in range(1, 33):
-            piece = self.piece_at(sq)
+            piece_bit = self._bitboard.piece_at(sq)
+            piece = PieceFactory.get_piece(piece_bit)
             if piece:
                 mapping[sq] = '⚫' if (piece.color == Side.Dark) else '🔴'
             else:
@@ -156,7 +122,7 @@ class Board(Entity):
     def copy(self):
         new_board = Board()
         new_board._turn = self._turn
-        new_board.bitboards = self.bitboards
+        new_board._bitboard = self._bitboard
 
         return new_board
 
@@ -164,10 +130,10 @@ class Board(Entity):
 
         match self._turn:
             case Side.Dark:
-                if self.bitboards[Side.Dark.value.lower()] == 0 and self.bitboards[Side.Dark.value] == 0:
+                if self._bitboard.occupancy_of("black") == 0:
                     return True
             case Side.Light:
-                if self.bitboards[Side.Light.value.lower()] == 0 and self.bitboards[Side.Light.value] == 0:
+                if self._bitboard.occupancy_of("white") == 0:
                     return True
 
         if not self.get_legal_moves(self._turn):
@@ -176,10 +142,10 @@ class Board(Entity):
         return False
 
     def get_winner(self):
-        if self.bitboards[Side.Dark.value.lower()] == 0 and self.bitboards[Side.Dark.value] == 0:
+        if self._bitboard.occupancy_of("black") == 0:
             return Side.Light
 
-        if self.bitboards[Side.Light.value.lower()] == 0 and self.bitboards[Side.Light.value] == 0:
+        if self._bitboard.occupancy_of("white") == 0:
             return Side.Dark
 
         if not self.get_legal_moves(self._turn):
@@ -188,69 +154,15 @@ class Board(Entity):
         return None
 
     def get_legal_moves(self, player: Side) -> list[LegalMove]:
-        # Generate all legal non-capturing moves for given color.
-        moves : List[LegalMove] = []
-        if player == Side.Dark:
-            men, kings = self.bitboards[Side.Dark.value.lower()], self.bitboards[Side.Dark.value]
-            forward_dirs = [(-1, -1), (-1, 1)]  # downwards
-        else:
-            men, kings = self.bitboards[Side.Light.value.lower()], self.bitboards[Side.Light.value]
-            forward_dirs = [(1, -1), (1, 1)]  # upwards
+        legal_moves : List[LegalMove] = []
+        color = "black" if self._turn == Side.Dark else "white"
 
-        occ = self.occupancy()
-        # Generate moves for men
-        for sq in range(1, 33):
-            if not (men & self.bit(sq)): continue
-            for neigh, _ in self.MOVE_MAP[sq]:
-                if not (occ & self.bit(neigh)):
-                    moves.append(LegalMove(sq, neigh))
-        # Generate moves for kings (both directions)
-        for sq in range(1, 33):
-            if not (kings & self.bit(sq)): continue
-            for neigh, _ in self.MOVE_MAP[sq]:
-                if not (occ & self.bit(neigh)):
-                    moves.append(LegalMove(sq, neigh))
+        moves = self._bitboard.generate_moves(color)
+        for move in moves:
+            legal_moves.append(LegalMove(move[0], move[1]))
 
-        # Generate all legal capturing moves for given color.
-        if player == Side.Dark:
-            men, kings = self.bitboards[Side.Dark.value.lower()], self.bitboards[Side.Dark.value]
-            my_pieces = men | kings
-            opp_pieces = self.bitboards[Side.Light.value.lower()] | self.bitboards[Side.Light.value]
-        else:
-            men, kings = self.bitboards[Side.Light.value.lower()], self.bitboards[Side.Light.value]
-            my_pieces = men | kings
-            opp_pieces = self.bitboards[Side.Dark.value.lower()] | self.bitboards[Side.Dark.value]
+        captures = self._bitboard.generate_captures(color)
+        for capture in captures:
+            legal_moves.append(CapturedMove(capture[0], capture[1], capture[2]))
 
-        occ = self.occupancy()
-        for sq in range(1, 33):
-            if not (my_pieces & self.bit(sq)): continue
-            for neigh, land in self.CAPTURE_MAP[sq]:
-                if (opp_pieces & self.bit(neigh)) and not (occ & self.bit(land)):
-                    moves.append(CapturedMove(sq, land, neigh))  # (from, to, jumped)
-
-        return moves
-
-board = Board()
-
-board.move_piece(12, 16)
-board.move_piece(24, 20)
-board.move_piece(9, 14)
-board.move_piece(23, 18)
-board.move_piece(6, 9)
-board.move_piece(27, 23)
-board.move_piece(9, 13)
-board.move_piece(23, 19)
-board.move_piece(8, 12)
-board.move_piece(28, 24)
-board.move_piece(10, 15)
-board.move_piece(26, 23)
-board.move_piece(1, 6)
-board.move_piece(32, 28)
-board.move_piece(5, 9)
-board.move_piece(31, 26)
-board.move_piece(3, 8)
-board.move_piece(21, 17)
-
-
-#board.display()
-#print(board.get_legal_moves(Side.Light))
+        return legal_moves

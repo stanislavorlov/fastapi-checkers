@@ -19,9 +19,9 @@ class BitboardCheckers:
             self.black_men |= mask
         elif piece == "B":
             self.black_kings |= mask
-        elif piece == "w":
+        elif piece == "r":
             self.white_men |= mask
-        elif piece == "W":
+        elif piece == "R":
             self.white_kings |= mask
 
     def remove_piece(self, square: int):
@@ -37,8 +37,8 @@ class BitboardCheckers:
         mask = self.bit(square)
         if self.black_men & mask: return "b"
         if self.black_kings & mask: return "B"
-        if self.white_men & mask: return "w"
-        if self.white_kings & mask: return "W"
+        if self.white_men & mask: return "r"
+        if self.white_kings & mask: return "R"
         return None
 
     def move_piece(self, from_square: int, to_square: int, piece: str):
@@ -48,6 +48,15 @@ class BitboardCheckers:
     def occupancy(self) -> int:
         """Return bitboard of all occupied squares."""
         return self.black_men | self.black_kings | self.white_men | self.white_kings
+
+    def occupancy_of(self, color: str) -> int:
+        match color:
+            case "black":
+                return self.black_men | self.black_kings
+            case "white":
+                return self.white_men | self.white_kings
+            case _:
+                return 0
 
     def print_board(self):
         """Pretty print board in 8x8 format."""
@@ -70,7 +79,7 @@ class BitboardCheckers:
         print("\n".join(board))
 
     def generate_moves(self, color: str):
-        """Generate all legal non-capturing moves for given color."""
+        """Generate all legal non-capturing moves for given color: black or white."""
         moves = []
         if color == "black":
             men, kings = self.black_men, self.black_kings
@@ -95,7 +104,7 @@ class BitboardCheckers:
         return moves
 
     def generate_captures(self, color: str):
-        """Generate all legal capturing moves for given color."""
+        """Generate all legal capturing moves for given color: black or white."""
         captures = []
         if color == "black":
             men, kings = self.black_men, self.black_kings
@@ -148,7 +157,7 @@ if __name__=='__main__':
     for sq in range(1, 13):   # white men
         board.set_piece(sq, "b")
     for sq in range(21, 33):  # black men
-        board.set_piece(sq, "w")
+        board.set_piece(sq, "r")
 
     board.move_piece(10, 14, "b")
     board.move_piece(23, 19, "w")
