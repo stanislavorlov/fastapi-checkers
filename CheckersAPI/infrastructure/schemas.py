@@ -19,14 +19,18 @@ def individual_game(game : Game, history_cursor: Cursor[Mapping[str, History]]) 
 def list_games(games : List[Game]) -> list[ReadGameDto]:
     return [individual_game(game, []) for game in games]
 
-def list_histories(histories : List[History]) -> list[HistoryDto]:
-    history_dto : list[HistoryDto] = []
-    for history in histories:
-        history_dto.append(HistoryDto(
-            #player_id=history.player_id,
-            event_type=history['event_type'],
-            from_=history['from_'],
-            to_=history['to_'],
-        ))
+def individual_history(history: History) -> HistoryDto:
+    return HistoryDto(
+        player_id=history.player_id,
+        event_type=history['event_type'],
+        from_=int(history['from_']),
+        to=int(history['to']),
+        sequence=history['sequence'],
+    )
 
-    return history_dto
+def list_histories(histories : List[History]) -> list[HistoryDto]:
+    history_dtos : list[HistoryDto] = []
+    for history in histories:
+        history_dtos.append(individual_history(history))
+
+    return history_dtos

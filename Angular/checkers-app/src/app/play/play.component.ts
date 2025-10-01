@@ -107,9 +107,7 @@ export class PlayComponent implements OnInit, OnDestroy {
       }
 
       if (data._type === 'move') {
-        const move = new Move(data._from, data._to, data._playerId, data._piece);
         
-        this.board.reply(move);
       }
     };
 
@@ -125,16 +123,34 @@ export class PlayComponent implements OnInit, OnDestroy {
   clickBoard(square: Square): void {
 
     if (square.canSelect) {
-      let action = this.board.click(square);
+      let actions = this.board.click(square);
+      let [move,action] = [actions.move, actions.action];
 
-      if (action.type == ActionType.MOVE || action.type == ActionType.CAPTURE || action.type == ActionType.PROMOTE) {
+      if (!!move && !!action) {
+        console.log("Action:", action, " Move:", move.toString());
+      } else if (!!action) {
+        console.log("Action:", action);
+      } else if (!!move) {
+        console.log("Move:", move.toString());
+      }
+
+      if (!!move) {
+        
+
+        // ToDo: send to the API full move string, e.g. "22-18" or "6x13x22"
+        if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+          //this.webSocket.send(JSON.stringify(move));
+        }
+      }
+
+      /*if (action.type == ActionType.MOVE || action.type == ActionType.CAPTURE || action.type == ActionType.PROMOTE) {
         let from = this.board.getHistory().slice(-2)[0];
         let to = this.board.getHistory().slice(-2)[1];
 
         if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
           this.webSocket.send(JSON.stringify({ _playerId: action.playerId, _type: action.type, _from: from.square, to: to.square }));
         }
-      }
+      }*/
     }
   }
 

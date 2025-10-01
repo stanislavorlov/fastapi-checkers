@@ -83,14 +83,14 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
     await manager.connect(game_id, websocket)
     try:
         while True:
-            message_text = await websocket.receive_text()
+            user_actions = await websocket.receive_text()
 
-            print(f"message received: {message_text}")
+            print(f"message received: {user_actions}")
 
             try:
-                game_event = EventParser().parse(message_text)
+                game_events = EventParser().parse(user_actions)
                 handler = EventHandler(game_id, manager)
-                await handler.handle(game_event)
+                await handler.handle(game_events)
 
             except json.decoder.JSONDecodeError:
                 print('Error decoding JSON')

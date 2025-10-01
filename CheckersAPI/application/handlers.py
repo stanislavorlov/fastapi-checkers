@@ -1,11 +1,15 @@
 import json
 from dataclasses import asdict
+from typing import List
 from domain.board import Board
+from domain.board_history import BoardHistory
+from domain.history_entry import HistoryEntry
+from domain.side import Side
 from infrastructure.database import history_collection
 from infrastructure.documents import History
-from domain.events import GameEvent
+from domain.events import GameEvent, EventType, GameEvents
 from infrastructure.connnection_manager import ConnectionManager
-from web.history_dto import HistoryDto
+from infrastructure.schemas import individual_history, list_histories
 
 
 class EventHandler:
@@ -13,28 +17,19 @@ class EventHandler:
         self.game_id = game_id
         self.manager = manager
 
-    async def handle(self, event: GameEvent):
+    async def handle(self, game_events: GameEvents):
         print('Event handler called -> handle')
 
-        history = history_collection.find({'game_id': self.game_id})
+        history = history_collection.find({'game_id': self.game_id}).sort('sequence', 1)
+        board_history = BoardHistory(list_histories(history))
+        board = Board().from_history(board_history)
 
-        board = Board()
+        current, previous = game_events.cur, game_events.prev
 
-        history_dtos = []
-        for item in history:
-            history_dto = HistoryDto(item)
-            history_dtos.append(history_dto)
+        print(f"Player {current.player_id} making {current.type.value()} with previous {previous.type.value()} action")
 
-            parsed_from = int(history_dto.from_)
-            parsed_to = int(history_dto.to_)
-            board.move_piece(parsed_from, parsed_to)
-
-        # clearing events queue before processing future moves
-        board.flush_events()
-
-        print(f"from: {event.from_}, to: {event.to_}")
-
-        board.move_piece(int(event.from_), int(event.to_))
+        if current.type == EventType.move() or current.type == EventType.capture() or current.type == EventType.promote():
+            board.move_piece(previous.square, current.square)
 
         for board_event in board.flush_events():
             # noinspection PyDataclass
@@ -42,9 +37,9 @@ class EventHandler:
 
         history = History(
             game_id=self.game_id,
-            player_id=event.player_id,
+            player_id=current.player_id,
             event_type=event.type.value(),
-            from_=event.from_,
-            to_=event.to_
+            square=event.square,
+            sequence=len(history),
         )
         #history_collection.insert_one(dict(history))

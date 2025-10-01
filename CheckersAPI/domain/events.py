@@ -23,6 +23,10 @@ class EventType:
         return EventType('promote')
 
     @staticmethod
+    def turned():
+        return EventType('turned')
+
+    @staticmethod
     def parse(message_text: str):
         match message_text:
             case 'move':
@@ -35,15 +39,24 @@ class EventType:
                 return EventType.capture()
             case 'promote':
                 return EventType.promote()
+            case 'turned':
+                return EventType.turned()
             case _:
                 return None
 
     def value(self):
         return self.name
 
+    def __eq__(self, other):
+        return self.name == other.name
+
 class GameEvent:
-    def __init__(self, player_id: str, type_: EventType, from_: str, to_: str):
+    def __init__(self, player_id: str, type_: EventType, square: str):
         self.player_id = player_id
         self.type = type_
-        self.from_ = from_
-        self.to_ = to_
+        self.square = square
+
+class GameEvents:
+    def __init__(self, prev: GameEvent, cur: GameEvent):
+        self.prev = prev
+        self.cur = cur

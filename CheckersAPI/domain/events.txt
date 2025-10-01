@@ -1,0 +1,17 @@
+select
+    square
+    player_id
+move
+    square
+    player_id
+unselect
+    square
+    player_id
+capture
+    square
+    player_id
+promote
+    square
+    player_id
+turned
+    player_id

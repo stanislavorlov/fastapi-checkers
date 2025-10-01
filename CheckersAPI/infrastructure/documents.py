@@ -16,5 +16,7 @@ class Game(BaseModel):
 class History(BaseModel):
     game_id: str
     event_type: str
-    from_: str
-    to_: str
+    from_: int
+    to: int
+    sequence: int
+    player_id: str

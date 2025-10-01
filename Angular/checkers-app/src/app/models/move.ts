@@ -1,21 +1,38 @@
-import { Action, ActionType } from "./action";
-import { Piece } from "./piece";
+export class Move {
+    private _squares: string[];
 
-export class Move extends Action {
-    private _to: string;
-    private _piece: Piece;
-    
-    constructor(from: string, to: string, playerId: string, piece: Piece) {
-        super(ActionType.MOVE, from, playerId);
-        this._to = to;
-        this._piece = piece;
+    constructor() {
+        this._squares = [];
     }
 
-    get to(): string {
-        return this._to;
+    public addSquare(square: string): void {
+        if (this._squares.some(s => s === "x")) {
+            throw new Error("Cannot add square after capture without adding capture first");
+        }
+
+        if (this._squares.length === 3) {
+            throw new Error("Cannot add more than two moves without capture");
+        }
+
+        if (this._squares.length > 0) {
+            this._squares.push("-");
+        }
+
+        this._squares.push(square);
     }
 
-    get piece(): Piece {
-        return this._piece;
+    public addCapture(square: string): void {
+        if (this._squares.some(s => s === "-")) {
+            throw new Error("Cannot add capture after move without adding move first");
+        }
+
+        if (this._squares.length > 0) {
+            this._squares.push("x");
+        }
+        this._squares.push(square);
+    }
+
+    public toString(): string {
+        return this._squares.join("");
     }
 }

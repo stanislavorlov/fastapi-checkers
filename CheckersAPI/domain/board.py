@@ -1,19 +1,22 @@
-from typing import List
+from typing import List, Optional
 from domain.bitboard import BitboardCheckers
+from domain.board_history import BoardHistory
+from domain.events import EventType, GameEvent
+from domain.history_entry import HistoryEntry
 from domain.king import King
 from domain.man import Man
 from domain.piece_factory import PieceFactory
 from domain.side import Side
 from domain.kernel.domain_event import PieceMovedEvent, PieceCapturedEvent, TurnSwitchedEvent
-from domain.kernel.entity import Entity
 from domain.legal_move import LegalMove, CapturedMove
 
-class Board(Entity):
+class Board:
 
     def __init__(self):
         super().__init__()
         self._turn = Side.Dark
         self._bitboard = BitboardCheckers()
+        self._history = BoardHistory.empty()
 
         for sq in range(1, 13):  # white men
             self._bitboard.set_piece(sq, Man(Side.Dark).acronym)
@@ -23,6 +26,14 @@ class Board(Entity):
     @property
     def turn(self):
         return self._turn
+
+    @staticmethod
+    def from_history(history: BoardHistory):
+        board = Board()
+        for item in history:
+            pass
+
+        return Board()
 
     def move_piece(self, from_square: int, to_square: int):
         """
@@ -58,6 +69,7 @@ class Board(Entity):
 
             was_captured_move = True
 
+            # ToDo: update board history
             self.raise_event(PieceCapturedEvent(captured_at=legal_move.jumped))
 
         # detect promotions
@@ -71,16 +83,19 @@ class Board(Entity):
 
         self._bitboard.set_piece(to_square, piece.acronym)
 
+        # ToDo: update board history
         super().raise_event(PieceMovedEvent(moved_from=from_square, moved_to=to_square))
 
         if promotion:
             self.switch_turn()
 
+            # ToDo: update board history
             super().raise_event(TurnSwitchedEvent(current_turn=self._turn))
         else:
             if not was_captured_move:
                 self.switch_turn()
 
+                # ToDo: update board history
                 super().raise_event(TurnSwitchedEvent(current_turn=self._turn))
             else:
                 legal_moves = self.get_legal_moves(self._turn)
@@ -90,6 +105,7 @@ class Board(Entity):
                 if all(not isinstance(m, CapturedMove) for m in filtered):
                     self.switch_turn()
 
+                    # ToDo: update board history
                     super().raise_event(TurnSwitchedEvent(current_turn=self._turn))
 
     def switch_turn(self):
