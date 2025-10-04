@@ -1,7 +1,7 @@
 from bson import ObjectId
 from infrastructure.database import game_collection, history_collection, player_collection
 from infrastructure.schemas import list_games, individual_game
-from web.dtos import WriteGameDto
+from web.models import WriteGameDto
 from fastapi import APIRouter
 
 router = APIRouter(

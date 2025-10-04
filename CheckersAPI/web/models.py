@@ -22,3 +22,10 @@ class WriteGameDto(BaseModel):
     mode: str
     light_player: str
     dark_player: str
+
+class CreateUser(BaseModel):
+    username: str
+    password: str
+    first_name: str | None = None
+    last_name: str | None = None
+    country: str | None = None

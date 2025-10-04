@@ -5,6 +5,10 @@ from pydantic import BaseModel
 class Player(BaseModel):
     player_id: str
     username: Optional[str]
+    password_hash: Optional[str]
+    first_name: Optional[str]
+    last_name: Optional[str]
+    country: Optional[str]
 
 class Game(BaseModel):
     name: str
