@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from infrastructure.database import player_collection
 from infrastructure.documents import Player
 from web.models import CreateUser
-from web.user_helper import hash_password, nanoid
+from web.user_helper import hash_password, nanoid, verify_password
 
 router = APIRouter(
     prefix="/api",
@@ -27,4 +27,23 @@ async def register_user(user: CreateUser):
 
 @router.post("/token")
 async def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
-    print(form_data.username, form_data.password)
+    player_dict = player_collection.find_one({"username": form_data.username})
+    if not player_dict:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password"
+        )
+    hashed_password = player_dict['password_hash']
+
+    if not verify_password(form_data.password, hashed_password):
+        print('password not match')
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password"
+        )
+
+    return {"access_token": form_data.username, "token_type": "bearer"}
+
+@router.get("/users/me")
+async def read_users_me():
+    pass
