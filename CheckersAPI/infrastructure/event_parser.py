@@ -1,21 +1,15 @@
 import json
-from domain.events import GameEvent, EventType
+from domain.pdn_move import PdnMove
 
 
 class EventParser:
-    def __init__(self):
-        pass
 
     @staticmethod
-    def parse(message_text: str) -> GameEvent:
+    def parse(message_text: str):
         json_string = json.loads(message_text)
 
-        print(json_string)
+        player = str(json_string['playerId'])
+        pdn_string = json_string['move']
+        captured_squares = json_string['captured']
 
-        game_event = GameEvent(
-            json_string['_playerId'],
-            EventType.parse(json_string['_type']),
-            json_string['_from'],
-            json_string['to'])
-
-        return game_event
+        return player, PdnMove(pdn_string, captured_squares)

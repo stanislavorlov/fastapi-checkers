@@ -1,9 +1,5 @@
 import { Direction } from "./direction";
-
-export enum PieceColor {
-    BLACK = 1,
-    RED = 2
-}
+import { PieceColor } from "./piece-color";
 
 export class Piece {
     private _color: PieceColor;

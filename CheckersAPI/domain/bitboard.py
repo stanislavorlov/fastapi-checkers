@@ -19,9 +19,9 @@ class BitboardCheckers:
             self.black_men |= mask
         elif piece == "B":
             self.black_kings |= mask
-        elif piece == "w":
+        elif piece == "r":
             self.white_men |= mask
-        elif piece == "W":
+        elif piece == "R":
             self.white_kings |= mask
 
     def remove_piece(self, square: int):
@@ -37,8 +37,8 @@ class BitboardCheckers:
         mask = self.bit(square)
         if self.black_men & mask: return "b"
         if self.black_kings & mask: return "B"
-        if self.white_men & mask: return "w"
-        if self.white_kings & mask: return "W"
+        if self.white_men & mask: return "r"
+        if self.white_kings & mask: return "R"
         return None
 
     def move_piece(self, from_square: int, to_square: int, piece: str):
@@ -48,6 +48,15 @@ class BitboardCheckers:
     def occupancy(self) -> int:
         """Return bitboard of all occupied squares."""
         return self.black_men | self.black_kings | self.white_men | self.white_kings
+
+    def occupancy_of(self, color: str) -> int:
+        match color:
+            case "black":
+                return self.black_men | self.black_kings
+            case "white":
+                return self.white_men | self.white_kings
+            case _:
+                return 0
 
     def print_board(self):
         """Pretty print board in 8x8 format."""
@@ -70,7 +79,7 @@ class BitboardCheckers:
         print("\n".join(board))
 
     def generate_moves(self, color: str):
-        """Generate all legal non-capturing moves for given color."""
+        """Generate all legal non-capturing moves for given color: black or white."""
         moves = []
         if color == "black":
             men, kings = self.black_men, self.black_kings
@@ -95,7 +104,7 @@ class BitboardCheckers:
         return moves
 
     def generate_captures(self, color: str):
-        """Generate all legal capturing moves for given color."""
+        """Generate all legal capturing moves for given color: black or white."""
         captures = []
         if color == "black":
             men, kings = self.black_men, self.black_kings
@@ -114,9 +123,10 @@ class BitboardCheckers:
                     captures.append((sq, land, neigh))  # (from, to, jumped)
         return captures
 
-    def _generate_maps(self):
+    @staticmethod
+    def _generate_maps():
         """Generate MOVE_MAP and CAPTURE_MAP automatically for 32 squares."""
-        MOVE_MAP, CAPTURE_MAP = {}, {}
+        move_map, capture_map = {}, {}
         board = [[0] * 8 for _ in range(8)]
         square = 1
         for row in range(8):
@@ -130,35 +140,14 @@ class BitboardCheckers:
             for col in range(8):
                 square = board[row][col]
                 if square == 0: continue
-                MOVE_MAP[square] = []
-                CAPTURE_MAP[square] = []
+                move_map[square] = []
+                capture_map[square] = []
                 for dr, dc in directions:
                     nr, nc = row + dr, col + dc
                     if 0 <= nr < 8 and 0 <= nc < 8 and board[nr][nc] != 0:
-                        MOVE_MAP[square].append((board[nr][nc], None))
+                        move_map[square].append((board[nr][nc], None))
                     jr, jc = row + 2 * dr, col + 2 * dc
                     if (0 <= jr < 8 and 0 <= jc < 8
                             and board[nr][nc] != 0 and board[jr][jc] != 0):
-                        CAPTURE_MAP[square].append((board[nr][nc], board[jr][jc]))
-        return MOVE_MAP, CAPTURE_MAP
-
-if __name__=='__main__':
-    board = BitboardCheckers()
-
-    for sq in range(1, 13):   # white men
-        board.set_piece(sq, "b")
-    for sq in range(21, 33):  # black men
-        board.set_piece(sq, "w")
-
-    board.move_piece(10, 14, "b")
-    board.move_piece(23, 19, "w")
-    board.move_piece(11, 15, "b")
-    board.move_piece(9, 13, "b")
-    board.move_piece(5, 9, "b")
-    board.move_piece(1, 5, "b")
-    board.move_piece(12, 16, "b")
-
-    board.print_board()
-
-    print("Moves (white):", board.generate_moves("white"))
-    print("Captures (white):", board.generate_captures("white"))
+                        capture_map[square].append((board[nr][nc], board[jr][jc]))
+        return move_map, capture_map

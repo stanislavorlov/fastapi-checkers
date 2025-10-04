@@ -1,11 +1,9 @@
 import json
-from dataclasses import asdict
-from domain.board import Board
+from domain.board_factory import BoardFactory
+from domain.pdn_move import PdnMove
 from infrastructure.database import history_collection
 from infrastructure.documents import History
-from domain.events import GameEvent
 from infrastructure.connnection_manager import ConnectionManager
-from web.history_dto import HistoryDto
 
 
 class EventHandler:
@@ -13,38 +11,29 @@ class EventHandler:
         self.game_id = game_id
         self.manager = manager
 
-    async def handle(self, event: GameEvent):
+    async def handle(self, player_id: str, pdn_move: PdnMove):
         print('Event handler called -> handle')
 
-        history = history_collection.find({'game_id': self.game_id})
+        histories = list(history_collection.find({'game_id': self.game_id}).sort('sequence', 1))
 
-        board = Board()
+        print(f'Found history {histories}')
 
-        history_dtos = []
-        for item in history:
-            history_dto = HistoryDto(item)
-            history_dtos.append(history_dto)
+        board = BoardFactory.create(histories)
 
-            parsed_from = int(history_dto.from_)
-            parsed_to = int(history_dto.to_)
-            board.move_piece(parsed_from, parsed_to)
+        if board.apply_move(pdn_move):
+            history = History(
+                game_id=self.game_id,
+                player_id=player_id,
+                move=pdn_move.as_string,
+                captures=pdn_move.captured_squares,
+                sequence=len(histories),
+            )
+            print(f'Saving history {dict(history)}')
+            #history_collection.insert_one(dict(history))
 
-        # clearing events queue before processing future moves
-        board.flush_events()
+            response = pdn_move.to_dict()
+            print(response)
+            response['player_id'] = player_id
+            print(response)
 
-        print(f"from: {event.from_}, to: {event.to_}")
-
-        board.move_piece(int(event.from_), int(event.to_))
-
-        for board_event in board.flush_events():
-            # noinspection PyDataclass
-            await self.manager.broadcast(self.game_id, json.dumps(asdict(board_event)))
-
-        history = History(
-            game_id=self.game_id,
-            player_id=event.player_id,
-            event_type=event.type.value(),
-            from_=event.from_,
-            to_=event.to_
-        )
-        #history_collection.insert_one(dict(history))
+            await self.manager.broadcast(self.game_id, json.dumps(response))
