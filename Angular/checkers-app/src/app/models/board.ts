@@ -8,12 +8,14 @@ import { Piece, Queen } from "./piece";
 import { PieceColor } from "./piece-color";
 import { BlackSquare, Square, WhiteSquare } from "./square";
 import { Stack } from "./stack";
+import { Utils } from "./utils";
 
 export class Board {
     private _boardMatrix: Square[][] = [[]];  // 2D array of squares, where each square is represented by a Square object
     private _boardMap: Map<string, Square> = new Map<string, Square>(); // Map of square ID to Square object
     private _pieces: Map<Square, Piece> = new Map<Square, Piece>(); // Map of Square to Piece object
-    private _history: Stack<Action>;
+    private _actionHistory: Stack<Action>;
+    private _moveHistory: Move[] = [];
     private _move: Move | null = null;
     private _turn: PieceColor = PieceColor.BLACK; // Black moves first
     private _playerId: string;
@@ -23,7 +25,7 @@ export class Board {
     private _event$: Subject<Move>;
 
     constructor(playerId: string, gameId: string, event$: Subject<Move>) {
-        this._history = new Stack<Action>();
+        this._actionHistory = new Stack<Action>();
         this._playerId = playerId;
         this._gameId = gameId;
         this._event$ = event$;
@@ -57,7 +59,7 @@ export class Board {
     }
 
     public getHistory() {
-        return [...this._history]; // returns a shallow copy
+        return [...this._moveHistory]; // returns a shallow copy
     }
 
     public load(game: Game) {
@@ -93,8 +95,44 @@ export class Board {
         });
     }
 
+    public replay(pdn: string, captured: string[], player_id: string) {
+        if (this._playerId !== player_id) {
+            // apply the move
+            let squares = Utils.parsePDN(pdn);
+            let pairs = Utils.pairwise(squares);
+
+            pairs.forEach(([from, to]) => {
+                let [from_square, to_square] = this.getMoveSquaresById(from, to);
+                
+                if (!from_square || !to_square) {
+                    console.error(`Invalid move: from ${from} or to ${to} not found on the board.`);
+                } else {
+                    this.move_piece(from_square, to_square, player_id);
+                }
+            });
+
+            captured.forEach((cap) => {
+                let cap_square = this.getSquareById(cap);
+                if (cap_square) {
+                    this.capture_piece(cap_square, player_id);
+                } else {
+                    console.error(`Invalid capture: square ${cap} not found on the board.`);
+                }
+            });
+
+            let move = new Move(player_id);
+            squares.forEach(sq => {
+                move.addSquare(sq);
+            });
+
+            this._moveHistory.push(move);
+        } else {
+            // confirm the move is the same as the last move sent
+        }
+    }
+
     public click(square: Square) {
-        let last_action = this._history.peek();
+        let last_action = this._actionHistory.peek();
         let current_action : Action | null = null;
 
         switch (last_action?.type) {
@@ -144,10 +182,12 @@ export class Board {
                             const hasJump = Array.from(moves.values()).some(m => m instanceof AvailableJump);
                             if (!hasJump) {
                                 this._event$.next(this._move!);
+                                this._moveHistory.push(this._move!);
                                 this._move = null;
                             }
                         } else if (move instanceof AvailableMove) {
                             this._event$.next(this._move!);
+                            this._moveHistory.push(this._move!);
                             this._move = null;
                         }
                     }
@@ -167,6 +207,7 @@ export class Board {
 
                 if (this._move) {
                     this._event$.next(this._move!);
+                    this._moveHistory.push(this._move!);
                     this._move = null;
                 }
                 
@@ -189,6 +230,7 @@ export class Board {
 
                 if (this._move) {
                     this._event$.next(this._move!);
+                    this._moveHistory.push(this._move!);
                     this._move = null;
                 }
 
@@ -219,6 +261,7 @@ export class Board {
                     if (!hasJump) {
                         console.log("No more jumps available, switching turn");
                         this._event$.next(this._move!);
+                        this._moveHistory.push(this._move!);
                         this._move = null;
                     }
 
@@ -234,6 +277,7 @@ export class Board {
 
                     if (this._move) {
                         this._event$.next(this._move!);
+                        this._moveHistory.push(this._move!);
                         this._move = null;
                     }
 
@@ -326,7 +370,7 @@ export class Board {
     }
 
     private recordAction(action: Action): void {
-        this._history.push(action);
+        this._actionHistory.push(action);
     }
 
     private switch_turn(): void {

@@ -105,10 +105,8 @@ export class PlayComponent implements OnInit, OnDestroy {
     this.webSocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       console.log('Received data:', data);
-      
-      //data.pdn
-      //data.captured
-      //data.player_id
+
+      this.board.replay(data.pdn, data.captured, data.player_id);
     };
 
     this.webSocket.onclose = () => {
