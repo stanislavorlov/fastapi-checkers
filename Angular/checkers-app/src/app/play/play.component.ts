@@ -1,5 +1,4 @@
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
-import { ActionType } from '../models/action';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Move } from '../models/move';
 import { Square } from '../models/square';
@@ -122,19 +121,6 @@ export class PlayComponent implements OnInit, OnDestroy {
 
     if (square.canSelect) {
       this.board.click(square);
-
-      /*if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-        this.webSocket.send(JSON.stringify(move));
-      }*/
-
-      /*if (action.type == ActionType.MOVE || action.type == ActionType.CAPTURE || action.type == ActionType.PROMOTE) {
-        let from = this.board.getHistory().slice(-2)[0];
-        let to = this.board.getHistory().slice(-2)[1];
-
-        if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-          this.webSocket.send(JSON.stringify({ _playerId: action.playerId, _type: action.type, _from: from.square, to: to.square }));
-        }
-      }*/
     }
   }
 

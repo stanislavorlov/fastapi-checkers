@@ -1,7 +1,11 @@
 from datetime import datetime
 from pydantic import BaseModel
-from web.history_dto import HistoryDto
 
+class HistoryDto(BaseModel):
+    player_id: str
+    move: str
+    captures: list[str]
+    sequence: int
 
 class ReadGameDto(BaseModel):
     game_id: str

@@ -13,10 +13,10 @@ export class CheckersService {
   }
 
   newGame(newGame: NewGame) {
-    return this.httpClient.post<ApiResult<string>>('/api/', newGame);
+    return this.httpClient.post<ApiResult<string>>('/api/games', newGame);
   }
 
   loadGame(gameId: string) {
-    return this.httpClient.get<Game>(`/api/${gameId}`);
+    return this.httpClient.get<Game>(`/api/games/${gameId}`);
   }
 }

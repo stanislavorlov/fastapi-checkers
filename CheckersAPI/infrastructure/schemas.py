@@ -1,8 +1,7 @@
 from typing import List, Mapping
 from pymongo.synchronous.cursor import Cursor
 from infrastructure.documents import Game, History
-from web.game_dto import ReadGameDto
-from web.history_dto import HistoryDto
+from web.dtos import ReadGameDto, HistoryDto
 
 
 def individual_game(game : Game, history_cursor: Cursor[Mapping[str, History]]) -> ReadGameDto:
