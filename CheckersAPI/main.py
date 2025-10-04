@@ -6,7 +6,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from infrastructure.connnection_manager import ConnectionManager
 from infrastructure.event_parser import EventParser
 from application.handlers import EventHandler
-from web.routers import game_api
+from web.routers import game_api, users_api
 
 
 @asynccontextmanager
@@ -33,6 +33,7 @@ app.add_middleware(
 )
 
 app.include_router(game_api.router)
+app.include_router(users_api.router)
 
 manager = ConnectionManager()
 
