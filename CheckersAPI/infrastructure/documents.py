@@ -15,8 +15,7 @@ class Game(BaseModel):
 
 class History(BaseModel):
     game_id: str
-    event_type: str
-    from_: int
-    to: int
+    move: str
+    captures: list[str]
     sequence: int
     player_id: str

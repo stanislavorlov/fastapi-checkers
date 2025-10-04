@@ -22,10 +22,9 @@ def list_games(games : List[Game]) -> list[ReadGameDto]:
 def individual_history(history: History) -> HistoryDto:
     return HistoryDto(
         player_id=history.player_id,
-        event_type=history['event_type'],
-        from_=int(history['from_']),
-        to=int(history['to']),
+        move=history['move'],
         sequence=history['sequence'],
+        captures=history['captures'],
     )
 
 def list_histories(histories : List[History]) -> list[HistoryDto]:

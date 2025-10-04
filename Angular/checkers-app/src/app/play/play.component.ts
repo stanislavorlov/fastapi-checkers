@@ -9,6 +9,7 @@ import { NgFor, NgIf } from '@angular/common';
 import { SessionStorageService } from '../services/session-storage.service';
 import { CheckersService } from '../services/checkers.service';
 import { Game } from '../models/game';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-play',
@@ -22,6 +23,7 @@ export class PlayComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private webSocket?: WebSocket;
+  private event$: Subject<Move>;
 
   gameId = this.route.snapshot.paramMap.get('id')!;
   gameMenu: boolean;
@@ -34,8 +36,9 @@ export class PlayComponent implements OnInit, OnDestroy {
 
   constructor(private checkersService: CheckersService, protected sessionStorage: SessionStorageService) {
     this.gameMenu = true;
+    this.event$ = new Subject<Move>();
     this.playerId = sessionStorage.getItem(SessionStorageService.PLAYER_ID_KEY)!;
-    this.board = new Board(this.playerId, this.gameId);
+    this.board = new Board(this.playerId, this.gameId, this.event$);
     this.pieces = new Map<Square, Piece>();
 
     console.log("Game ID:", this.gameId);
@@ -61,13 +64,22 @@ export class PlayComponent implements OnInit, OnDestroy {
           this.opponentId = result.light_player;
         } else {
           console.error('Player not part of this game');
-          return;
+          //return;
         }
         
         this.board.load(result);
         this.pieces = this.board.pieces;
 
         this.connectWebSocket(this.gameId);
+
+        this.event$.asObservable().subscribe((move: Move) => {
+          console.log('Move event:', move.toJSONstring());
+
+          // ToDo: send to the API full move string, e.g. "22-18" or "6x13x22"
+          if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+            this.webSocket.send(move.toJSONstring());
+          }
+        });
       });
     }
   }
@@ -94,21 +106,9 @@ export class PlayComponent implements OnInit, OnDestroy {
       const data = JSON.parse(event.data);
       console.log('Received data:', data);
       
-      switch (data.event_type) {
-        case 'captured':
-          let capturedSquare = data.captured_at;
-          break;
-        case 'moved':
-          let [from, to] = [data.moved_from, data.moved_to];
-          break;
-        case 'turn':
-          let turn = data.current_turn;
-          break;
-      }
-
-      if (data._type === 'move') {
-        
-      }
+      //data.pdn
+      //data.captured
+      //data.player_id
     };
 
     this.webSocket.onclose = () => {
@@ -123,25 +123,11 @@ export class PlayComponent implements OnInit, OnDestroy {
   clickBoard(square: Square): void {
 
     if (square.canSelect) {
-      let actions = this.board.click(square);
-      let [move,action] = [actions.move, actions.action];
+      this.board.click(square);
 
-      if (!!move && !!action) {
-        console.log("Action:", action, " Move:", move.toString());
-      } else if (!!action) {
-        console.log("Action:", action);
-      } else if (!!move) {
-        console.log("Move:", move.toString());
-      }
-
-      if (!!move) {
-        
-
-        // ToDo: send to the API full move string, e.g. "22-18" or "6x13x22"
-        if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-          //this.webSocket.send(JSON.stringify(move));
-        }
-      }
+      /*if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+        this.webSocket.send(JSON.stringify(move));
+      }*/
 
       /*if (action.type == ActionType.MOVE || action.type == ActionType.CAPTURE || action.type == ActionType.PROMOTE) {
         let from = this.board.getHistory().slice(-2)[0];

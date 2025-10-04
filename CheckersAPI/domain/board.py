@@ -1,13 +1,12 @@
-from typing import List, Optional
+from itertools import pairwise
+from typing import List
 from domain.bitboard import BitboardCheckers
 from domain.board_history import BoardHistory
-from domain.events import EventType, GameEvent
-from domain.history_entry import HistoryEntry
 from domain.king import King
 from domain.man import Man
+from domain.pdn_move import PdnMove
 from domain.piece_factory import PieceFactory
 from domain.side import Side
-from domain.kernel.domain_event import PieceMovedEvent, PieceCapturedEvent, TurnSwitchedEvent
 from domain.legal_move import LegalMove, CapturedMove
 
 class Board:
@@ -31,82 +30,63 @@ class Board:
     def from_history(history: BoardHistory):
         board = Board()
         for item in history:
-            pass
+            board.apply_move(item.move)    # pdn move
 
-        return Board()
+        board._history = history
 
-    def move_piece(self, from_square: int, to_square: int):
-        """
-        Moves a piece on the board from one square to another.
-        If captures is performed, it calculates the captured square and removes the piece.
+        return board
 
-        Args:
-            from_square (int): The starting square index of the piece
-            to_square (int): The target square index where the piece should move
-        """
+    def apply_move(self, pdn_move: PdnMove) -> bool:
+        squares = pdn_move.move_squares
+
+        if not len(squares):
+            return False
+
+        from_square = squares[0]
+
         piece_bit = self._bitboard.piece_at(from_square)
         piece = PieceFactory.get_piece(piece_bit)
 
         if not piece:
             print(f"Piece at {from_square} not found in the board")
-
-            return
+            return False
 
         if piece.color != self._turn:
             print(f"It is not {self._turn}'s turn")
+            return False
 
-            return
+        for prev, cur in pairwise(squares):
+            legal_moves = self.get_legal_moves(self._turn)
+            legal_move = next((m for m in legal_moves if m.from_ == prev and m.to_ == cur), None)
 
-        legal_moves = self.get_legal_moves(self._turn)
-        legal_move = next((m for m in legal_moves if m.from_ == from_square and m.to_ == to_square), None)
+            if not legal_move:
+                print(f"There is no legal move from {prev} to {cur} found in the board")
+                return False
 
-        self._bitboard.remove_piece(from_square)
+            self._bitboard.remove_piece(prev)
 
-        was_captured_move = False
-        if isinstance(legal_move, CapturedMove):
-            print(f'Captured move, removing piece at {legal_move.jumped}')
-            self._bitboard.remove_piece(legal_move.jumped)
+            if isinstance(legal_move, CapturedMove):
+                if int(pdn_move.next_captured_square) != legal_move.jumped:
+                    print('Captured square does not match calculated one')
+                    return False
 
-            was_captured_move = True
+                print(f'Captured move, removing piece at {legal_move.jumped}')
+                self._bitboard.remove_piece(legal_move.jumped)
 
-            # ToDo: update board history
-            self.raise_event(PieceCapturedEvent(captured_at=legal_move.jumped))
+            self._bitboard.set_piece(cur, piece.acronym)
 
         # detect promotions
-        promotion = False
-        if piece.color == Side.Dark and piece.is_man and 29 <= to_square <= 32:
+        if piece.color == Side.Dark and piece.is_man and 29 <= squares[-1] <= 32:
             piece = King(piece.color)
-            promotion = True
-        elif piece.color == Side.Light and piece.is_man and 1 <= to_square <= 4:
+        elif piece.color == Side.Light and piece.is_man and 1 <= squares[-1] <= 4:
             piece = King(piece.color)
-            promotion = True
 
-        self._bitboard.set_piece(to_square, piece.acronym)
+        self._bitboard.set_piece(squares[-1], piece.acronym)
 
-        # ToDo: update board history
-        super().raise_event(PieceMovedEvent(moved_from=from_square, moved_to=to_square))
+        # switch turn
+        self.switch_turn()
 
-        if promotion:
-            self.switch_turn()
-
-            # ToDo: update board history
-            super().raise_event(TurnSwitchedEvent(current_turn=self._turn))
-        else:
-            if not was_captured_move:
-                self.switch_turn()
-
-                # ToDo: update board history
-                super().raise_event(TurnSwitchedEvent(current_turn=self._turn))
-            else:
-                legal_moves = self.get_legal_moves(self._turn)
-                filtered = [m for m in legal_moves if m.from_ == to_square]
-
-                # if no legal moves for the current piece (no future capturing), update the turn
-                if all(not isinstance(m, CapturedMove) for m in filtered):
-                    self.switch_turn()
-
-                    # ToDo: update board history
-                    super().raise_event(TurnSwitchedEvent(current_turn=self._turn))
+        return True
 
     def switch_turn(self):
         self._turn = Side.Dark if self._turn == Side.Light else Side.Light
@@ -171,7 +151,7 @@ class Board:
 
     def get_legal_moves(self, player: Side) -> list[LegalMove]:
         legal_moves : List[LegalMove] = []
-        color = "black" if self._turn == Side.Dark else "white"
+        color = "black" if player == Side.Dark else "white"
 
         moves = self._bitboard.generate_moves(color)
         for move in moves:

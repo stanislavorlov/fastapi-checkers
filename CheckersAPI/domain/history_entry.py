@@ -1,12 +1,11 @@
-from domain.events import EventType
+from domain.pdn_move import PdnMove
 
 
 class HistoryEntry:
 
-    def __init__(self, player_id: str, type_: EventType, from_: str, to: str, sequence: int):
+    def __init__(self, player_id: str, move: PdnMove, sequence: int, captures: list[str] = None):
         super().__init__()
         self.player_id = player_id
-        self.type_ = type_
-        self.from_ = from_
-        self.to = to
+        self.move = move
         self.sequence = sequence
+        self.captures = captures

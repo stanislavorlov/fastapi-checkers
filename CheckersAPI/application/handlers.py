@@ -1,15 +1,9 @@
 import json
-from dataclasses import asdict
-from typing import List
-from domain.board import Board
-from domain.board_history import BoardHistory
-from domain.history_entry import HistoryEntry
-from domain.side import Side
+from domain.board_factory import BoardFactory
+from domain.pdn_move import PdnMove
 from infrastructure.database import history_collection
 from infrastructure.documents import History
-from domain.events import GameEvent, EventType, GameEvents
 from infrastructure.connnection_manager import ConnectionManager
-from infrastructure.schemas import individual_history, list_histories
 
 
 class EventHandler:
@@ -17,29 +11,29 @@ class EventHandler:
         self.game_id = game_id
         self.manager = manager
 
-    async def handle(self, game_events: GameEvents):
+    async def handle(self, player_id: str, pdn_move: PdnMove):
         print('Event handler called -> handle')
 
-        history = history_collection.find({'game_id': self.game_id}).sort('sequence', 1)
-        board_history = BoardHistory(list_histories(history))
-        board = Board().from_history(board_history)
+        histories = list(history_collection.find({'game_id': self.game_id}).sort('sequence', 1))
 
-        current, previous = game_events.cur, game_events.prev
+        print(f'Found history {histories}')
 
-        print(f"Player {current.player_id} making {current.type.value()} with previous {previous.type.value()} action")
+        board = BoardFactory.create(histories)
 
-        if current.type == EventType.move() or current.type == EventType.capture() or current.type == EventType.promote():
-            board.move_piece(previous.square, current.square)
+        if board.apply_move(pdn_move):
+            history = History(
+                game_id=self.game_id,
+                player_id=player_id,
+                move=pdn_move.as_string,
+                captures=pdn_move.captured_squares,
+                sequence=len(histories),
+            )
+            print(f'Saving history {dict(history)}')
+            #history_collection.insert_one(dict(history))
 
-        for board_event in board.flush_events():
-            # noinspection PyDataclass
-            await self.manager.broadcast(self.game_id, json.dumps(asdict(board_event)))
+            response = pdn_move.to_dict()
+            print(response)
+            response['player_id'] = player_id
+            print(response)
 
-        history = History(
-            game_id=self.game_id,
-            player_id=current.player_id,
-            event_type=event.type.value(),
-            square=event.square,
-            sequence=len(history),
-        )
-        #history_collection.insert_one(dict(history))
+            await self.manager.broadcast(self.game_id, json.dumps(response))

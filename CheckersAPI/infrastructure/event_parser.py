@@ -1,32 +1,15 @@
 import json
-from domain.events import GameEvent, EventType, GameEvents
+from domain.pdn_move import PdnMove
 
 
 class EventParser:
 
     @staticmethod
-    def parse(message_text: str) -> GameEvents:
+    def parse(message_text: str):
         json_string = json.loads(message_text)
 
-        previous = json_string['_previous']
-        current = json_string['_current']
+        player = str(json_string['playerId'])
+        pdn_string = json_string['move']
+        captured_squares = json_string['captured']
 
-        return GameEvents(EventParser.parse_event(previous), EventParser.parse_event(current))
-
-    @staticmethod
-    def parse_event(message_text: str) -> GameEvent:
-        if not message_text or not len(message_text):
-            return None
-
-        try:
-            json_string = json.loads(message_text)
-
-            game_event = GameEvent(
-                json_string['_playerId'],
-                EventType.parse(json_string['_type']),
-                json_string['_square'])
-
-            return game_event
-
-        except:
-            return None
+        return player, PdnMove(pdn_string, captured_squares)
