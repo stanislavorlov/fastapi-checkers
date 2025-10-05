@@ -29,3 +29,8 @@ class CreateUser(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     country: str | None = None
+
+class AccessTokenData(BaseModel):
+    sub: str
+    preferred_username: str
+    name: str
