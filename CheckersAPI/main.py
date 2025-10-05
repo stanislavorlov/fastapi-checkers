@@ -8,7 +8,6 @@ from infrastructure.event_parser import EventParser
 from application.handlers import EventHandler
 from web.routers import game_api, users_api
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # App startup

@@ -1,13 +1,6 @@
-import os
-
-from dotenv import load_dotenv
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
-
-load_dotenv()
-
-DATABASE_URL=os.getenv('DATABASE_URL')
-DATABASE_NAME=os.getenv('DATABASE_NAME')
+from infrastructure.config import DATABASE_URL, DATABASE_NAME
 
 client = MongoClient(DATABASE_URL, server_api=ServerApi('1'))
 
