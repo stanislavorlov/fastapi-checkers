@@ -18,7 +18,7 @@ def individual_game(game : Game, history_cursor: Cursor[Mapping[str, History]]) 
 def single_player(player: Player) -> dict:
     return {
         "player_id": player['player_id'],
-        "username": player['username'],
+        "email": player['email'],
         "first_name": player['first_name'],
         "last_name": player['last_name'],
         "country": player['country'],
