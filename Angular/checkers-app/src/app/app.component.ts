@@ -1,16 +1,6 @@
-import { Component, inject, OnDestroy, OnInit, Renderer2 } from '@angular/core';
-import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
-import { Square } from './models/square';
-import { CheckersService } from './services/checkers.service';
-import { ApiResult } from './models/api-result';
-import { ActionType } from './models/action';
-import { Move } from './models/move';
-import { Game } from './models/game';
-import { Piece } from './models/piece';
-import { Board } from './models/board';
-import { BoardService } from './services/board.service';
-import { SessionStorageService } from './services/session-storage.service';
-import { PlayerId } from './models/player-id';
+import { Component, inject, OnInit } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
+import { UserService } from './services/user.service';
 
 @Component({
   selector: 'app-root',
@@ -18,147 +8,19 @@ import { PlayerId } from './models/player-id';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent implements OnInit, OnDestroy {
-  //board: Board;
-  //pieces: Map<Square, Piece>;
-  /*gameMenu: boolean;
-  gameMode?: 'single' | 'multi' | 'online' | null;
-  singleSide?: 'red' | 'black' | null;*/
-  //playerId: string = '';
+export class AppComponent implements OnInit {
   
-  //private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  //private webSocket?: WebSocket;
 
-  constructor(private sessionService: SessionStorageService) {
-    //this.board = new Board();
-    //this.pieces = new Map<Square, Piece>();
-    //this.gameMenu = true;
-
-    //this._playerId = nanoid();
+  constructor(private userService: UserService) {
+    
   }
 
-  ngOnInit(): void {
-
-    const playerId = this.sessionService.getItem(SessionStorageService.PLAYER_ID_KEY);
-    if (!playerId) {
-      const newId = PlayerId.generate();
-      this.sessionService.setItem(SessionStorageService.PLAYER_ID_KEY, newId.id);
-    }
-
-    /*this.route.queryParamMap.subscribe(params => {
-      const id = params.get('id');
-      
-      if (!!id) {
-        this.checkersService.loadGame(id).subscribe((result: Game) => {
-          if (!result) {
-            console.error('Game not found or invalid response');
-            return;
-          }
-
-          //this.gameMenu = false;
-          
-          //this.board.load(result);
-          //this.pieces = this.board.pieces;
-
-          this.connectWebSocket(id);
-        });
-      }
-    });*/
+  async ngOnInit(): Promise<void> {
+    await this.userService.loadPlayerProfile();
   }
-
-  ngOnDestroy(): void {
-    //this.closeWebSocket();
-  }
-
-  /*choosePlayMode(mode: 'single' | 'multi' | 'online'): void {
-    this.gameMode = mode;
-  }
-
-  singleModeColor(color: 'red' | 'black'): void {
-    this.singleSide = color;
-  }*/
-
-  /*closeWebSocket(): void {
-    if (this.webSocket) {
-      this.webSocket.close();
-      this.webSocket = undefined;
-    }
-  }*/
-
-  /*connectWebSocket(gameId: string): void {
-    this.webSocket = new WebSocket(`ws://localhost:8000/ws/${gameId}`);
-
-    this.webSocket.onopen = (ev: Event) => {
-      console.log('WebSocket connection established');
-    };
-
-    this.webSocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log('Received data:', data);
-      
-      switch (data.event_type) {
-        case 'captured':
-          let capturedSquare = data.captured_at;
-          break;
-        case 'moved':
-          let [from, to] = [data.moved_from, data.moved_to];
-          break;
-        case 'turn':
-          let turn = data.current_turn;
-          break;
-      }
-
-      if (data._type === 'move') {
-        const move = new Move(data._from, data._to, data._playerId, data._piece);
-        
-        //this.board.reply(move);
-      }
-    };
-
-    this.webSocket.onclose = () => {
-      console.log('WebSocket connection closed');
-    };
-
-    this.webSocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-  }*/
-
-  /*clickBoard(square: Square): void {
-
-    if (square.canSelect) {
-      let action = this.board.click(square);
-
-      if (action.type == ActionType.MOVE || action.type == ActionType.CAPTURE || action.type == ActionType.PROMOTE) {
-        let from = this.board.getHistory().slice(-2)[0];
-        let to = this.board.getHistory().slice(-2)[1];
-
-        if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-          this.webSocket.send(JSON.stringify({ _playerId: action.playerId, _type: action.type, _from: from.square, to: to.square }));
-        }
-      }
-    }
-  }*/
 
   backMenu(): void {
-    /*this.gameMenu = true;
-    this.gameMode = null;
-    this.singleSide = null;*/
-
     this.router.navigate(['/'], { queryParams: {} });
-    //this.closeWebSocket();
   }
-
-  /*newGame(): void {
-    //sessionStorage.getItem('player_id');
-
-    this.checkersService.newGame('New Game', new Date(), this.gameMode!, this.playerId, this.singleSide ?? '').subscribe((game_id: ApiResult<string>) => {
-      if (!!game_id) {
-        this.router.navigate(['/'], {
-          queryParams: { id: game_id }
-        });
-      }
-    });
-  }*/
 }

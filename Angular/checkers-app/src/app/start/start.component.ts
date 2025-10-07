@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { ApiResult } from '../models/api-result';
 import { NgIf } from '@angular/common';
 import { NewGameFactory } from '../models/new-game-factory';
-import { SessionStorageService } from '../services/session-storage.service';
+import { UserService } from '../services/user.service';
 
 @Component({
   selector: 'app-start',
@@ -17,7 +17,7 @@ export class StartComponent {
   singleSide?: 'red' | 'black' | null;
   gameMenu: boolean;
 
-  constructor(private checkersService: CheckersService, private sessionService: SessionStorageService, private router: Router) {
+  constructor(private checkersService: CheckersService, private userService: UserService, private router: Router) {
     this.gameMode = null;
     this.gameMenu = true;
   }
@@ -31,7 +31,12 @@ export class StartComponent {
   }
 
   newGame(): void {
-    const playerId = this.sessionService.getItem(SessionStorageService.PLAYER_ID_KEY)!;
+    const playerId = this.userService.currentPlayer?.player_id || '';
+    if (!playerId) {
+      console.error('Player ID is not available.');
+      return;
+    }
+
     const newGame = NewGameFactory.createGame(playerId, this.gameMode!, this.singleSide || null);
 
     this.checkersService.newGame(newGame).subscribe((game_id: ApiResult<string>) => {
@@ -41,12 +46,18 @@ export class StartComponent {
     });
   }
 
+  logIn(): void {
+    this.router.navigate(['/account/login'], { queryParams: {} });
+  }
+
+  signUp(): void {
+    this.router.navigate(['/account/signup'], { queryParams: {} });
+  }
+
   backMenu(): void {
-    //this.gameMenu = true;
     this.gameMode = null;
     this.singleSide = null;
 
     this.router.navigate(['/'], { queryParams: {} });
-    //this.closeWebSocket();
   }
 }

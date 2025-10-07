@@ -5,10 +5,10 @@ import { Square } from '../models/square';
 import { Board } from '../models/board';
 import { Piece } from '../models/piece';
 import { NgFor, NgIf } from '@angular/common';
-import { SessionStorageService } from '../services/session-storage.service';
 import { CheckersService } from '../services/checkers.service';
 import { Game } from '../models/game';
 import { Subject } from 'rxjs';
+import { UserService } from '../services/user.service';
 
 @Component({
   selector: 'app-play',
@@ -33,10 +33,10 @@ export class PlayComponent implements OnInit, OnDestroy {
   opponentId?: string;
   opponentSide?: 'red' | 'black';
 
-  constructor(private checkersService: CheckersService, protected sessionStorage: SessionStorageService) {
+  constructor(private checkersService: CheckersService, private userService: UserService) {
     this.gameMenu = true;
     this.event$ = new Subject<Move>();
-    this.playerId = sessionStorage.getItem(SessionStorageService.PLAYER_ID_KEY)!;
+    //this.playerId = this.userService.getPlayerId();
     this.board = new Board(this.playerId, this.gameId, this.event$);
     this.pieces = new Map<Square, Piece>();
 

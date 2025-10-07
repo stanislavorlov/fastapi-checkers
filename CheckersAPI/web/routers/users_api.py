@@ -24,7 +24,7 @@ async def register_user(user: CreateUser):
         last_name=user.last_name,
         country=user.country,
         player_id=nanoid(10),
-        username=user.username,
+        email=user.email,
         password_hash=hash_password(user.password),
     )
 
@@ -34,25 +34,25 @@ async def register_user(user: CreateUser):
 
 @router.post("/token")
 async def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    player_dict = player_collection.find_one({"username": form_data.username})
+    player_dict = player_collection.find_one({"email": form_data.username})
     if not player_dict:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password"
+            detail="Incorrect email or password"
         )
     hashed_password = player_dict['password_hash']
 
     if not verify_password(form_data.password, hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password"
+            detail="Incorrect email or password"
         )
 
     access_token = create_access_token(
         data=AccessTokenData(
             sub=player_dict['player_id'],
             name=f"{player_dict['first_name']} {player_dict['last_name']}",
-            preferred_username=player_dict['username'],
+            preferred_username=player_dict['email'],
         )
     )
 

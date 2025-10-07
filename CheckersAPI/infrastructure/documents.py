@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 class Player(BaseModel):
     player_id: str
-    username: Optional[str]
+    email: Optional[str]
     password_hash: Optional[str]
     first_name: Optional[str]
     last_name: Optional[str]

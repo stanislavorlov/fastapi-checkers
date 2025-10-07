@@ -1,0 +1,39 @@
+<div class="content">
+    <div class="container-fluid">
+    <div class="row">
+        <div class="card auth">
+            <div class="card-body auth-card">
+                <div class="auth-avatar">
+                    <img src="https://pluspng.com/img-png/user-png-icon-account-avatar-human-male-man-men-people-person-download-svg-download-png-edit-icon-512.png" alt="user" class="user-image">
+                </div>
+                <form [formGroup]="loginForm" (submit)="login()">
+                    <div class="form-group">
+                        <label for="email">Email : </label>
+                        <input type="text" id="email" name="email" class="form-control" autocomplete="email" placeholder="Email" formControlName="email">
+                        <div *ngIf="email?.invalid && email?.touched" class="error-message">
+                            <div *ngIf="email?.errors?.['required']">Email is required.</div>
+                            <div *ngIf="email?.errors?.['email']">Invalid email format.</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password : </label>
+                        <input type="password" id="password" name="password" class="form-control" autocomplete="off" placeholder="********" formControlName="password">
+                        <div *ngIf="password?.invalid && password?.touched" class="error-message">
+                            <div *ngIf="password?.errors?.['required']">Password is required.</div>
+                            <div *ngIf="password?.errors?.['minlength']">Password must be at least 6 characters.</div>
+                        </div>
+                        <div class="text-right forget-pass">
+                            <a routerLink="/forget-password">Forget Password ?</a>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <input type="submit" class="btn btn-my" value="Login">
+                    </div>
+                </form>
+                <div class="text-center sign-up">
+                    Don`t have an account ? <a [routerLink]="['/account/signup']">Sign Up</a> here.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
