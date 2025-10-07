@@ -71,28 +71,30 @@ export class Board {
             this._playerColor = PieceColor.RED;
         }
 
-        game.history.forEach((move: HistoryEntry) => {
-            let [from_square, to_square] = this.getMoveSquaresById(move.from_, move.to_);
+        if (!!game.history) {
+            game.history.forEach((move: HistoryEntry) => {
+                let [from_square, to_square] = this.getMoveSquaresById(move.from_, move.to_);
 
-            if (!from_square || !to_square) {
-                console.error(`Invalid move: from ${move.from_} or to ${move.to_} not found on the board.`);
-            } else {
-                switch (move.event_type) {
-                    case ActionType.MOVE:
-                        this.move_piece(from_square, to_square, move.player_id);
-                        this.recordAction(new Action(ActionType.MOVE, to_square.id, move.player_id));
-                        break;
-                    case ActionType.CAPTURE:
-                        this.capture_piece(to_square, move.player_id);
-                        this.recordAction(new Action(ActionType.CAPTURE, to_square.id, move.player_id));
-                        break;
-                    case ActionType.PROMOTE:
-                        this.promote_piece(to_square, move.player_id);
-                        this.recordAction(new Action(ActionType.PROMOTE, to_square.id, move.player_id));
-                        break;
+                if (!from_square || !to_square) {
+                    console.error(`Invalid move: from ${move.from_} or to ${move.to_} not found on the board.`);
+                } else {
+                    switch (move.event_type) {
+                        case ActionType.MOVE:
+                            this.move_piece(from_square, to_square, move.player_id);
+                            this.recordAction(new Action(ActionType.MOVE, to_square.id, move.player_id));
+                            break;
+                        case ActionType.CAPTURE:
+                            this.capture_piece(to_square, move.player_id);
+                            this.recordAction(new Action(ActionType.CAPTURE, to_square.id, move.player_id));
+                            break;
+                        case ActionType.PROMOTE:
+                            this.promote_piece(to_square, move.player_id);
+                            this.recordAction(new Action(ActionType.PROMOTE, to_square.id, move.player_id));
+                            break;
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     public replay(pdn: string, captured: string[], player_id: string) {

@@ -39,9 +39,13 @@
                 </td>
             </tr>
         </table>
-        <div>
+        <div *ngIf="(player$ | async)?.is_guest == true">
             <hr />
             <button class="button-31" role="button" (click)="logIn()">Log In</button> <button class="button-31" role="button" (click)="signUp()">Sign Up</button> to play online!
+        </div>
+        <div *ngIf="(player$ | async)?.is_guest == false">
+            <hr />
+            Welcome, <b>{{ (player$ | async)?.displayName }}</b> <button class="button-31" role="button" (click)="logOut()">Log Out</button>
         </div>
     </div>
     <div *ngIf="gameMenu" class="right-side">

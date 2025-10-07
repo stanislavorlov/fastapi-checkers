@@ -1,3 +1,13 @@
 pip install "fastapi[all]"
 
 uvicorn main:app --reload
+
+----
+Host on the local network:
+Grep local IP address:
+ifconfig | grep inet
+
+uvicorn main:app --host 0.0.0.0 --port 8000
+
+Angular app:
+ng serve --host 0.0.0.0 --port 4200

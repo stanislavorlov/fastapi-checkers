@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { UserService } from '../../services/user.service';
 
 @Component({
@@ -12,6 +12,7 @@ import { UserService } from '../../services/user.service';
 })
 export class LoginComponent {
   loginForm: FormGroup;
+  private readonly router = inject(Router);
 
   constructor(private userService: UserService) { 
     this.loginForm = new FormGroup({
@@ -33,10 +34,10 @@ export class LoginComponent {
       console.log(`Logging in with email: ${this.loginForm.value.email} and password: ${this.loginForm.value.password}`);
       this.userService.authenticate(this.loginForm.value.email, this.loginForm.value.password).subscribe({
         next: (token) => {
-          console.log('Login successful:', token);
+          this.router.navigate(['/']);
         },
         error: (error) => {
-          console.error('Login failed:', error);
+          alert('Login failed: ' + error);
         }
       });
     } else {

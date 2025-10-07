@@ -2,34 +2,35 @@ import { Injectable } from '@angular/core';
 import { LocalStorageService } from './local-storage.service';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, firstValueFrom, Observable, tap } from 'rxjs';
-import { Player } from '../models/player';
+import { GuestPlayer, Player } from '../models/player';
 import { AccessToken } from '../models/access_token';
-import { PlayerId } from '../models/player-id';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  private playerSubject = new BehaviorSubject<Player | null>(null);
+  private playerSubject = new BehaviorSubject<Player>(new GuestPlayer());
   public player$ = this.playerSubject.asObservable();
 
   constructor(private localStorageService: LocalStorageService, private httpClient: HttpClient) {
     
   }
 
-  get currentPlayer(): Player | null {
+  get currentPlayer(): Player {
     return this.playerSubject.value;
   }
 
   async loadPlayerProfile(): Promise<void> {
     try {
-      const player = await firstValueFrom(
+      const playerData = await firstValueFrom(
         this.httpClient.get<Player>('/api/users/me')
       );
+      const player = new Player(playerData);
+      player.is_guest = false;
       this.playerSubject.next(player);
     } catch (error) {
       console.log('401 Unauthorized, using guest profile');
-      this.playerSubject.next(this.createGuestPlayer());
+      this.playerSubject.next(new GuestPlayer());
     }
   }
 
@@ -67,11 +68,5 @@ export class UserService {
 
   logout(): void {
     this.localStorageService.removeItem(LocalStorageService.JWT_ACCESS_TOKEN);
-  }
-
-  private createGuestPlayer(): Player {
-    const id = Date.now().toString();
-
-    return { player_id: PlayerId.generate().id, username: `Guest${id}`, first_name: '', last_name: '', country: '' };
   }
 }

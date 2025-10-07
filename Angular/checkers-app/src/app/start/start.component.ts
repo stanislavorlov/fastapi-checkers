@@ -1,14 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CheckersService } from '../services/checkers.service';
 import { Router } from '@angular/router';
 import { ApiResult } from '../models/api-result';
-import { NgIf } from '@angular/common';
+import { AsyncPipe, NgIf } from '@angular/common';
 import { NewGameFactory } from '../models/new-game-factory';
 import { UserService } from '../services/user.service';
 
 @Component({
   selector: 'app-start',
-  imports: [NgIf],
+  imports: [NgIf, AsyncPipe],
   templateUrl: './start.component.html',
   styleUrl: './start.component.css'
 })
@@ -16,8 +16,10 @@ export class StartComponent {
   gameMode?: 'single' | 'multi' | 'online' | null;
   singleSide?: 'red' | 'black' | null;
   gameMenu: boolean;
+  private userService: UserService = inject(UserService);
+  player$ = this.userService.player$;
 
-  constructor(private checkersService: CheckersService, private userService: UserService, private router: Router) {
+  constructor(private checkersService: CheckersService, private router: Router) {
     this.gameMode = null;
     this.gameMenu = true;
   }
@@ -52,6 +54,13 @@ export class StartComponent {
 
   signUp(): void {
     this.router.navigate(['/account/signup'], { queryParams: {} });
+  }
+
+  logOut(): void {
+    this.userService.logout();
+    this.gameMode = null;
+    this.singleSide = null;
+    this.router.navigate(['/'], { queryParams: {} });
   }
 
   backMenu(): void {
