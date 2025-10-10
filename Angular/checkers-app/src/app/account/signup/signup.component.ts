@@ -27,7 +27,8 @@ export class SignupComponent {
     this.signupForm = new FormGroup({
       email: new FormControl('', [Validators.required, Validators.email]),
       password: new FormControl('', [Validators.required, Validators.minLength(6)]),
-      confirmPassword: new FormControl('', [Validators.required])
+      confirmPassword: new FormControl('', [Validators.required]),
+      level: new FormControl('beginner'),
     }, { validators: this.passwordMatchValidator });
   }
 
@@ -45,8 +46,11 @@ export class SignupComponent {
 
   signup(): void {
     if (this.signupForm.valid) {
-      console.log(`Signing up with email: ${this.signupForm.value.email} and password: ${this.signupForm.value.password}`);
-      this.userService.register(this.signupForm.value.email, this.signupForm.value.password).subscribe({
+      console.log(`Signing up with email: ${this.signupForm.value.email} and password: ${this.signupForm.value.password} with level: ${this.signupForm.value.level}`);
+      this.userService.register(
+        this.signupForm.value.email, 
+        this.signupForm.value.password, 
+        this.signupForm.value.level).subscribe({
         next: (response) => {
           console.log('Signup successful:', response);
         },

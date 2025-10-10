@@ -156,7 +156,7 @@ class Glicko2:
 class QueueEntry:
     player_id: str
     rating: float = 1500.0
-    rd: Optional[float] = None          # Glicko RD if you use it
+    rd: Optional[float] = None          # Glicko rating deviation if you use it
     region: str = "global"
     ping_ms: int = 60
     join_ts: float = field(default_factory=lambda: time.time())
@@ -280,7 +280,7 @@ if __name__ == "__main__":
 
     # Enqueue 10 players with various ratings/latencies
     for i in range(10):
-        mm.enqueue(QueueEntry(
+        entry = QueueEntry(
             player_id=f"P{i}",
             rating=1500 + random.randint(-300, 300),
             rd=random.choice([None, 80, 120, 200]),
@@ -288,7 +288,9 @@ if __name__ == "__main__":
             region=random.choice(["EU", "US", "EU", "EU", "US"]),
             games_played=random.randint(0, 200),
             recent_foes=tuple(random.sample([f"P{j}" for j in range(10) if j != i], k=random.randint(0, 1)))
-        ))
+        )
+        mm.enqueue(entry)
+        print(entry)
 
     # One matchmaking tick
     pairs = mm.tick()

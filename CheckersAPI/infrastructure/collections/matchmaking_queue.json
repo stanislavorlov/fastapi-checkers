@@ -1,0 +1,12 @@
+{
+  "_id": ObjectId("..."),
+  "player_id": ObjectId("..."),
+  "region": "EU",
+  "ping_ms": 48,
+  "rating_estimate": 1925,       // snapshot for matchmaking
+  "rd": 75,                      // Glicko rating deviation
+  "mode": "standard",
+  "timestamp": ISODate("2025-10-09T12:01:00Z"),
+  "status": "waiting",           // waiting | matched | timeout
+  "matched_with": ObjectId("...") // optional when found
+}

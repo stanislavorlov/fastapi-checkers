@@ -1,6 +1,6 @@
 from typing import List, Mapping
 from pymongo.synchronous.cursor import Cursor
-from infrastructure.documents import Game, History, Player
+from infrastructure.documents import Game, History, User
 from web.models import ReadGameDto, HistoryDto
 
 
@@ -15,7 +15,7 @@ def individual_game(game : Game, history_cursor: Cursor[Mapping[str, History]]) 
         history=list_histories(history_cursor)
     )
 
-def single_player(player: Player) -> dict:
+def single_player(player: User) -> dict:
     return {
         "player_id": player['player_id'],
         "email": player['email'],

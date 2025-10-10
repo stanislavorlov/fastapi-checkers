@@ -1,28 +1,19 @@
-import { NewGame } from "./new-game";
+import { GamePlayer, NewGame } from "./new-game";
 
 export class NewGameFactory {
 
-    public static createGame(playerId: string, gameMode: 'single' | 'multi' | 'online', singleSide: 'red' | 'black' | null): NewGame {
+    public static createGame(playerId: string, anonymous: boolean, gameMode: 'single' | 'online', singleSide: 'red' | 'black' | null): NewGame {
         let newGame = new NewGame('New Game', new Date(), gameMode!);
+        let players: GamePlayer[] = [];
         
+        // with AI bot
         if (gameMode == 'single' && !!singleSide) {
-            switch (singleSide) {
-                case 'red':
-                    newGame.light_player = playerId;
-                    newGame.dark_player = 'AI';
-                    break;
-                case 'black':
-                    newGame.light_player = 'AI';
-                    newGame.dark_player = playerId;
-                    break;
-            }
-        } else if (gameMode == 'multi') {
-            newGame.light_player = playerId;
-            newGame.dark_player = playerId;
+            players.push(new GamePlayer(playerId, singleSide, true, anonymous));
         } else if (gameMode == 'online') {
-            newGame.light_player = playerId;
-            newGame.dark_player = playerId;
+            players.push(new GamePlayer(playerId, '', true, anonymous));
         }
+
+        newGame.players = players;
     
         return newGame;
     }

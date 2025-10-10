@@ -55,12 +55,13 @@ export class UserService {
     );
   }
 
-  register(email: string, password: string): Observable<any> {
+  register(email: string, password: string, level: string): Observable<any> {
     console.log('Registering user');
 
     const body = {
       email: email,
-      password: password
+      password: password,
+      level: level
     };
 
     return this.httpClient.post('/api/register', body);

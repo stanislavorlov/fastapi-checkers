@@ -30,9 +30,14 @@
                             <div *ngIf="confirmPassword?.errors?.['required']">Confirm Password is required.</div>
                             <div *ngIf="confirmPassword?.errors?.['passwordMismatch']">Passwords do not match.</div>
                         </div>
-                        <div class="text-right forget-pass">
-                            <a routerLink="/forget-password">Forget Password ?</a>
-                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Choose your level : </label>
+                        <select class="form-control" formControlName="level">
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
                     </div>
                     <div class="text-center">
                         <input type="submit" class="btn btn-my" value="Sign Up">

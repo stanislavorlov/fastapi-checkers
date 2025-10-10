@@ -13,7 +13,7 @@ import { UserService } from '../services/user.service';
   styleUrl: './start.component.css'
 })
 export class StartComponent {
-  gameMode?: 'single' | 'multi' | 'online' | null;
+  gameMode?: 'single' | 'online' | null;
   singleSide?: 'red' | 'black' | null;
   gameMenu: boolean;
   private userService: UserService = inject(UserService);
@@ -24,7 +24,7 @@ export class StartComponent {
     this.gameMenu = true;
   }
 
-  choosePlayMode(mode: 'single' | 'multi' | 'online'): void {
+  choosePlayMode(mode: 'single' | 'online'): void {
     this.gameMode = mode;
   }
 
@@ -33,13 +33,13 @@ export class StartComponent {
   }
 
   newGame(): void {
-    const playerId = this.userService.currentPlayer?.player_id || '';
-    if (!playerId) {
-      console.error('Player ID is not available.');
+    const currentPlayer = this.userService.currentPlayer;
+    if (!currentPlayer) {
+      console.error('Player data is not available.');
       return;
     }
 
-    const newGame = NewGameFactory.createGame(playerId, this.gameMode!, this.singleSide || null);
+    const newGame = NewGameFactory.createGame(currentPlayer.player_id, currentPlayer.is_guest, this.gameMode!, this.singleSide || null);
 
     this.checkersService.newGame(newGame).subscribe((game_id: ApiResult<string>) => {
       if (!!game_id) {
