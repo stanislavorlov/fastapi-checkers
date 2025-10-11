@@ -6,7 +6,7 @@
                     <h1>Game Mode</h1>
                 </li>
                 <li style="flex-direction: column">
-                    <button class="button-9" role="button" (click)="choosePlayMode('single')">Single Player (AI bot)</button>
+                    <button class="button-9" role="button" (click)="choosePlayMode('computer')">Computer (AI bot)</button>
                 </li>
                 <li style="flex-direction: column">
                     <button class="button-9" role="button" (click)="choosePlayMode('online')">Play Online</button>
@@ -14,17 +14,17 @@
             </ul>
         </div>
         <table *ngIf="gameMode">
-            <tr *ngIf="gameMode === 'single'">
+            <tr *ngIf="gameMode === 'computer'">
                 <td colspan="2">
                     <h3>Choose your side</h3>
                 </td>
             </tr>
-            <tr *ngIf="gameMode === 'single'">
+            <tr *ngIf="gameMode === 'computer'">
                 <td>
-                    <button class="button-9" role="button" style="display: inline-block;" (click)="singleModeColor('black')"><img src="./black_piece.png" alt="Black Piece" height="40" /></button>
+                    <button class="button-9" role="button" style="display: inline-block;" (click)="computerModeColor('black')"><img src="./black_piece.png" alt="Black Piece" height="40" /></button>
                 </td>
                 <td>
-                    <button class="button-9" role="button" style="display: inline-block;" (click)="singleModeColor('red')"><img src="./red_piece.png" alt="Red Piece" height="40" /></button>
+                    <button class="button-9" role="button" style="display: inline-block;" (click)="computerModeColor('red')"><img src="./red_piece.png" alt="Red Piece" height="40" /></button>
                 </td>
             </tr>
             <tr>

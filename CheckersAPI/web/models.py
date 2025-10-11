@@ -18,15 +18,14 @@ class ReadGameDto(BaseModel):
 
 class GamePlayerDto(BaseModel):
     player_id: str
-    side: str
-    requestor: bool
     anonymous: bool
 
-class WriteGameDto(BaseModel):
-    name: str
-    started: datetime
-    mode: str
-    players: list[GamePlayerDto]
+class RequestComputerGameDto(BaseModel):
+    player: GamePlayerDto
+    side: str
+
+class RequestOnlineGameDto(BaseModel):
+    player: GamePlayerDto
 
 class CreateUser(BaseModel):
     email: str

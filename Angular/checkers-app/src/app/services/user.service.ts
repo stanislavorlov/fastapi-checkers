@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { LocalStorageService } from './local-storage.service';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, firstValueFrom, Observable, tap } from 'rxjs';
+import { BehaviorSubject, first, firstValueFrom, Observable, tap } from 'rxjs';
 import { GuestPlayer, Player } from '../models/player';
 import { AccessToken } from '../models/access_token';
 
@@ -21,6 +21,8 @@ export class UserService {
   }
 
   async loadPlayerProfile(): Promise<void> {
+    console.log('Loading player profile');
+
     try {
       const playerData = await firstValueFrom(
         this.httpClient.get<Player>('/api/users/me')
@@ -33,6 +35,32 @@ export class UserService {
       this.playerSubject.next(new GuestPlayer());
     }
   }
+
+  async init(): Promise<void> {
+    let token = this.localStorageService.getItem(LocalStorageService.JWT_ACCESS_TOKEN);
+    if (!token) {
+      console.log('No token found, authenticating as guest');
+      const token = await firstValueFrom(
+        this.httpClient.post<AccessToken>('/api/guest-token', {})
+      );
+      this.localStorageService.setItem(LocalStorageService.JWT_ACCESS_TOKEN, token.access_token);
+    }
+
+    await this.loadPlayerProfile();
+  }
+
+  /*async authenticateGuest(): Promise<void> {
+    console.log('Authenticating as guest');
+
+    this.httpClient.post<AccessToken>(
+      '/api/users/guest-token', {}
+    ).pipe(
+      tap((token) => {
+        console.log('Storing guest token in local storage');
+        this.localStorageService.setItem(LocalStorageService.JWT_ACCESS_TOKEN, token.access_token);
+      })
+    );
+  }*/
 
   authenticate(email: string, password: string): Observable<AccessToken> {
     console.log('Authenticating user:', email);

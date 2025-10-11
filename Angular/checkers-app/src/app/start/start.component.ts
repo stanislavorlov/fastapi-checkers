@@ -3,7 +3,7 @@ import { CheckersService } from '../services/checkers.service';
 import { Router } from '@angular/router';
 import { ApiResult } from '../models/api-result';
 import { AsyncPipe, NgIf } from '@angular/common';
-import { NewGameFactory } from '../models/new-game-factory';
+//import { NewGameFactory } from '../models/new-game-factory';
 import { UserService } from '../services/user.service';
 
 @Component({
@@ -13,7 +13,7 @@ import { UserService } from '../services/user.service';
   styleUrl: './start.component.css'
 })
 export class StartComponent {
-  gameMode?: 'single' | 'online' | null;
+  gameMode?: 'computer' | 'online' | null;
   singleSide?: 'red' | 'black' | null;
   gameMenu: boolean;
   private userService: UserService = inject(UserService);
@@ -24,11 +24,11 @@ export class StartComponent {
     this.gameMenu = true;
   }
 
-  choosePlayMode(mode: 'single' | 'online'): void {
+  choosePlayMode(mode: 'computer' | 'online'): void {
     this.gameMode = mode;
   }
 
-  singleModeColor(color: 'red' | 'black'): void {
+  computerModeColor(color: 'red' | 'black'): void {
     this.singleSide = color;
   }
 
@@ -39,13 +39,35 @@ export class StartComponent {
       return;
     }
 
-    const newGame = NewGameFactory.createGame(currentPlayer.player_id, currentPlayer.is_guest, this.gameMode!, this.singleSide || null);
+    //const newGame = NewGameFactory.createGame(currentPlayer.player_id, currentPlayer.is_guest, this.gameMode!, this.singleSide || null);
 
-    this.checkersService.newGame(newGame).subscribe((game_id: ApiResult<string>) => {
-      if (!!game_id) {
-        this.router.navigate(['/', game_id], { queryParams: {} });
-      }
-    });
+    switch (this.gameMode) {
+      case 'computer':
+
+        this.checkersService.requestComputerGame().subscribe({
+          next: (game_id: ApiResult<string>) => {
+            if (!!game_id) {
+              this.router.navigate(['/', game_id], { queryParams: {} });
+            }
+          }
+        });
+      
+        break;
+      case 'online':
+
+        this.checkersService.requestOnlineGame().subscribe({
+          next: (game_id: ApiResult<string>) => {
+            if (!!game_id) {
+              this.router.navigate(['/', game_id], { queryParams: {} });
+            }
+          }
+        });
+
+        break;
+      default:
+        console.error('Invalid game mode selected.');
+        return;
+    }
   }
 
   logIn(): void {

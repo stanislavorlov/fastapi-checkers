@@ -12,8 +12,12 @@ export class CheckersService {
   constructor(private httpClient: HttpClient) {
   }
 
-  newGame(newGame: NewGame) {
-    return this.httpClient.post<ApiResult<string>>('/api/games', newGame);
+  requestOnlineGame() {
+    return this.httpClient.post<ApiResult<string>>('/api/games/online', {});
+  }
+
+  requestComputerGame() {
+    return this.httpClient.post<ApiResult<string>>('/api/games/computer', {});
   }
 
   loadGame(gameId: string) {

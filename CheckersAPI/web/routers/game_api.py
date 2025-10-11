@@ -1,8 +1,11 @@
+from typing import Annotated
 from bson import ObjectId
+from fastapi import APIRouter, Depends
 from infrastructure.database import game_collection, history_collection, user_collection, match_collection
+from infrastructure.documents import User
 from infrastructure.schemas import list_games, individual_game
-from web.models import WriteGameDto
-from fastapi import APIRouter, HTTPException
+from web.models import RequestComputerGameDto, RequestOnlineGameDto
+from web.user_helper import get_current_user
 
 router = APIRouter(
     prefix="/api/games",
@@ -25,50 +28,48 @@ async def get_game(game_id: str):
     except Exception as e:
         return str(e)
 
-@router.post("/online/new")
-async def request_game():
-    pass
+@router.post("/online")
+async def request_online_game(
+        request_dto: RequestOnlineGameDto,
+        current_user: Annotated[User, Depends(get_current_user)]):
+    # ToDo: player request a game
+    # System starts MatchMaking algorithm
+    # Once found, player receives a notification and after than game is created
+
+    # ToDo: player should be authenticated with anonymous token by default
+    match_collection.insert_one()
+
+    # MongoDB change stream
+
+    def watch_changes():
+        pipeline = [{"$match": {"operationType": "insert"}}]
+        with game_collection.watch(pipeline, full_document="updateLookup") as stream:
+            print("Change stream started")
+            for change in stream:
+                doc = change["fullDocument"]
+                message = {}
+
+                # ToDo: broadcast message via WebSockets
+
+    # ToDo: should be run in a separate thread in main -> lifespan
+    # thread = Thread(target=watch_changes, daemon=True)
+    # thread.start()
 
 @router.post("/computer")
-async def post_game(game_dto: WriteGameDto):
-    # If single mode, then create a new game collection
-    # If online mode, enqueue matchmaking and notify via WebSockets
-
+async def request_computer_game(
+        request_dto: RequestComputerGameDto,
+        current_user: Annotated[User, Depends(get_current_user)]):
     game = dict(game_dto)
 
-    if game_dto.mode == 'single':
-        player = game_dto.players[0]
+    # ToDo: player should be authenticated with anonymous token by default
+    player = game_dto.players[0]
 
-        inserted = game_collection.insert_one(game)
+    inserted = game_collection.insert_one(game)
 
-        upsert_player(game_dto.dark_player)
-        upsert_player(game_dto.light_player)
+    upsert_player(game_dto.dark_player)
+    upsert_player(game_dto.light_player)
 
-        return str(inserted.inserted_id)
-    else:
-        # ToDo: player request a game
-        # System starts MatchMaking algorithm
-        # Once found, player receives a notification and after than game is created
-
-        match_collection.insert_one()
-
-        # MongoDB change stream
-
-        def watch_changes():
-            pipeline = [{"$match": {"operationType":"insert"}}]
-            with game_collection.watch(pipeline, full_document="updateLookup") as stream:
-                print("Change stream started")
-                for change in stream:
-                    doc = change["fullDocument"]
-                    message = {}
-
-                    # ToDo: broadcast message via WebSockets
-
-        # ToDo: should be run in a separate thread in main -> lifespan
-        #thread = Thread(target=watch_changes, daemon=True)
-        #thread.start()
-
-        pass
+    return str(inserted.inserted_id)
 
 def upsert_player(player_id: str):
     if player_id != "AI":

@@ -17,7 +17,7 @@ export class AppComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    await this.userService.loadPlayerProfile();
+    //await this.userService.loadPlayerProfile();
   }
 
   backMenu(): void {

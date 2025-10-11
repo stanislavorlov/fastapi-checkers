@@ -1,4 +1,4 @@
-import { GamePlayer, NewGame } from "./new-game";
+/*import { GamePlayer, NewGame } from "./new-game";
 
 export class NewGameFactory {
 
@@ -17,4 +17,4 @@ export class NewGameFactory {
     
         return newGame;
     }
-}
+}*/
