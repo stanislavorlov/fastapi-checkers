@@ -1,0 +1,2 @@
+class AggregateRoot:
+    pass

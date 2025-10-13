@@ -2,7 +2,7 @@ import json
 from domain.board_factory import BoardFactory
 from domain.pdn_move import PdnMove
 from infrastructure.database import history_collection
-from infrastructure.documents import History
+from infrastructure.documents import HistorySchema
 from infrastructure.connnection_manager import ConnectionManager
 
 
@@ -21,7 +21,7 @@ class EventHandler:
         board = BoardFactory.create(histories)
 
         if board.apply_move(pdn_move):
-            history = History(
+            history = HistorySchema(
                 game_id=self.game_id,
                 player_id=player_id,
                 move=pdn_move.as_string,

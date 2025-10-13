@@ -1,13 +1,13 @@
 from domain.board import Board
 from domain.board_history import BoardHistory
 from domain.history_entry import HistoryEntry
-from infrastructure.documents import History
+from infrastructure.documents import HistorySchema
 
 
 class BoardFactory:
 
     @staticmethod
-    def create(histories: list[History]) -> Board:
+    def create(histories: list[HistorySchema]) -> Board:
         history_entries: list[HistoryEntry] = []
         for history in histories:
             history_entries.append(HistoryEntry(

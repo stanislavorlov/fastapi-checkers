@@ -1,26 +1,33 @@
-import datetime
+from datetime import datetime, timezone
 from typing import Optional
-from pydantic import BaseModel
+from bson import ObjectId
+from pydantic import BaseModel, Field
 
-class User(BaseModel):
+
+class UserSchema(BaseModel):
     user_id: str
+    player_id: str
     email: str
     password_hash: str
     first_name: Optional[str]
     last_name: Optional[str]
     country: Optional[str]
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class GlickoRank(BaseModel):
-    rating: int
-    rd: int
-    vol: float
+class UserSessionSchema(BaseModel):
+    is_anonymous: bool
+    token: str
+    user_id: str
+    host: str
+    agent: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class PlayerRank(BaseModel):
-    elo: int
-    glicko: GlickoRank
-    last_update: datetime.datetime
+class PlayerRankSchema(BaseModel):
+    rating: int             # ~1000–3000
+    deviation: int          # 30–350, how uncertain we are about a player’s rating, more games -> bigger, less - slower
+    last_update: datetime
 
-class PlayerStats(BaseModel):
+class PlayerStatsSchema(BaseModel):
     games_played: int
     wins: int
     losses: int
@@ -28,42 +35,47 @@ class PlayerStats(BaseModel):
     win_rate: float
     streak: int
 
-class Player(BaseModel):
-    user_id: Optional[str]
+class PlayerSchema(BaseModel):
+    nickname: Optional[str] = None
+    region: str
+    rank_id: str
+    stats_id: str
     is_anonymous: bool
-    region: str         # EU
-    rank: PlayerRank
-    stats: PlayerStats
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class MatchingQueue(BaseModel):
+    model_config = {
+        "arbitrary_types_allowed": True,
+        "json_encoders": {ObjectId: str}
+    }
+
+class MatchingQueueSchema(BaseModel):
     player_id: str
     region: str
     rating_estimate: int
     rd: int
-    timestamp: datetime.datetime
+    timestamp: datetime
     status: str             # waiting | matched | timeout
     matched_with: Optional[str]  # optional when found
 
-class GamePlayer(BaseModel):
+class GamePlayerSchema(BaseModel):
     player_id: str
     side: str
-    #requestor: bool
 
-class GameResult(BaseModel):
+class GameResultSchema(BaseModel):
     winner_id: Optional[str] = None
     reason: str     # resignation | capture | draw
 
-class Game(BaseModel):
+class GameSchema(BaseModel):
     name: str
     region: str
-    created_at: datetime.datetime
-    started_at: Optional[datetime.datetime]
-    finished_at: Optional[datetime.datetime]
-    result: GameResult
+    created_at: datetime
+    started_at: Optional[datetime]
+    finished_at: Optional[datetime]
+    result: GameResultSchema
     mode: str
-    players: list[GamePlayer]
+    players: list[GamePlayerSchema]
 
-class History(BaseModel):
+class HistorySchema(BaseModel):
     game_id: str
     move: str
     captures: list[str]

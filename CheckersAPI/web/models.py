@@ -27,7 +27,7 @@ class RequestComputerGameDto(BaseModel):
 class RequestOnlineGameDto(BaseModel):
     player: GamePlayerDto
 
-class CreateUser(BaseModel):
+class CreateUserDto(BaseModel):
     email: str
     password: str
     level: str
@@ -39,3 +39,11 @@ class AccessTokenData(BaseModel):
     sub: str
     preferred_username: str
     name: str
+
+class PlayerUserDto(BaseModel):
+    player_id: str
+    email: str
+    first_name: str
+    last_name: str
+    country: str
+    anonymous: bool

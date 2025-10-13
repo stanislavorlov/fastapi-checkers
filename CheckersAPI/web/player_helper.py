@@ -1,4 +1,5 @@
-from infrastructure.documents import PlayerStats
+from datetime import datetime
+from infrastructure.documents import PlayerStatsSchema, PlayerRankSchema
 
 
 def detect_region(country: str):
@@ -10,19 +11,19 @@ def detect_region(country: str):
         case _:
             return "Global"
 
-def initial_rank(level: str) -> int:
-    match level:
-        case "beginner":
-            return 400
-        case "intermediate":
-            return 800
-        case "advanced":
-            return 1200
-
-    return 800
+# def initial_rank(level: str) -> PlayerRankSchema:
+#     match level:
+#         case "beginner":
+#             return PlayerRankSchema(rating=400, deviation=0, last_update=datetime.now())
+#         case "intermediate":
+#             return PlayerRankSchema(rating=800, deviation=0, last_update=datetime.now())
+#         case "advanced":
+#             return PlayerRankSchema(rating=1200, deviation=0, last_update=datetime.now())
+#
+#     return PlayerRankSchema(rating=800, deviation=0, last_update=datetime.now())
 
 def initial_stats():
-    return PlayerStats(
+    return PlayerStatsSchema(
             games_played=0,
             wins=0,
             losses=0,

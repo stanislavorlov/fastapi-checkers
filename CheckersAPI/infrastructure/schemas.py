@@ -1,10 +1,10 @@
 from typing import List, Mapping
 from pymongo.synchronous.cursor import Cursor
-from infrastructure.documents import Game, History, User
-from web.models import ReadGameDto, HistoryDto
+from infrastructure.documents import GameSchema, HistorySchema, UserSchema
+from web.models import ReadGameDto, HistoryDto, PlayerUserDto
 
 
-def individual_game(game : Game, history_cursor: Cursor[Mapping[str, History]]) -> ReadGameDto:
+def individual_game(game : GameSchema, history_cursor: Cursor[Mapping[str, HistorySchema]]) -> ReadGameDto:
     return ReadGameDto(
         name=game['name'],
         started=game['started'],
@@ -15,19 +15,30 @@ def individual_game(game : Game, history_cursor: Cursor[Mapping[str, History]]) 
         history=list_histories(history_cursor)
     )
 
-def single_player(player: User) -> dict:
-    return {
-        "player_id": player['player_id'],
-        "email": player['email'],
-        "first_name": player['first_name'],
-        "last_name": player['last_name'],
-        "country": player['country'],
-    }
+def single_player(player: UserSchema) -> PlayerUserDto:
+    return PlayerUserDto(
+        player_id=player['player_id'],
+        email=player['email'],
+        first_name=player['first_name'],
+        last_name=player['last_name'],
+        country=player['country'],
+        anonymous=False
+    )
 
-def list_games(games : List[Game]) -> list[ReadGameDto]:
+def guest_player(guest_id) -> PlayerUserDto:
+    return PlayerUserDto(
+        player_id=guest_id,
+        email='',
+        first_name='Guest',
+        last_name='Guest',
+        country='',
+        anonymous=True
+    )
+
+def list_games(games : List[GameSchema]) -> list[ReadGameDto]:
     return [individual_game(game, []) for game in games]
 
-def individual_history(history: History) -> HistoryDto:
+def individual_history(history: HistorySchema) -> HistoryDto:
     return HistoryDto(
         player_id=history.player_id,
         move=history['move'],
@@ -35,7 +46,7 @@ def individual_history(history: History) -> HistoryDto:
         captures=history['captures'],
     )
 
-def list_histories(histories : List[History]) -> list[HistoryDto]:
+def list_histories(histories : List[HistorySchema]) -> list[HistoryDto]:
     history_dtos : list[HistoryDto] = []
     for history in histories:
         history_dtos.append(individual_history(history))
