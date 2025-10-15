@@ -28,7 +28,10 @@ class PlayerService:
                 player_stats_schema = PlayerStatsSchema.model_validate(domain_player.player_stats.__dict__)
                 stats_inserted = stats_collection.insert_one(dict(player_stats_schema))
 
-                player_schema = pm.domain_to_schema(domain_player, str(rank_inserted.inserted_id), str(stats_inserted.inserted_id))
+                player_schema = pm.domain_to_schema(
+                    domain_player,
+                    str(rank_inserted.inserted_id),
+                    str(stats_inserted.inserted_id))
                 player_insert_result = player_collection.insert_one(player_schema.model_dump())
 
                 user_schema = um.domain_to_schema(domain_user, str(player_insert_result.inserted_id))
