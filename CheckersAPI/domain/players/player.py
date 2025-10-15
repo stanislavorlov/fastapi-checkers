@@ -12,7 +12,7 @@ class Player(Entity):
     player_stats: PlayerStats
     nickname: str
     region: Region
-    anonymous: bool
+    is_anonymous: bool
 
     @staticmethod
     def create(rank: Rank, nickname: str, region: Region) -> 'Player':
@@ -21,7 +21,7 @@ class Player(Entity):
             nickname=nickname,
             region=region,
             player_stats=PlayerStats.create_empty(),
-            anonymous=False,
+            is_anonymous=False,
         )
 
     @staticmethod
@@ -31,5 +31,5 @@ class Player(Entity):
             nickname=FullName(FirstName.create(), LastName.create()),
             region=Region.global_(),
             player_stats=PlayerStats.create_empty(),
-            anonymous=True,
+            is_anonymous=True,
         )

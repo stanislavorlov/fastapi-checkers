@@ -2,7 +2,7 @@ from typing import Annotated
 from bson import ObjectId
 from fastapi import APIRouter, Depends
 from infrastructure.database import game_collection, history_collection, user_collection, match_collection
-from infrastructure.documents import User
+from infrastructure.documents import UserSchema
 from infrastructure.schemas import list_games, individual_game
 from web.models import RequestComputerGameDto, RequestOnlineGameDto
 from web.user_helper import get_current_user
@@ -31,7 +31,7 @@ async def get_game(game_id: str):
 @router.post("/online")
 async def request_online_game(
         request_dto: RequestOnlineGameDto,
-        current_user: Annotated[User, Depends(get_current_user)]):
+        current_user: Annotated[UserSchema, Depends(get_current_user)]):
     # ToDo: player request a game
     # System starts MatchMaking algorithm
     # Once found, player receives a notification and after than game is created
@@ -58,7 +58,7 @@ async def request_online_game(
 @router.post("/computer")
 async def request_computer_game(
         request_dto: RequestComputerGameDto,
-        current_user: Annotated[User, Depends(get_current_user)]):
+        current_user: Annotated[UserSchema, Depends(get_current_user)]):
     game = dict(game_dto)
 
     # ToDo: player should be authenticated with anonymous token by default
