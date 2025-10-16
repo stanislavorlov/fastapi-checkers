@@ -1,7 +1,6 @@
 import secrets
 import string
 from datetime import timedelta, datetime, timezone
-from typing import Annotated
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -9,8 +8,9 @@ from jwt import InvalidTokenError
 from pwdlib import PasswordHash
 from infrastructure.config import ACCESS_TOKEN_EXPIRE_MINUTES, ISSUER, AUDIENCE, SECRET_KEY, ALGORITHM
 from infrastructure.database import user_collection
-from infrastructure.schemas import single_player
-from web.models import AccessTokenData, RequestComputerGameDto
+from infrastructure.documents import UserSchema
+from infrastructure.schemas import single_user, guest_user
+from web.models import AccessTokenData
 
 password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/token")
@@ -76,25 +76,62 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         if user_type == "guest":
             guest_random_id = nanoid(10)
 
-            return {
-                "player_id": guest_random_id,
-                "email": '',
-                "first_name": f"Guest{guest_random_id}",
-                "last_name": '',
-                "country": '',
-            }
+            return guest_user(guest_random_id)
 
         if user_id is None:
+            print('User ID is None')
+
             raise credentials_exception
 
     except InvalidTokenError:
+        print('Invalid token')
+
         raise credentials_exception
 
     if user_type == "user":
-        player_dict = user_collection.find_one({"user_id": user_id})
-        if player_dict is None:
+        user_dict = user_collection.find_one({"user_id": user_id})
+        if user_dict is None:
+            print('user not found')
+
             raise credentials_exception
 
-        return single_player(player_dict)
+        pipeline = [
+            {"$match": {"user_id": user_id}},
+            {
+                "$lookup": {
+                    "from": "players",  # collection to join
+                    "let": {"pid": {"$toObjectId": "$player_id"}},  # convert string → ObjectId
+                    "pipeline": [
+                        {"$match": {"$expr": {"$eq": ["$_id", "$$pid"]}}}
+                    ],
+                    "as": "player"  # output field name
+                }
+            },
+            {
+                "$unwind": "$player"  # optional: flatten list of joined players
+            }
+        ]
+
+        # if current_user.disabled:
+        #    raise HTTPException(status_code=400, detail="Inactive user")
+
+        result = list(user_collection.aggregate(pipeline))
+
+        if not len(result):
+
+            raise credentials_exception
+
+        result_cursor = result[0]
+
+        return {
+            'user_id': str(result_cursor['user_id']),
+            'player_id': str(result_cursor['player_id']),
+            'first_name': result_cursor.get('first_name') or '',
+            'last_name': result_cursor.get('last_name') or '',
+            'email': result_cursor.get('email') or '',
+            'nickname': result_cursor['player']['nickname'] or '',
+            'region': result_cursor['player']['region'] or '',
+            'country': result_cursor.get('country') or '',
+        }
 
     return None # to do Guest
