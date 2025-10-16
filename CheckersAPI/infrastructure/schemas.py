@@ -15,15 +15,17 @@ def individual_game(game : GameSchema, history_cursor: Cursor[Mapping[str, Histo
         history=list_histories(history_cursor)
     )
 
-def single_user(player: UserSchema) -> PlayerUserDto:
-    return PlayerUserDto(
-        player_id=player['player_id'],
-        email=player['email'],
-        first_name=player.get('first_name') or '',
-        last_name=player.get('last_name') or '',
-        country=player.get('country') or '',
-        anonymous=False
-    )
+def user_profile(pipeline_result):
+    return {
+        'user_id': str(pipeline_result['user_id']),
+        'player_id': str(pipeline_result['player_id']),
+        'first_name': pipeline_result.get('first_name') or '',
+        'last_name': pipeline_result.get('last_name') or '',
+        'email': pipeline_result.get('email') or '',
+        'nickname': pipeline_result['player']['nickname'] or '',
+        'region': pipeline_result['player']['region'] or '',
+        'country': pipeline_result.get('country') or '',
+    }
 
 def guest_user(guest_id) -> PlayerUserDto:
     return PlayerUserDto(

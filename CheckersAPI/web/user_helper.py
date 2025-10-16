@@ -8,8 +8,7 @@ from jwt import InvalidTokenError
 from pwdlib import PasswordHash
 from infrastructure.config import ACCESS_TOKEN_EXPIRE_MINUTES, ISSUER, AUDIENCE, SECRET_KEY, ALGORITHM
 from infrastructure.database import user_collection
-from infrastructure.documents import UserSchema
-from infrastructure.schemas import single_user, guest_user
+from infrastructure.schemas import guest_user, user_profile
 from web.models import AccessTokenData
 
 password_hash = PasswordHash.recommended()
@@ -118,20 +117,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         result = list(user_collection.aggregate(pipeline))
 
         if not len(result):
-
             raise credentials_exception
 
-        result_cursor = result[0]
-
-        return {
-            'user_id': str(result_cursor['user_id']),
-            'player_id': str(result_cursor['player_id']),
-            'first_name': result_cursor.get('first_name') or '',
-            'last_name': result_cursor.get('last_name') or '',
-            'email': result_cursor.get('email') or '',
-            'nickname': result_cursor['player']['nickname'] or '',
-            'region': result_cursor['player']['region'] or '',
-            'country': result_cursor.get('country') or '',
-        }
+        return user_profile(result[0])
 
     return None # to do Guest
