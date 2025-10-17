@@ -7,8 +7,8 @@ from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 from pwdlib import PasswordHash
 from infrastructure.config import ACCESS_TOKEN_EXPIRE_MINUTES, ISSUER, AUDIENCE, SECRET_KEY, ALGORITHM
-from infrastructure.database import user_collection
-from infrastructure.schemas import guest_user, user_profile
+from infrastructure.repositories.user_repository import UserRepository
+from infrastructure.schemas import guest_user
 from web.models import AccessTokenData
 
 password_hash = PasswordHash.recommended()
@@ -27,7 +27,7 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_hash.verify(plain_password, hashed_password)
 
-def create_access_token(data: AccessTokenData, token_type: str = "user", expires_delta: timedelta | None = None):
+def create_access_token(data: AccessTokenData, expires_delta: timedelta | None = None):
     """
     Method creates an access token
     iss - Issuer claim containing StringOrURI value
@@ -49,11 +49,26 @@ def create_access_token(data: AccessTokenData, token_type: str = "user", expires
     to_encode.update({"exp": expire})
     to_encode.update({"iss": ISSUER})
     to_encode.update({"aud": AUDIENCE})
-    to_encode.update({"type": token_type})
+    #to_encode.update({"type": token_type})
 
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
     return encoded_jwt
+
+def decode_access_token(token: str) -> AccessTokenData:
+    payload = jwt.decode(
+        jwt=token,
+        key=SECRET_KEY,
+        audience=AUDIENCE,
+        issuer=ISSUER,
+        algorithms=[ALGORITHM])
+
+    return AccessTokenData(
+        sub=payload["sub"],
+        type=payload['type'],
+        preferred_username=payload['preferred_username'],
+        name=payload['name'],
+    )
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
@@ -62,15 +77,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(
-            jwt=token,
-            key=SECRET_KEY,
-            audience=AUDIENCE,
-            issuer=ISSUER,
-            algorithms=[ALGORITHM])
-
-        user_id = payload.get("sub")
-        user_type = payload.get("type", "user")
+        payload = decode_access_token(token)
+        user_id, user_type = payload.sub, payload.type
 
         if user_type == "guest":
             guest_random_id = nanoid(10)
@@ -82,43 +90,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
             raise credentials_exception
 
+        return UserRepository().get_user_profile(user_id)
+
     except InvalidTokenError:
         print('Invalid token')
 
         raise credentials_exception
-
-    if user_type == "user":
-        user_dict = user_collection.find_one({"user_id": user_id})
-        if user_dict is None:
-            print('user not found')
-
-            raise credentials_exception
-
-        pipeline = [
-            {"$match": {"user_id": user_id}},
-            {
-                "$lookup": {
-                    "from": "players",  # collection to join
-                    "let": {"pid": {"$toObjectId": "$player_id"}},  # convert string → ObjectId
-                    "pipeline": [
-                        {"$match": {"$expr": {"$eq": ["$_id", "$$pid"]}}}
-                    ],
-                    "as": "player"  # output field name
-                }
-            },
-            {
-                "$unwind": "$player"  # optional: flatten list of joined players
-            }
-        ]
-
-        # if current_user.disabled:
-        #    raise HTTPException(status_code=400, detail="Inactive user")
-
-        result = list(user_collection.aggregate(pipeline))
-
-        if not len(result):
-            raise credentials_exception
-
-        return user_profile(result[0])
-
-    return None # to do Guest

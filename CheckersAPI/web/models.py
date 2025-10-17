@@ -39,6 +39,7 @@ class AccessTokenData(BaseModel):
     sub: str
     preferred_username: str
     name: str
+    type: str
 
 class PlayerUserDto(BaseModel):
     player_id: str

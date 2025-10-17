@@ -15,6 +15,16 @@ def individual_game(game : GameSchema, history_cursor: Cursor[Mapping[str, Histo
         history=list_histories(history_cursor)
     )
 
+def individual_user(user_dict):
+    return {
+        'user_id': user_dict['user_id'],
+        'player_id': user_dict['player_id'],
+        'email': user_dict['email'],
+        'first_name': user_dict['first_name'],
+        'last_name': user_dict['last_name'],
+        'country': user_dict['country'],
+    }
+
 def user_profile(pipeline_result):
     return {
         'user_id': str(pipeline_result['user_id']),

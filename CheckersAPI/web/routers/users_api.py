@@ -51,8 +51,8 @@ async def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()])
             sub=user_dict['user_id'],
             name=f"{user_dict['first_name']} {user_dict['last_name']}",
             preferred_username=user_dict['email'],
-        ),
-        token_type='user'
+            type='user'
+        )
     )
 
     return {"access_token": access_token, "token_type": "bearer"}
@@ -72,9 +72,9 @@ async def guest_token():
         data=AccessTokenData(
             sub='',
             preferred_username='',
-            name=''
-        ),
-        token_type='guest'
+            name='',
+            type='guest'
+        )
     )
 
     return {"access_token": token, "token_type": "bearer"}
