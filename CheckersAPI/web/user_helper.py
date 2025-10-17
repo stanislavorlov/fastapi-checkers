@@ -9,7 +9,7 @@ from pwdlib import PasswordHash
 from infrastructure.config import ACCESS_TOKEN_EXPIRE_MINUTES, ISSUER, AUDIENCE, SECRET_KEY, ALGORITHM
 from infrastructure.repositories.user_repository import UserRepository
 from infrastructure.schemas import guest_user
-from web.models import AccessTokenData
+from web.models import AccessTokenData, AccessToken
 
 password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/token")
@@ -27,7 +27,7 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_hash.verify(plain_password, hashed_password)
 
-def create_access_token(data: AccessTokenData, expires_delta: timedelta | None = None):
+def create_access_token(user_id: str, name: str, email: str, access_type: str):
     """
     Method creates an access token
     iss - Issuer claim containing StringOrURI value
@@ -40,20 +40,19 @@ def create_access_token(data: AccessTokenData, expires_delta: timedelta | None =
     jti - unique identifier for the JWT.
     """
 
-    to_encode = data.model_dump()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    data = AccessTokenData(
+        sub=user_id,
+        name=name,
+        preferred_username=email,
+        type=access_type,
+        exp=datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        iss=ISSUER,
+        aud=AUDIENCE,
+    )
 
-    to_encode.update({"exp": expire})
-    to_encode.update({"iss": ISSUER})
-    to_encode.update({"aud": AUDIENCE})
-    #to_encode.update({"type": token_type})
+    encoded_jwt = jwt.encode(data.model_dump(), SECRET_KEY, algorithm=ALGORITHM)
 
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-    return encoded_jwt
+    return AccessToken(access_token=encoded_jwt)
 
 def decode_access_token(token: str) -> AccessTokenData:
     payload = jwt.decode(
@@ -68,6 +67,9 @@ def decode_access_token(token: str) -> AccessTokenData:
         type=payload['type'],
         preferred_username=payload['preferred_username'],
         name=payload['name'],
+        exp=payload['exp'],
+        iss=payload['iss'],
+        aud=payload['aud'],
     )
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):

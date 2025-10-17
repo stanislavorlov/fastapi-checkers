@@ -40,6 +40,9 @@ class AccessTokenData(BaseModel):
     preferred_username: str
     name: str
     type: str
+    exp: datetime
+    iss: str
+    aud: str
 
 class AccessToken(BaseModel):
     access_token: str

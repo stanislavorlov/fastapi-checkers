@@ -1,11 +1,12 @@
 import logging
 from typing import Annotated
+from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from application.services.player_service import PlayerService
 from infrastructure.database import user_collection
 from infrastructure.documents import UserSchema
-from web.models import CreateUserDto, AccessTokenData, AccessToken
+from web.models import CreateUserDto
 from web.user_helper import verify_password, create_access_token, get_current_user
 
 router = APIRouter(
@@ -46,30 +47,24 @@ async def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()])
         )
 
     access_token = create_access_token(
-        data=AccessTokenData(
-            sub=user_dict['user_id'],
-            name=f"{user_dict['first_name']} {user_dict['last_name']}",
-            preferred_username=user_dict['email'],
-            type='user'
-        )
-    )
+        user_dict['user_id'],
+        f"{user_dict['first_name']} {user_dict['last_name']}",
+        user_dict['email'],
+        'user')
 
-    #return {"access_token": access_token, "token_type": "bearer"}
-    return AccessToken(access_token=access_token)
+    return access_token
 
 @router.post("/guest-token")
 async def guest_token():
-    token = create_access_token(
-        data=AccessTokenData(
-            sub='',
-            preferred_username='',
-            name='',
-            type='guest'
-        )
-    )
+    guest_id = str(ObjectId())
 
-    #return {"access_token": token, "token_type": "bearer"}
-    return AccessToken(access_token=token)
+    token = create_access_token(
+        guest_id,
+        f'Guest Player {guest_id}',
+        f'guest_player_{guest_id}@email.com',
+        'guest')
+
+    return token
 
 # async def get_current_active_user(
 #     current_user: Annotated[User, Depends(get_current_user)],

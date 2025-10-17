@@ -4,7 +4,7 @@ from infrastructure.schemas import user_profile, individual_user
 
 class UserRepository:
 
-    def get_user_by_id(self, user_id: int):
+    def get_user_by_id(self, user_id):
         user_dict = user_collection.find_one({"user_id": user_id})
 
         return individual_user(user_dict) if user_dict else None
