@@ -41,6 +41,10 @@ class AccessTokenData(BaseModel):
     name: str
     type: str
 
+class AccessToken(BaseModel):
+    access_token: str
+    token_type: str = 'bearer'
+
 class PlayerUserDto(BaseModel):
     player_id: str
     email: str

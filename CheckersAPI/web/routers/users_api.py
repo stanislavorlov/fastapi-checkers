@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from application.services.player_service import PlayerService
 from infrastructure.database import user_collection
 from infrastructure.documents import UserSchema
-from web.models import CreateUserDto, AccessTokenData
+from web.models import CreateUserDto, AccessTokenData, AccessToken
 from web.user_helper import verify_password, create_access_token, get_current_user
 
 router = APIRouter(
@@ -39,7 +39,6 @@ async def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()])
         )
     hashed_password = user_dict['password_hash']
 
-    print('checking password')
     if not verify_password(form_data.password, hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -55,19 +54,11 @@ async def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()])
         )
     )
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    #return {"access_token": access_token, "token_type": "bearer"}
+    return AccessToken(access_token=access_token)
 
 @router.post("/guest-token")
 async def guest_token():
-    # guest_id = f"guest_{uuid.uuid4().hex[:6]}"
-    # payload = {
-    #     "sub": guest_id,
-    #     "type": "guest",
-    #     "iat": datetime.utcnow(),
-    #     "exp": datetime.utcnow() + timedelta(days=1)  # 24-hour token
-    # }
-    # token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
-
     token = create_access_token(
         data=AccessTokenData(
             sub='',
@@ -77,7 +68,8 @@ async def guest_token():
         )
     )
 
-    return {"access_token": token, "token_type": "bearer"}
+    #return {"access_token": token, "token_type": "bearer"}
+    return AccessToken(access_token=token)
 
 # async def get_current_active_user(
 #     current_user: Annotated[User, Depends(get_current_user)],
