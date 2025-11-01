@@ -10,13 +10,16 @@ class ProfileRepository:
     def __init__(self, db: MongoContext):
         self.db = db
 
-    async def create(self, profile: Profile):
-        result = await self.db.profiles.insert_one(ProfileSchema.model_dump(profile, by_alias=True))
+    def create(self, profile: Profile):
+        document = {
+            **ProfileSchema.model_dump(profile, by_alias=True),
+            "first_name" : profile.first_name.value,
+            "last_name" : profile.last_name.value,
+        }
+
+        result = self.db.profiles.insert_one(document)
 
         return str(result.inserted_id)
-        # profile_document = ProfileSchema.model_validate(profile)
-        #
-        # return profile_collection.insert_one(profile_document)
 
     async def get(self, profile_id: str) -> Optional[Profile]:
         profile_document = await self.db.profiles.find_one({"_id": ObjectId(profile_id)})
