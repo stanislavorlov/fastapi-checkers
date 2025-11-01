@@ -1,9 +1,8 @@
 import secrets
 import string
 from datetime import timedelta, datetime, timezone
-from typing import Annotated
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 from pwdlib import PasswordHash
@@ -98,7 +97,7 @@ async def get_current_user(
 
             raise credentials_exception
 
-        return await profile_repository.get(user_id)
+        return profile_repository.get(user_id)
 
     except InvalidTokenError:
         print('Invalid token')

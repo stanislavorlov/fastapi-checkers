@@ -26,7 +26,14 @@ class ProfileRepository:
         profile_document = self.db.profiles.find_one({"_id": ObjectId(profile_id)})
 
         if not profile_document is None:
-            return Profile(**profile_document)
+            return Profile(
+                _id=profile_document["_id"],
+                email=profile_document["email"],
+                first_name=FirstName(profile_document["first_name"]),
+                last_name=LastName(profile_document["last_name"]),
+                password_hash=profile_document["password_hash"],
+                username=profile_document["username"],
+            )
 
         return None
 
@@ -35,6 +42,7 @@ class ProfileRepository:
 
         if profile_document is not None:
             return Profile(
+                _id=profile_document["_id"],
                 email=profile_document["email"],
                 first_name=FirstName(profile_document["first_name"]),
                 last_name=LastName(profile_document["last_name"]),

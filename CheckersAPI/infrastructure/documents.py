@@ -2,21 +2,31 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Literal, List
 from bson import ObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, GetCoreSchemaHandler
+from pydantic_core import core_schema
 
 
 # ---------------------------
 # Custom ObjectId validator
 # ---------------------------
 class PyObjectId(ObjectId):
+    """Pydantic v2-compatible wrapper for MongoDB ObjectId."""
+
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(cls, source_type, handler: GetCoreSchemaHandler):
+        return core_schema.no_info_plain_validator_function(cls.validate)
+
     @classmethod
     def validate(cls, v):
+        if isinstance(v, ObjectId):
+            return v
         if not ObjectId.is_valid(v):
-            raise ValueError("Invalid ObjectId")
+            raise ValueError(f"Invalid ObjectId: {v}")
         return ObjectId(v)
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, schema, handler):
+        return {"type": "string", "pattern": "^[a-fA-F0-9]{24}$"}
 
 
 # ---------------------------
