@@ -1,11 +1,8 @@
-from domain.pdn_move import PdnMove
+from pydantic import BaseModel
 
 
-class HistoryEntry:
-
-    def __init__(self, player_id: str, move: PdnMove, sequence: int, captures: list[str] = None):
-        super().__init__()
-        self.player_id = player_id
-        self.move = move
-        self.sequence = sequence
-        self.captures = captures
+class HistoryEntry(BaseModel):
+    player_id: str
+    pdn_string: str
+    sequence: int
+    captures: list[str] = None

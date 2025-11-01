@@ -1,38 +1,30 @@
-import logging
 from typing import Annotated
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
-from application.services.player_service import PlayerService
-from infrastructure.database import user_collection
-from infrastructure.documents import UserSchema
-from web.models import CreateUserDto
-from web.user_helper import verify_password, create_access_token, get_current_user
+from domain.profile.profile import Profile
+from infrastructure.repositories.profile_repository import ProfileRepository
+from web.dependencies import get_profile_repository
+from web.token_helper import verify_password, create_access_token, get_current_user, oauth2_scheme
+from web.web_helper import parse_accept_language
 
 router = APIRouter(
     prefix="/api",
-    tags=["users"],
+    tags=["sessions"],
 )
 
-logger = logging.getLogger("checkers_app")
-
-@router.post("/register")
-async def register_user(create_user: CreateUserDto):
-    try:
-        PlayerService.register_user(create_user)
-
-        return {"status": "ok"}
-    except Exception as e:
-        print(e)
-        logger.exception("error occurred during registration", exc_info=e)
-
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
-
 @router.post("/token")
-async def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    user_dict = user_collection.find_one({"email": form_data.username})
+async def login(
+    request: Request,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+):
+    client_host = request.client.host
+    accept_language = request.headers.get("accept-language", "")
+
+    # Parse and get the top preferred language
+    create_account.language = parse_accept_language(accept_language)  # "en"
+
+    user_dict = account_collection.find_one({"email": form_data.username})
     if not user_dict:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -46,6 +38,9 @@ async def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()])
             detail="Incorrect email or password"
         )
 
+    # ToDo: SessionService -> create session
+
+    # ToDo: store token in database
     access_token = create_access_token(
         user_dict['user_id'],
         f"{user_dict['first_name']} {user_dict['last_name']}",
@@ -58,6 +53,9 @@ async def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()])
 async def guest_token():
     guest_id = str(ObjectId())
 
+    # ToDo: SessionService -> create session
+
+    # ToDo:  use domain logic for this
     token = create_access_token(
         guest_id,
         f'Guest Player {guest_id}',
@@ -74,9 +72,10 @@ async def guest_token():
 
 @router.get("/users/me")
 async def read_users_me(
-    current_user: Annotated[UserSchema, Depends(get_current_user)]
+    token: str = Depends(oauth2_scheme),
+    profile_repo: ProfileRepository = Depends(get_profile_repository)
 ):
-    return current_user
+    return await get_current_user(token=token, profile_repository=profile_repo)
 
 # @router.get("/users/ip")
 # def get_current_user_ip(request: Request):

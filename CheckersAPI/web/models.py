@@ -27,13 +27,14 @@ class RequestComputerGameDto(BaseModel):
 class RequestOnlineGameDto(BaseModel):
     player: GamePlayerDto
 
-class CreateUserDto(BaseModel):
+class CreateAccountDto(BaseModel):
     email: str
     password: str
     level: str
     first_name: str | None = None
     last_name: str | None = None
     country: str | None = None
+    language: str | None = None
 
 class AccessTokenData(BaseModel):
     sub: str

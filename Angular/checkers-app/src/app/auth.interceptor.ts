@@ -6,7 +6,7 @@ import { tap } from 'rxjs';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authToken = inject(LocalStorageService).getItem(LocalStorageService.JWT_ACCESS_TOKEN);
 
-  if (!!authToken) {
+  if (!!authToken && !(req.url.includes('/api/token') || req.url.includes('/api/guest-token'))) {
     const newReq = req.clone({
       setHeaders: {
         Authorization: authToken ? `Bearer ${authToken}` : '',

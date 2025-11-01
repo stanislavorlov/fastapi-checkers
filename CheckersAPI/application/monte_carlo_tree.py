@@ -4,7 +4,7 @@ from typing import Dict
 import numpy as np
 
 from application.tansor_helper import TensorHelper
-from domain.board import Board
+from domain.board.board import Board
 from domain.side import Side
 from domain.move import Move
 from neural_network import NeuralNetwork
