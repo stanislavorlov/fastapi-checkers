@@ -10,8 +10,7 @@ class RegisterProfileHandler:
     def __init__(self, profile_repository: ProfileRepository):
         self.profile_repository = profile_repository
 
-    def handle(self,
-                     request: CreateAccountDto):
+    def handle(self, request: CreateAccountDto):
 
         username = request.email.split('@')[0]
 

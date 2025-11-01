@@ -2,11 +2,11 @@ from typing import Annotated
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
-from domain.profile.profile import Profile
+from application.handlers.retrieve_token_handler import RetrieveTokenHandler
+from application.requests.retrieve_token import RetrieveToken
 from infrastructure.repositories.profile_repository import ProfileRepository
-from web.dependencies import get_profile_repository
-from web.token_helper import verify_password, create_access_token, get_current_user, oauth2_scheme
-from web.web_helper import parse_accept_language
+from web.dependencies import get_profile_repository, get_retrieve_token_handler
+from web.token_helper import create_access_token, get_current_user, oauth2_scheme
 
 router = APIRouter(
     prefix="/api",
@@ -16,36 +16,23 @@ router = APIRouter(
 @router.post("/token")
 async def login(
     request: Request,
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    handler: Annotated[RetrieveTokenHandler, Depends(get_retrieve_token_handler)]
 ):
-    client_host = request.client.host
-    accept_language = request.headers.get("accept-language", "")
+    retrieve_token = RetrieveToken(
+        request.client.host,
+        request.headers.get("accept-language", ""),
+        form_data.username,
+        form_data.password
+    )
 
-    # Parse and get the top preferred language
-    create_account.language = parse_accept_language(accept_language)  # "en"
+    access_token = handler.handle(retrieve_token)
 
-    user_dict = account_collection.find_one({"email": form_data.username})
-    if not user_dict:
+    if not access_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+            detail="Invalid credentials"
         )
-    hashed_password = user_dict['password_hash']
-
-    if not verify_password(form_data.password, hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
-        )
-
-    # ToDo: SessionService -> create session
-
-    # ToDo: store token in database
-    access_token = create_access_token(
-        user_dict['user_id'],
-        f"{user_dict['first_name']} {user_dict['last_name']}",
-        user_dict['email'],
-        'user')
 
     return access_token
 

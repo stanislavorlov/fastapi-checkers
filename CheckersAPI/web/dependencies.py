@@ -1,6 +1,7 @@
 from fastapi import Depends
 from application.handlers.game_event_handler import GameEventHandler
 from application.handlers.register_profile_handler import RegisterProfileHandler
+from application.handlers.retrieve_token_handler import RetrieveTokenHandler
 from infrastructure.event_parser import EventParser
 from infrastructure.mongo_context import MongoContext
 from infrastructure.repositories.game_repository import GameRepository
@@ -19,6 +20,13 @@ def get_register_profile_handler(
     profile_repository = ProfileRepository(db)
 
     return RegisterProfileHandler(profile_repository)
+
+def get_retrieve_token_handler(
+        db = Depends(get_mongo_context),
+):
+    profile_repository = ProfileRepository(db)
+
+    return RetrieveTokenHandler(profile_repository)
 
 def get_event_parser():
     return EventParser()
