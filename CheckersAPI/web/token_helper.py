@@ -1,13 +1,14 @@
 import secrets
 import string
 from datetime import timedelta, datetime, timezone
+from typing import Annotated
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 from pwdlib import PasswordHash
 from infrastructure.config import ACCESS_TOKEN_EXPIRE_MINUTES, ISSUER, AUDIENCE, SECRET_KEY, ALGORITHM
-from infrastructure.repositories.user_repository import UserRepository
+from infrastructure.repositories.profile_repository import ProfileRepository
 from infrastructure.schemas import guest_user
 from web.models import AccessTokenData, AccessToken
 
@@ -72,7 +73,12 @@ def decode_access_token(token: str) -> AccessTokenData:
         aud=payload['aud'],
     )
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+# profile_repository: Annotated[ProfileRepository, Depends(get_profile_repository)],
+# token: str = Depends(oauth2_scheme)
+async def get_current_user(
+        profile_repository: ProfileRepository,
+        token: str
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -92,7 +98,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
             raise credentials_exception
 
-        return UserRepository().get_user_profile(user_id)
+        return await profile_repository.get(user_id)
 
     except InvalidTokenError:
         print('Invalid token')

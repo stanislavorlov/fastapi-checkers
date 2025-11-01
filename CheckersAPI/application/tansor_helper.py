@@ -1,5 +1,5 @@
 import numpy as np
-from domain.board import Board
+from domain.board.board import Board
 from domain.side import Side
 
 

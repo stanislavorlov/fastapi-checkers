@@ -1,6 +1,6 @@
 from typing import List, Mapping
 from pymongo.synchronous.cursor import Cursor
-from infrastructure.documents import GameSchema, HistorySchema, UserSchema
+from infrastructure.documents import GameSchema, HistorySchema
 from web.models import ReadGameDto, HistoryDto, PlayerUserDto
 
 
@@ -46,9 +46,6 @@ def guest_user(guest_id) -> PlayerUserDto:
         country='',
         anonymous=True
     )
-
-def list_games(games : List[GameSchema]) -> list[ReadGameDto]:
-    return [individual_game(game, []) for game in games]
 
 def individual_history(history: HistorySchema) -> HistoryDto:
     return HistoryDto(

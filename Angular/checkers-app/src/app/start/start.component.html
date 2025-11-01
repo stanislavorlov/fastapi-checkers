@@ -38,7 +38,7 @@
         </table>
         <div *ngIf="(player$ | async)?.is_guest == true">
             <hr />
-            <button class="button-31" role="button" (click)="logIn()">Log In</button> <button class="button-31" role="button" (click)="signUp()">Sign Up</button> to play online!
+            Welcome, <b>{{ (player$ | async)?.displayName }}</b> <button class="button-31" role="button" (click)="logIn()">Log In</button> <button class="button-31" role="button" (click)="signUp()">Sign Up</button>
         </div>
         <div *ngIf="(player$ | async)?.is_guest == false">
             <hr />

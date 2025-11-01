@@ -1,4 +1,4 @@
-from domain.players.player import Player
+from domain.players.game_player import Player
 from infrastructure.documents import PlayerSchema
 
 

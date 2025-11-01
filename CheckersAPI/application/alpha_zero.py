@@ -1,11 +1,8 @@
-import copy
 import random
-import numpy as np
-import functools  # For memoization
 from application.monte_carlo_tree import MCTS
 from application.neural_network import NeuralNetwork
 from application.tansor_helper import TensorHelper
-from domain.board import Board
+from domain.board.board import Board
 from domain.side import Side
 from domain.move import Move
 

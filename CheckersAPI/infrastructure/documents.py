@@ -1,83 +1,247 @@
 from datetime import datetime, timezone
-from typing import Optional
+from enum import Enum
+from typing import Optional, Literal, List
 from bson import ObjectId
 from pydantic import BaseModel, Field
 
 
-class UserSchema(BaseModel):
-    user_id: str
-    player_id: str
+# ---------------------------
+# Custom ObjectId validator
+# ---------------------------
+class PyObjectId(ObjectId):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+    @classmethod
+    def validate(cls, v):
+        if not ObjectId.is_valid(v):
+            raise ValueError("Invalid ObjectId")
+        return ObjectId(v)
+
+
+# ---------------------------
+# Enums
+# ---------------------------
+class PlayerType(str, Enum):
+    GUEST = "guest"
+    ACCOUNT = "account"
+
+
+class GameMode(str, Enum):
+    PVP = "pvp"
+    PVE = "pve"
+
+
+class PlayerColor(str, Enum):
+    WHITE = "white"
+    BLACK = "black"
+
+
+class QueueStatus(str, Enum):
+    WAITING = "waiting"
+    MATCHED = "matched"
+    TIMEOUT = "timeout"
+
+
+class ProfileSchema(BaseModel):
+    """
+    Account is created during user registration
+    """
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     email: str
     password_hash: str
-    first_name: Optional[str]
-    last_name: Optional[str]
-    country: Optional[str]
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    username: str
+    locked: bool = False
+    join_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    language: Optional[str] = None
+    bio: Optional[str] = None
+    avatar_url: Optional[str] = None
+    country: Optional[str] = None
 
-class UserSessionSchema(BaseModel):
-    is_anonymous: bool
-    token: str
-    user_id: str
-    host: str
-    agent: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class PlayerRankSchema(BaseModel):
-    rating: int             # ~1000–3000
-    deviation: int          # 30–350, how uncertain we are about a player’s rating, more games -> bigger, less - slower
-    last_update: datetime
-
-class PlayerStatsSchema(BaseModel):
-    games_played: int
-    wins: int
-    losses: int
-    draws: int
-    win_rate: float
-    streak: int
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
 
 class PlayerSchema(BaseModel):
-    nickname: Optional[str] = None
+    """
+    Account is created during starting the game. Since anonymous can be created only at that stage.
+    """
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    type: PlayerType
+    display_name: str
+    profile_id: Optional[PyObjectId] = None  # present for registered accounts
+
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+
+class SessionSchema(BaseModel):
+    """
+    Session is going to be added while authenticating a user or starting a game
+    """
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    player_id: PyObjectId  # always a PlayerSchema ID
+    token: str
+    host: str
+    agent: str
     region: str
-    rank_id: str
-    stats_id: str
-    is_anonymous: bool
+    timezone: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    model_config = {
-        "arbitrary_types_allowed": True,
-        "json_encoders": {ObjectId: str}
-    }
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+
+class RankSchema(BaseModel):
+    """
+    Rank schema to be created during the player creation
+    """
+    player_id: PyObjectId
+    rating: int             # ~1000–3000
+    deviation: int          # 30–350, how uncertain we are about a player’s rating, more games -> bigger, less - slower
+    last_update: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+
+class StatsSchema(BaseModel):
+    """
+    Rank schema to be created during the player creation
+    """
+    player_id: str
+    games_played: int = 0
+    wins: int = 0
+    losses: int = 0
+    draws: int = 0
+    win_rate: float = 0.0
+    streak: int = 0
 
 class MatchingQueueSchema(BaseModel):
-    player_id: str
+    """
+    Player requests a game, enters matching.
+    """
+    session_id: str
     region: str
     rating_estimate: int
     rd: int
-    timestamp: datetime
-    status: str             # waiting | matched | timeout
-    matched_with: Optional[str]  # optional when found
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    status: QueueStatus = QueueStatus.WAITING
+    matched_with: Optional[PyObjectId] = None
 
 class GamePlayerSchema(BaseModel):
-    player_id: str
-    side: str
+    player_id: PyObjectId
+    color: PlayerColor
+    snapshot: Optional[dict] = None  # store display_name/type at game creation
 
-class GameResultSchema(BaseModel):
-    winner_id: Optional[str] = None
-    reason: str     # resignation | capture | draw
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
 
 class GameSchema(BaseModel):
-    name: str
-    region: str
-    created_at: datetime
-    started_at: Optional[datetime]
-    finished_at: Optional[datetime]
-    result: GameResultSchema
-    mode: str
-    players: list[GamePlayerSchema]
+    """
+    When a match is found
+    """
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+    result: Optional[dict] = None  # { winner: ObjectId | null, reason: str | null }
+    mode: GameMode
+    players: List[GamePlayerSchema]
+
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
 
 class HistorySchema(BaseModel):
-    game_id: str
+    game_id: PyObjectId
     move: str
-    captures: list[str]
+    captures: List[str] = []
     sequence: int
-    player_id: str
+
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
+
+# Account → for authenticated users
+# Player → for all participants (guest or account)
+# Game → the actual checkers match
+# accounts
+
+# For authenticated users (login credentials, email, password, etc.)
+# {
+#   _id: ObjectId,
+#   email: String,
+#   password_hash: String,
+#   created_at: Date
+# }
+# players
+# For any user identity (authenticated or guest)
+# {
+#   _id: ObjectId,                 // always required
+#   type: "guest" | "account",
+#   display_name: String,
+#   account_id: ObjectId,          // only for type === "account"
+#   created_at: Date,
+#   last_seen: Date
+# }
+# games
+# {
+#   _id: ObjectId,
+#   players: [
+#     { player_id: ObjectId, color: "white" },
+#     { player_id: ObjectId, color: "black" }
+#   ],
+#   moves: [String],
+#   started_at: Date,
+#   ended_at: Date,
+#   result: {
+#     winner: ObjectId,
+#     reason: String
+#   }
+# }
+
+# from pydantic import BaseModel, Field
+# from typing import Literal, List, Optional
+# from bson import ObjectId
+# from datetime import datetime
+#
+# class PyObjectId(ObjectId):
+#     @classmethod
+#     def __get_validators__(cls):
+#         yield cls.validate
+#     @classmethod
+#     def validate(cls, v):
+#         if not ObjectId.is_valid(v):
+#             raise ValueError("Invalid ObjectId")
+#         return ObjectId(v)
+#
+# class PlayerSnapshot(BaseModel):
+#     display_name: str
+#     type: Literal["guest", "account"]
+#
+# class GamePlayer(BaseModel):
+#     player_id: PyObjectId
+#     color: Literal["white", "black"]
+#     snapshot: Optional[PlayerSnapshot] = None
+#     rating_before: Optional[float] = None
+#     rating_after: Optional[float] = None
+#
+# class GameSchema(BaseModel):
+#     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+#     mode: Literal["pvp", "pve"]
+#     players: List[GamePlayer]
+#     moves: List[str] = []
+#     result: Optional[dict] = None
+#     started_at: datetime = Field(default_factory=datetime.utcnow)
+#     ended_at: Optional[datetime] = None

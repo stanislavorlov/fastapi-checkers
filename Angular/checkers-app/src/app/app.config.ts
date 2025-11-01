@@ -18,6 +18,7 @@ export const appConfig: ApplicationConfig = {
       withFetch()
     ),
     provideAppInitializer(async () => {
+      // ToDo: create guest token during game creation if not authenticated
       const userService = inject(UserService);
       await userService.init();
     }),
