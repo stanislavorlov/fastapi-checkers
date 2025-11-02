@@ -1,4 +1,5 @@
 import json
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from starlette.middleware.cors import CORSMiddleware
@@ -9,7 +10,11 @@ from web.dependencies import get_event_parser, get_game_event_handler
 from web.routers import game_api, accounts_api, session_api
 from infrastructure.runtime import connection_manager as manager
 
-
+# Configure root logging once
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
