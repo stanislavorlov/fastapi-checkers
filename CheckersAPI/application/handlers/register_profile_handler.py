@@ -25,6 +25,3 @@ class RegisterProfileHandler:
         )
 
         self.profile_repository.create(profile)
-
-        # ToDo: create ranks and stats during player creation - on game startup
-

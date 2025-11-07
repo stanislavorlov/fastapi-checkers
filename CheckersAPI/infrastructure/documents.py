@@ -55,7 +55,7 @@ class QueueStatus(str, Enum):
 
 class ProfileSchema(BaseModel):
     """
-    Account is created during user registration
+    Profile is created during user registration
     """
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     email: str
@@ -63,6 +63,7 @@ class ProfileSchema(BaseModel):
     username: str
     locked: bool = False
     join_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    initial_level: str
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     language: Optional[str] = None
@@ -77,7 +78,7 @@ class ProfileSchema(BaseModel):
 
 class PlayerSchema(BaseModel):
     """
-    Account is created during starting the game. Since anonymous can be created only at that stage.
+    Player is created during starting the game. Since anonymous can be created only at that stage.
     """
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     type: PlayerType

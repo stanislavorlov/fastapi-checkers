@@ -35,6 +35,10 @@ class MongoContext:
     def profiles(self):
         return self.db["profiles"]
 
+    @property
+    def players(self):
+        return self.db["players"]
+
 # client = MongoClient(DATABASE_URL, server_api=ServerApi('1'))
 #
 # db = client.get_database(DATABASE_NAME)

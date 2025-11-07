@@ -3,7 +3,7 @@ import uuid
 from domain.kernel.value_object import ValueObject
 
 
-@dataclass(frozen=True)
+@dataclass
 class FirstName(ValueObject):
     value: str
 
@@ -17,7 +17,7 @@ class FirstName(ValueObject):
         return self.value
 
 
-@dataclass(frozen=True)
+@dataclass
 class LastName(ValueObject):
     value: str
 
@@ -31,7 +31,7 @@ class LastName(ValueObject):
     def __str__(self):
         return self.value
 
-@dataclass(frozen=True)
+@dataclass
 class FullName(ValueObject):
     first: FirstName
     last: LastName

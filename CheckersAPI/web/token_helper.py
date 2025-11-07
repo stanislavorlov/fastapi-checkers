@@ -52,7 +52,7 @@ def create_access_token(user_id: str, name: str, email: str, access_type: str):
 
     encoded_jwt = jwt.encode(data.model_dump(), SECRET_KEY, algorithm=ALGORITHM)
 
-    return AccessToken(access_token=encoded_jwt)
+    return AccessToken(user_id=user_id, access_token=encoded_jwt)
 
 def decode_access_token(token: str) -> AccessTokenData:
     payload = jwt.decode(
