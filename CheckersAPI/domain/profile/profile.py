@@ -10,6 +10,7 @@ class Profile(AggregateRoot):
     password_hash: str
     contact: Contact
     locked: bool = False
+    initial_level: str
     join_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     full_name: Optional[FullName] = None
     language: Optional[str] = None

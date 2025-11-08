@@ -2,14 +2,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from application.handlers.create_player_handler import CreatePlayerHandler
-from application.handlers.guest_token_handler import GuestTokenHandler
 from application.handlers.retrieve_token_handler import RetrieveTokenHandler
 from application.requests.create_player import CreatePlayerRequest
 from application.requests.retrieve_token import RetrieveToken
 from domain.player.player_type import PlayerType
 from infrastructure.repositories.profile_repository import ProfileRepository
-from web.dependencies import get_profile_repository, get_retrieve_token_handler, get_create_player_handler, \
-    get_guest_token_handler
+from web.dependencies import get_profile_repository, get_retrieve_token_handler, get_create_player_handler
 from web.token_helper import get_current_user, oauth2_scheme
 
 router = APIRouter(
@@ -21,14 +19,14 @@ router = APIRouter(
 async def login(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    token_handler: Annotated[RetrieveTokenHandler, Depends(get_retrieve_token_handler)],
-    player_handler: Annotated[CreatePlayerHandler, Depends(get_create_player_handler)],
+    token_handler: Annotated[RetrieveTokenHandler, Depends(get_retrieve_token_handler)]
 ):
     retrieve_token = RetrieveToken(
-        request.client.host,
-        request.headers.get("accept-language", ""),
-        form_data.username,
-        form_data.password
+        client_host=request.client.host,
+        accept_language=request.headers.get("accept-language", ""),
+        username=form_data.username,
+        password=form_data.password,
+        agent=request.headers.get("user-agent", ""),
     )
 
     access_token = token_handler.handle(retrieve_token)
@@ -39,19 +37,12 @@ async def login(
             detail="Invalid credentials"
         )
 
-    create_player = CreatePlayerRequest(
-        type=PlayerType.ACCOUNT,
-        profile_id=access_token.user_id,
-        player_level=''
-    )
-
-    player_handler.handle(create_player)
-
     return access_token
 
 @router.post("/guest-token")
 async def guest_token(
-    guest_token_handler: Annotated[GuestTokenHandler, Depends(get_guest_token_handler)],
+    request: Request,
+    token_handler: Annotated[RetrieveTokenHandler, Depends(get_retrieve_token_handler)],
     player_handler: Annotated[CreatePlayerHandler, Depends(get_create_player_handler)]
 ):
     create_player = CreatePlayerRequest(
@@ -61,7 +52,13 @@ async def guest_token(
 
     player_handler.handle(create_player)
 
-    access_token = guest_token_handler.handle()
+    retrieve_token = RetrieveToken(
+        request.client.host,
+        request.headers.get("accept-language", ""),
+
+    )
+
+    access_token = token_handler.handle(retrieve_token)
 
     return access_token
 

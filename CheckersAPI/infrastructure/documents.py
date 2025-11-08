@@ -126,7 +126,7 @@ class StatsSchema(BaseModel):
     """
     Rank schema to be created during the player creation
     """
-    player_id: str
+    player_id: PyObjectId
     games_played: int = 0
     wins: int = 0
     losses: int = 0

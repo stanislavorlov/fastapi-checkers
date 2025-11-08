@@ -23,9 +23,11 @@ class Contact(ValueObject):
 
         return NameEmail(name=name, email=f"{name}@checkers.com")
 
-# contact1 = Contact(contact="stasorlov21 <stasorlov21@gmail.com>")
-# print(contact1.email)
-# print(contact1.username)
+contact1 = Contact(contact="stasorlov21 <stasorlov21@gmail.com>")
+print(contact1.email)
+temp: str = contact1.email
+print(temp)
+print(contact1.username)
 #
 # contact2 = Contact()
 # print(contact2.email)

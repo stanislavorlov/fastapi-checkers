@@ -53,13 +53,9 @@ def get_retrieve_token_handler(
 ):
     profile_repository = ProfileRepository(db)
     session_repository = SessionRepository(db)
+    player_repository = PlayerRepository(db)
 
-    return RetrieveTokenHandler(profile_repository, session_repository)
-
-def get_guest_token_handler(
-        db = Depends(get_mongo_context),
-):
-    pass
+    return RetrieveTokenHandler(profile_repository, session_repository, player_repository)
 
 def get_game_event_handler(
         db = Depends(get_mongo_context),
