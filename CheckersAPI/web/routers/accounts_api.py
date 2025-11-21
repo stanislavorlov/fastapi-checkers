@@ -1,7 +1,6 @@
 import logging
 from typing import Annotated
 from fastapi import APIRouter, HTTPException, status, Request, Depends
-
 from application.handlers.create_player_handler import CreatePlayerHandler
 from application.handlers.register_profile_handler import RegisterProfileHandler
 from application.requests.create_player import CreatePlayerRequest

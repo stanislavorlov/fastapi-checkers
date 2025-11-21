@@ -15,7 +15,7 @@ class CreatePlayerHandler:
         self.profile_repository = profile_repository
         self.player_repository = player_repository
 
-    def handle(self, request: CreatePlayerRequest):
+    def handle(self, request: CreatePlayerRequest) -> str:
         """
         Method handles the creation of a new player when a new guest joins or accounts log in
         """
@@ -30,4 +30,4 @@ class CreatePlayerHandler:
             request.player_level,
             profile)
 
-        self.player_repository.create(player)
+        return self.player_repository.create(player)

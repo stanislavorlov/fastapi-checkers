@@ -33,7 +33,7 @@ class RetrieveTokenHandler:
             return None
 
         access_token = create_access_token(
-            str(profile.id),
+            str(player.id),
             str(profile.full_name),
             profile.contact.email,
             'user')

@@ -45,17 +45,19 @@ async def guest_token(
     token_handler: Annotated[RetrieveTokenHandler, Depends(get_retrieve_token_handler)],
     player_handler: Annotated[CreatePlayerHandler, Depends(get_create_player_handler)]
 ):
-    create_player = CreatePlayerRequest(
+    """ create_player = CreatePlayerRequest(
         type=PlayerType.GUEST,
         player_level=''
     )
 
-    player_handler.handle(create_player)
+    player_handler.handle(create_player) """
 
     retrieve_token = RetrieveToken(
-        request.client.host,
-        request.headers.get("accept-language", ""),
-
+        client_host=request.client.host,
+        accept_language=request.headers.get("accept-language", ""),
+        agent=request.headers.get("user-agent", ""),
+        username='',
+        password='',
     )
 
     access_token = token_handler.handle(retrieve_token)

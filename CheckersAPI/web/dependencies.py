@@ -9,6 +9,7 @@ from infrastructure.repositories.game_repository import GameRepository
 from infrastructure.repositories.player_repository import PlayerRepository
 from infrastructure.repositories.profile_repository import ProfileRepository
 from infrastructure.repositories.session_token_repository import SessionRepository
+from infrastructure.repositories.matching_repository import MatchingRepository
 from infrastructure.runtime import connection_manager as manager
 
 # created once at startup
@@ -40,6 +41,11 @@ def get_session_repository(
     session_repository = SessionRepository(db)
 
     return session_repository
+
+def get_matching_repository(
+        db = Depends(get_mongo_context),
+):
+    return MatchingRepository(db)
 
 def get_register_profile_handler(
         db = Depends(get_mongo_context),

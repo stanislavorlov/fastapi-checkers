@@ -1,8 +1,8 @@
 from typing import Annotated
 from bson import ObjectId
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, HTTPException
 from infrastructure.repositories.game_repository import GameRepository
-from infrastructure.schemas import individual_game
+from infrastructure.mappers import individual_game
 from web.dependencies import get_game_repository
 from web.models import RequestComputerGameDto, RequestOnlineGameDto
 from web.token_helper import get_current_user
@@ -17,11 +17,7 @@ async def get_game(
         game_id: str,
         repository: Annotated[GameRepository, Depends(get_game_repository)]
 ):
-    try:
-        return await repository.fetch(game_id)
-
-    except Exception as e:
-        return str(e)
+    return await repository.fetch(game_id)
 
 # @router.post("/online")
 # async def request_online_game(
@@ -79,6 +75,49 @@ async def get_game(
 #
 #     # ToDo: return
 #
-# @app.delete("/api/{id}")
-# async def delete_game(id: str):
-#     game_collection.find_one_and_delete({"_id": ObjectId(id)})
+from application.requests.create_player import CreatePlayerRequest
+from domain.player.player_type import PlayerType
+from web.token_helper import decode_access_token
+from infrastructure.repositories.matching_repository import MatchingRepository
+from infrastructure.repositories.game_repository import GameRepository
+from web.dependencies import get_matching_repository, get_create_player_handler, get_game_repository
+from web.models import RequestGameResponse
+from application.handlers.create_player_handler import CreatePlayerHandler
+
+@router.post("/request_game", response_model=RequestGameResponse)
+async def request_game(
+        request: Request,
+        matching_repository: Annotated[MatchingRepository, Depends(get_matching_repository)],
+        player_handler: Annotated[CreatePlayerHandler, Depends(get_create_player_handler)]
+):
+    player_id = ""
+    
+    auth_header = request.headers.get("Authorization")
+    if auth_header:
+        try:
+            token = auth_header.split(" ")[1]
+            payload = decode_access_token(token)
+            player_id = payload.sub
+        except Exception:
+            # If token is invalid, treat as guest? Or raise error?
+            # For now, let's assume if they try to auth and fail, it's an error.
+            # But if they just don't send it, it's guest.
+            # However, to be safe and follow "Otherwise, create a Player document for un-authorized user",
+            # we can fall back to guest creation if auth fails, or strictly require valid auth if header is present.
+            # Let's strictly require valid auth if header is present to avoid confusion.
+            raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    else:
+        # Create guest player
+        create_player_request = CreatePlayerRequest(
+            type=PlayerType.GUEST,
+            player_level="1", # Default level for guest
+            profile_id=None
+        )
+        player_id = player_handler.handle(create_player_request)
+
+    # Add to matching queue
+    # ToDo: get region and rating from player or request?
+    # For now using defaults
+    matching_repository.add_to_queue(player_id=player_id, region="EU", rating=1000)
+
+    return RequestGameResponse(player_id=player_id, status="waiting")

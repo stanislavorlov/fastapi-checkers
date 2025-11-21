@@ -1,9 +1,11 @@
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
-from infrastructure.config import DATABASE_URL, DATABASE_NAME
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
+from infrastructure.settings import settings
 
 class MongoContext:
-    def __init__(self, url: str = DATABASE_URL, db_name: str = DATABASE_NAME):
+    def __init__(self, url: str = settings.DATABASE_URL, db_name: str = settings.DATABASE_NAME):
         self.client = MongoClient(url, server_api=ServerApi("1"))
         self.db = self.client[db_name]
 
