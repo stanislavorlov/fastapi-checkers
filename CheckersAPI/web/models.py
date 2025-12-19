@@ -46,6 +46,7 @@ class AccessTokenData(BaseModel):
     aud: str
 
 class AccessToken(BaseModel):
+    player_id: str
     access_token: str
     token_type: str = 'bearer'
 
@@ -56,3 +57,7 @@ class PlayerUserDto(BaseModel):
     last_name: str
     country: str
     anonymous: bool
+
+class RequestGameResponse(BaseModel):
+    player_id: str
+    status: str

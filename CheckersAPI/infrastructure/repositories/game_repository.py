@@ -45,6 +45,7 @@ class GameRepository:
     async def append_history(self, game_id: str, history: HistoryEntry):
         await self.db.history.insert_one({
             "game_id": game_id,
+            "player_id": history.player_id,
             "move": history.move,
             "captures": history.captures,
             "sequence": history.sequence,

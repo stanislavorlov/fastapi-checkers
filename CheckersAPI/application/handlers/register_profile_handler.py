@@ -1,4 +1,5 @@
-from domain.profile.full_name import FirstName, LastName
+from domain.profile.contact import Contact
+from domain.profile.full_name import FullName
 from domain.profile.profile import Profile
 from infrastructure.repositories.profile_repository import ProfileRepository
 from web.models import CreateAccountDto
@@ -10,21 +11,19 @@ class RegisterProfileHandler:
     def __init__(self, profile_repository: ProfileRepository):
         self.profile_repository = profile_repository
 
-    def handle(self, request: CreateAccountDto):
+    def handle(self, request: CreateAccountDto) -> str:
 
         username = request.email.split('@')[0]
 
         profile = Profile(
-            email=request.email,
             password_hash=hash_password(request.password),
-            username=username,
-            first_name=FirstName(request.first_name),
-            last_name=LastName(request.last_name),
+            contact=Contact(
+                contact=f"{username} <{request.email}>"
+            ),
+            initial_level=request.level,
+            full_name=FullName.create(first=request.first_name, last=request.last_name),
+            language=request.language,
             country=request.country,
-            language= request.language,
         )
 
-        self.profile_repository.create(profile)
-
-        # ToDo: create ranks and stats during player creation - on game startup
-
+        return self.profile_repository.create(profile)

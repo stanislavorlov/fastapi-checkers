@@ -6,9 +6,9 @@ from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 from pwdlib import PasswordHash
-from infrastructure.config import ACCESS_TOKEN_EXPIRE_MINUTES, ISSUER, AUDIENCE, SECRET_KEY, ALGORITHM
+from infrastructure.settings import settings
 from infrastructure.repositories.profile_repository import ProfileRepository
-from infrastructure.schemas import guest_user
+from infrastructure.mappers import guest_user
 from web.models import AccessTokenData, AccessToken
 
 password_hash = PasswordHash.recommended()
@@ -27,7 +27,7 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_hash.verify(plain_password, hashed_password)
 
-def create_access_token(user_id: str, name: str, email: str, access_type: str):
+def create_access_token(player_id: str, name: str, email: str, access_type: str):
     """
     Method creates an access token
     iss - Issuer claim containing StringOrURI value
@@ -41,26 +41,26 @@ def create_access_token(user_id: str, name: str, email: str, access_type: str):
     """
 
     data = AccessTokenData(
-        sub=user_id,
+        sub=player_id,
         name=name,
         preferred_username=email,
         type=access_type,
-        exp=datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
-        iss=ISSUER,
-        aud=AUDIENCE,
+        exp=datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        iss=settings.ISSUER,
+        aud=settings.AUDIENCE,
     )
 
-    encoded_jwt = jwt.encode(data.model_dump(), SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(data.model_dump(), settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
-    return AccessToken(access_token=encoded_jwt)
+    return AccessToken(player_id=player_id, access_token=encoded_jwt)
 
 def decode_access_token(token: str) -> AccessTokenData:
     payload = jwt.decode(
         jwt=token,
-        key=SECRET_KEY,
-        audience=AUDIENCE,
-        issuer=ISSUER,
-        algorithms=[ALGORITHM])
+        key=settings.SECRET_KEY,
+        audience=settings.AUDIENCE,
+        issuer=settings.ISSUER,
+        algorithms=[settings.ALGORITHM])
 
     return AccessTokenData(
         sub=payload["sub"],

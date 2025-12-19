@@ -1,12 +1,14 @@
 from typing import Annotated
-from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from application.handlers.create_player_handler import CreatePlayerHandler
 from application.handlers.retrieve_token_handler import RetrieveTokenHandler
+from application.requests.create_player import CreatePlayerRequest
 from application.requests.retrieve_token import RetrieveToken
+from domain.player.player_type import PlayerType
 from infrastructure.repositories.profile_repository import ProfileRepository
-from web.dependencies import get_profile_repository, get_retrieve_token_handler
-from web.token_helper import create_access_token, get_current_user, oauth2_scheme
+from web.dependencies import get_profile_repository, get_retrieve_token_handler, get_create_player_handler
+from web.token_helper import get_current_user, oauth2_scheme
 
 router = APIRouter(
     prefix="/api",
@@ -17,16 +19,17 @@ router = APIRouter(
 async def login(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    handler: Annotated[RetrieveTokenHandler, Depends(get_retrieve_token_handler)]
+    token_handler: Annotated[RetrieveTokenHandler, Depends(get_retrieve_token_handler)]
 ):
     retrieve_token = RetrieveToken(
-        request.client.host,
-        request.headers.get("accept-language", ""),
-        form_data.username,
-        form_data.password
+        client_host=request.client.host,
+        accept_language=request.headers.get("accept-language", ""),
+        username=form_data.username,
+        password=form_data.password,
+        agent=request.headers.get("user-agent", ""),
     )
 
-    access_token = handler.handle(retrieve_token)
+    access_token = token_handler.handle(retrieve_token)
 
     if not access_token:
         raise HTTPException(
@@ -37,19 +40,29 @@ async def login(
     return access_token
 
 @router.post("/guest-token")
-async def guest_token():
-    guest_id = str(ObjectId())
+async def guest_token(
+    request: Request,
+    token_handler: Annotated[RetrieveTokenHandler, Depends(get_retrieve_token_handler)],
+    player_handler: Annotated[CreatePlayerHandler, Depends(get_create_player_handler)]
+):
+    """ create_player = CreatePlayerRequest(
+        type=PlayerType.GUEST,
+        player_level=''
+    )
 
-    # ToDo: SessionService -> create session
+    player_handler.handle(create_player) """
 
-    # ToDo:  use domain logic for this
-    token = create_access_token(
-        guest_id,
-        f'Guest Player {guest_id}',
-        f'guest_player_{guest_id}@email.com',
-        'guest')
+    retrieve_token = RetrieveToken(
+        client_host=request.client.host,
+        accept_language=request.headers.get("accept-language", ""),
+        agent=request.headers.get("user-agent", ""),
+        username='',
+        password='',
+    )
 
-    return token
+    access_token = token_handler.handle(retrieve_token)
+
+    return access_token
 
 # async def get_current_active_user(
 #     current_user: Annotated[User, Depends(get_current_user)],

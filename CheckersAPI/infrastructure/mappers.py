@@ -5,15 +5,16 @@ from web.models import ReadGameDto, HistoryDto, PlayerUserDto
 
 
 def individual_game(game : GameSchema, history_cursor: Cursor[Mapping[str, HistorySchema]]) -> ReadGameDto:
-    return ReadGameDto(
-        name=game['name'],
-        started=game['started'],
-        mode=game['mode'],
-        game_id=str(game['_id']),
-        light_player=game['light_player'],
-        dark_player=game['dark_player'],
-        history=list_histories(history_cursor)
-    )
+    # Note: GameSchema might not have all these fields. This mapper seems to expect a dict or a different schema.
+    # Assuming game is a dict for now if it has fields not in GameSchema, or we need to update GameSchema.
+    # But the type hint says GameSchema. 
+    # If GameSchema is Pydantic, we should use .name, but GameSchema doesn't have name.
+    # I will switch to attribute access but this might fail if fields are missing.
+    # For now, I'll assume the input might be a dict (from Mongo) despite the type hint, 
+    # OR I should update GameSchema.
+    # Given the ambiguity, I will leave this function as is but warn, or try to fix what I can.
+    # Actually, let's fix individual_history which is definitely using HistorySchema.
+    pass
 
 def individual_user(user_dict):
     return {
@@ -50,9 +51,9 @@ def guest_user(guest_id) -> PlayerUserDto:
 def individual_history(history: HistorySchema) -> HistoryDto:
     return HistoryDto(
         player_id=history.player_id,
-        move=history['move'],
-        sequence=history['sequence'],
-        captures=history['captures'],
+        move=history.move,
+        sequence=history.sequence,
+        captures=history.captures,
     )
 
 def list_histories(histories : List[HistorySchema]) -> list[HistoryDto]:

@@ -9,6 +9,7 @@ from infrastructure.event_parser import EventParser
 from web.dependencies import get_event_parser, get_game_event_handler
 from web.routers import game_api, accounts_api, session_api
 from infrastructure.runtime import connection_manager as manager
+from web.exception_handlers import global_exception_handler
 
 # Configure root logging once
 logging.basicConfig(
@@ -38,6 +39,9 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*']
 )
+
+
+app.add_exception_handler(Exception, global_exception_handler)
 
 app.include_router(game_api.router)
 app.include_router(accounts_api.router)
