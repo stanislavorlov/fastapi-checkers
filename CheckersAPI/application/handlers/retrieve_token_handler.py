@@ -28,14 +28,24 @@ class RetrieveTokenHandler:
         # Guest Flow
         if request.is_guest:
             logger.info('Processing Guest Token request')
-            create_player_request = CreatePlayerRequest(
-                type=PlayerType.GUEST,
-                player_level=''
-            )
-            player_id = self.create_player_handler.handle(create_player_request)
-
-            logger.info('Processing Account Token request for Player %s', player_id)
             
+            # Check if this guest already has a recent session
+            existing_player_id = self.session_repository.find_recent_guest_session(
+                request.client_host, 
+                request.agent
+            )
+            
+            if existing_player_id:
+                logger.info('Found recent guest session for player %s, reusing', existing_player_id)
+                player_id = existing_player_id
+            else:
+                create_player_request = CreatePlayerRequest(
+                    type=PlayerType.GUEST,
+                    player_level=''
+                )
+                player_id = self.create_player_handler.handle(create_player_request)
+                logger.info('Created new Guest Player %s', player_id)
+
             access_token = create_access_token(
                 player_id,
                 'Guest',
