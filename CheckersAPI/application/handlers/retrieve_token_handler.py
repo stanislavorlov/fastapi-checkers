@@ -39,6 +39,28 @@ class RetrieveTokenHandler:
         if auth_result is None:
             return None
 
+        # Check if we already have an active session for this player/client
+        existing_token = self.session_repository.find_session_by_player_and_client(
+            auth_result.player_id, 
+            request.client_host, 
+            request.agent
+        )
+        
+        if existing_token:
+            logger.info('Reusing existing session token for player %s', auth_result.player_id)
+            # We return a partial AccessToken or just enough to satisfy the contract
+            # Since the client needs the access_token, we can return it if it's still valid
+            # For simplicity, we create a DTO with the existing token
+            return AccessToken(
+                access_token=existing_token,
+                token_type='bearer',
+                player_id=auth_result.player_id,
+                name=auth_result.display_name,
+                email=auth_result.email,
+                type=auth_result.type,
+                refresh_token='' # Refresh token logic might need more care if we want to reuse it too
+            )
+
         access_token = create_access_token(
             auth_result.player_id,
             auth_result.display_name,
