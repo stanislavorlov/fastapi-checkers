@@ -10,7 +10,6 @@ from pwdlib import PasswordHash
 from infrastructure.settings import settings
 from infrastructure.repositories.profile_repository import ProfileRepository
 from infrastructure.repositories.player_repository import PlayerRepository
-from infrastructure.mappers import guest_user
 from web.models import AccessTokenData, AccessToken, PlayerUserDto
 
 password_hash = PasswordHash.recommended()

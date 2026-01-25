@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import timezone, datetime
 from typing import Optional, List
 from pydantic import Field
 from domain.kernel.aggregate_root import AggregateRoot
@@ -20,6 +20,7 @@ class Player(AggregateRoot):
     sessions: List[PlayerSession] = []
     rank: Rank = Field(None, alias="_rank")
     stats: PlayerStats = Field(None, alias="_stats")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     def update_player(self, display_name: DisplayName, type_: PlayerType) -> None:
         self.display_name = display_name
@@ -32,7 +33,8 @@ class Player(AggregateRoot):
             display_name=DisplayName.from_contact(profile.contact) if profile else DisplayName.from_contact(Contact()),
             profile_id=profile.id if profile else None,
             rank=Rank.from_level(player_level),
-            stats=PlayerStats.create_empty())
+            stats=PlayerStats.create_empty(),
+            created_at=datetime.now(timezone.utc))
 
     def create_session(self, session_token: str, host: str, agent: str, region: Region, tz: timezone) -> 'PlayerSession':
         self.sessions.append(PlayerSession.create(self.id, session_token, host, agent, region, tz))

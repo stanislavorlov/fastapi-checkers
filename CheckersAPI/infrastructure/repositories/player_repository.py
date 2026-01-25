@@ -21,6 +21,7 @@ class PlayerRepository:
             type=PlayerType(player.type_.value),
             display_name=player.display_name.value,
             profile_id=player.profile_id,
+            created_at=player.created_at
         )
 
         self.db.players.insert_one(
@@ -77,6 +78,7 @@ class PlayerRepository:
                 win_rate=stats['win_rate'] if stats else 0,
                 streak=stats['streak'] if stats else 0,
             ),
+            created_at=result.get("created_at") or datetime.now(timezone.utc)
         )
 
     def get_by_profile_id(self, profile_id: str | ObjectId) -> Player | None:
@@ -109,4 +111,5 @@ class PlayerRepository:
                 win_rate=stats['win_rate'] if stats else 0,
                 streak=stats['streak'] if stats else 0,
             ),
+            created_at=result.get("created_at") or datetime.now(timezone.utc)
         )

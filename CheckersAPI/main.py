@@ -10,6 +10,7 @@ from web.dependencies import get_event_parser, get_game_event_handler
 from web.routers import game_api, accounts_api, session_api
 from infrastructure.runtime import connection_manager as manager
 from web.exception_handlers import global_exception_handler
+from infrastructure.mongo_context import MongoContext
 
 # Configure root logging once
 logging.basicConfig(
@@ -27,6 +28,8 @@ logging.getLogger("python_multipart").setLevel(logging.WARNING)
 async def lifespan(app: FastAPI):
     logger.info("🚀 App started")
     try:
+        # Create TTL indexes on startup
+        MongoContext().ensure_indexes()
         yield
     finally:
         logger.info("🛑 Shutting down. Closing all WebSocket connections...")

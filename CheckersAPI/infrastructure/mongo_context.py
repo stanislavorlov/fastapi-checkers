@@ -1,13 +1,29 @@
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
-from pymongo import MongoClient
-from pymongo.server_api import ServerApi
 from infrastructure.settings import settings
 
 class MongoContext:
     def __init__(self, url: str = settings.DATABASE_URL, db_name: str = settings.DATABASE_NAME):
         self.client = MongoClient(url, server_api=ServerApi("1"))
         self.db = self.client[db_name]
+
+    def ensure_indexes(self):
+        """
+        Creates TTL indexes for sessions and guest players.
+        """
+        # Session TTL: Expire sessions after 7 days
+        self.sessions.create_index(
+            "created_at", 
+            expireAfterSeconds=7 * 24 * 60 * 60
+        )
+
+        # Player Partial TTL: Expire guests after 7 days of inactivity (creation timestamp fallback)
+        # partialFilterExpression ensures only guest players are removed
+        self.players.create_index(
+            "created_at",
+            expireAfterSeconds=7 * 24 * 60 * 60,
+            partialFilterExpression={"type": "guest"}
+        )
 
     @property
     def sessions(self):

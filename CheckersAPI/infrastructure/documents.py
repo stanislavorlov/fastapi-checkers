@@ -89,6 +89,7 @@ class PlayerSchema(BaseModel):
     type: PlayerType
     display_name: str
     profile_id: Optional[PyObjectId] = None  # present for registered accounts
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     model_config = ConfigDict(
         populate_by_name=True,
