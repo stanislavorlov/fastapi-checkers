@@ -17,13 +17,19 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 
+logger = logging.getLogger(__name__)
+
+# "Log everything as DEBUG, EXCEPT noisy libraries"
+logging.getLogger("pymongo").setLevel(logging.WARNING)
+logging.getLogger("python_multipart").setLevel(logging.WARNING)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("🚀 App started")
+    logger.info("🚀 App started")
     try:
         yield
     finally:
-        print("🛑 Shutting down. Closing all WebSocket connections...")
+        logger.info("🛑 Shutting down. Closing all WebSocket connections...")
         await manager.close_all()
 
 app = FastAPI(lifespan=lifespan)
@@ -50,16 +56,16 @@ app.include_router(session_api.router)
 async def message_loop(game_id: str, websocket: WebSocket, parser: EventParser, handler: GameEventHandler):
     while True:
         move_message = await websocket.receive_text()
-        print(f"message received: {move_message}")
+        logger.debug(f"message received: {move_message}")
 
         try:
             player, pdn_move = parser.parse(move_message)
             await handler.handle(game_id, player, pdn_move)
 
         except json.decoder.JSONDecodeError:
-            print("Error decoding JSON")
+            logger.error("Error decoding JSON")
         except Exception as e:
-            print(f"Unexpected error: {e}")
+            logger.error(f"Unexpected error: {e}")
 
 @app.websocket("/ws/{game_id}")
 async def websocket_endpoint(

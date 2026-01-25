@@ -1,13 +1,11 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
-from application.handlers.create_player_handler import CreatePlayerHandler
 from application.handlers.retrieve_token_handler import RetrieveTokenHandler
-from application.requests.create_player import CreatePlayerRequest
-from application.requests.retrieve_token import RetrieveToken
-from domain.player.player_type import PlayerType
+from application.requests.retrieve_token import RetrieveGuestToken, RetrieveProfileToken
 from infrastructure.repositories.profile_repository import ProfileRepository
-from web.dependencies import get_profile_repository, get_retrieve_token_handler, get_create_player_handler
+from infrastructure.repositories.player_repository import PlayerRepository
+from web.dependencies import get_profile_repository, get_retrieve_token_handler, get_player_repository
 from web.token_helper import get_current_user, oauth2_scheme
 
 router = APIRouter(
@@ -21,7 +19,7 @@ async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     token_handler: Annotated[RetrieveTokenHandler, Depends(get_retrieve_token_handler)]
 ):
-    retrieve_token = RetrieveToken(
+    retrieve_token = RetrieveProfileToken(
         client_host=request.client.host,
         accept_language=request.headers.get("accept-language", ""),
         username=form_data.username,
@@ -29,6 +27,7 @@ async def login(
         agent=request.headers.get("user-agent", ""),
     )
 
+    print(f"Headers: {request.headers}")
     access_token = token_handler.handle(retrieve_token)
 
     if not access_token:
@@ -43,39 +42,27 @@ async def login(
 async def guest_token(
     request: Request,
     token_handler: Annotated[RetrieveTokenHandler, Depends(get_retrieve_token_handler)],
-    player_handler: Annotated[CreatePlayerHandler, Depends(get_create_player_handler)]
 ):
-    """ create_player = CreatePlayerRequest(
-        type=PlayerType.GUEST,
-        player_level=''
-    )
-
-    player_handler.handle(create_player) """
-
-    retrieve_token = RetrieveToken(
+    retrieve_token = RetrieveGuestToken(
         client_host=request.client.host,
         accept_language=request.headers.get("accept-language", ""),
         agent=request.headers.get("user-agent", ""),
-        username='',
-        password='',
     )
+
+    print(f"Headers: {request.headers}")
+    print(f"user agent: {retrieve_token.agent}")
 
     access_token = token_handler.handle(retrieve_token)
 
     return access_token
 
-# async def get_current_active_user(
-#     current_user: Annotated[User, Depends(get_current_user)],
-# ):
-#
-#     return current_user
-
 @router.get("/users/me")
 async def read_users_me(
     token: str = Depends(oauth2_scheme),
-    profile_repo: ProfileRepository = Depends(get_profile_repository)
+    profile_repo: ProfileRepository = Depends(get_profile_repository),
+    player_repo: PlayerRepository = Depends(get_player_repository)
 ):
-    return await get_current_user(token=token, profile_repository=profile_repo)
+    return await get_current_user(token=token, profile_repository=profile_repo, player_repository=player_repo)
 
 # @router.get("/users/ip")
 # def get_current_user_ip(request: Request):

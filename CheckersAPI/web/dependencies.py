@@ -42,6 +42,13 @@ def get_session_repository(
 
     return session_repository
 
+def get_player_repository(
+        db = Depends(get_mongo_context),
+):
+    player_repository = PlayerRepository(db)
+
+    return player_repository
+
 def get_matching_repository(
         db = Depends(get_mongo_context),
 ):
@@ -60,8 +67,9 @@ def get_retrieve_token_handler(
     profile_repository = ProfileRepository(db)
     session_repository = SessionRepository(db)
     player_repository = PlayerRepository(db)
+    create_player_handler = CreatePlayerHandler(profile_repository, player_repository)
 
-    return RetrieveTokenHandler(profile_repository, session_repository, player_repository)
+    return RetrieveTokenHandler(profile_repository, session_repository, player_repository, create_player_handler)
 
 def get_game_event_handler(
         db = Depends(get_mongo_context),

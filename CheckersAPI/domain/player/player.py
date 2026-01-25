@@ -6,6 +6,7 @@ from domain.player.display_name import DisplayName
 from domain.player.player_type import PlayerType
 from domain.player.rank import Rank
 from domain.player.stats import PlayerStats
+from domain.profile.contact import Contact
 from domain.profile.profile import Profile
 from domain.sessions.player_session import PlayerSession
 from domain.sessions.region import Region
@@ -28,7 +29,7 @@ class Player(AggregateRoot):
     def create(cls, type_: PlayerType, player_level: str, profile: Optional[Profile]) -> "Player":
         return cls(
             type_=type_,
-            display_name=DisplayName.from_contact(profile.contact) if profile else DisplayName.create(),
+            display_name=DisplayName.from_contact(profile.contact) if profile else DisplayName.from_contact(Contact()),
             profile_id=profile.id if profile else None,
             rank=Rank.from_level(player_level),
             stats=PlayerStats.create_empty())

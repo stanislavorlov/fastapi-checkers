@@ -1,15 +1,15 @@
-import { ApplicationConfig, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideHttpClient, withFetch, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
 import { authInterceptor } from './auth.interceptor';
-import { UserService } from './services/user.service';
+import { USER_AGENT } from './tokens';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }), 
-    provideRouter(routes), 
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes),
     provideHttpClient(
       withInterceptors([
         authInterceptor,
@@ -17,11 +17,7 @@ export const appConfig: ApplicationConfig = {
       withInterceptorsFromDi(),
       withFetch()
     ),
-    provideAppInitializer(async () => {
-      // ToDo: create guest token during game creation if not authenticated
-      const userService = inject(UserService);
-      await userService.init();
-    }),
-    provideClientHydration(withEventReplay())
+    provideClientHydration(withEventReplay()),
+    { provide: USER_AGENT, useValue: '' }
   ]
 };

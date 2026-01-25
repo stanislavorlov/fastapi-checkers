@@ -50,8 +50,8 @@ def guest_user(guest_id) -> PlayerUserDto:
 
 def individual_history(history: HistorySchema) -> HistoryDto:
     return HistoryDto(
-        player_id=history.player_id,
-        move=history.move,
+        player_id=str(history.player_id),
+        move=history.pdn_string,
         sequence=history.sequence,
         captures=history.captures,
     )

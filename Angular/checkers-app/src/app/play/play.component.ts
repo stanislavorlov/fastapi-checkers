@@ -36,10 +36,10 @@ export class PlayComponent implements OnInit, OnDestroy {
   constructor(private checkersService: CheckersService, private userService: UserService) {
     this.gameMenu = true;
     this.event$ = new Subject<Move>();
-    this.playerId = this.userService.currentPlayer?.player_id || '';
+    //this.playerId = this.userService.currentPlayer?.player_id || '';
     this.board = new Board(this.playerId, this.gameId, this.event$);
     this.pieces = new Map<Square, Piece>();
-    
+
     console.log("Game ID:", this.gameId);
     console.log("Player ID:", this.playerId);
   }
@@ -65,7 +65,7 @@ export class PlayComponent implements OnInit, OnDestroy {
           console.error('Player not part of this game');
           //return;
         }
-        
+
         this.board.load(result);
         this.pieces = this.board.pieces;
 

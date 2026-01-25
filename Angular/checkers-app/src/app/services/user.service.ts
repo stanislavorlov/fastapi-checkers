@@ -1,70 +1,69 @@
 import { Injectable } from '@angular/core';
-import { LocalStorageService } from './local-storage.service';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, first, firstValueFrom, Observable, tap } from 'rxjs';
-import { GuestPlayer, Player } from '../models/player';
+import { BehaviorSubject, firstValueFrom, from, Observable, tap, switchMap, map } from 'rxjs';
+import { LocalStorageService } from './local-storage.service';
+import { Player } from '../models/player';
 import { AccessToken } from '../models/access_token';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  private playerSubject = new BehaviorSubject<Player>(new GuestPlayer());
+  private playerSubject = new BehaviorSubject<Player | null>(null);
   public player$ = this.playerSubject.asObservable();
 
-  constructor(private localStorageService: LocalStorageService, private httpClient: HttpClient) {
-    
-  }
+  constructor(private localStorageService: LocalStorageService, private httpClient: HttpClient) { }
 
-  get currentPlayer(): Player {
+  get currentPlayer(): Player | null {
     return this.playerSubject.value;
   }
 
   async loadPlayerProfile(): Promise<void> {
     console.log('Loading player profile');
-
     try {
       const playerData = await firstValueFrom(
-        this.httpClient.get<Player>('/api/users/me')
+        this.httpClient.get<any>('/api/users/me')
       );
       const player = new Player(playerData);
-      player.is_guest = false;
+      player.is_guest = playerData.anonymous;
       this.playerSubject.next(player);
     } catch (error) {
-      console.log('401 Unauthorized, using guest profile');
-      this.playerSubject.next(new GuestPlayer());
+      console.log('Error loading profile, likely unauthorized');
+      this.playerSubject.next(null);
     }
   }
 
   async init(): Promise<void> {
     let token = this.localStorageService.getItem(LocalStorageService.JWT_ACCESS_TOKEN);
-    if (!token) {
-      console.log('No token found, authenticating as guest');
-      const token = await firstValueFrom(
-        this.httpClient.post<AccessToken>('/api/guest-token', {})
-      );
-      this.localStorageService.setItem(LocalStorageService.JWT_ACCESS_TOKEN, token.access_token);
+
+    if (token) {
+      await this.loadPlayerProfile();
     }
 
-    await this.loadPlayerProfile();
+    if (!this.currentPlayer) {
+      console.log('No valid session found, authenticating as guest');
+      const tokenResponse = await firstValueFrom(
+        this.httpClient.post<AccessToken>('/api/guest-token', {})
+      );
+      this.localStorageService.setItem(LocalStorageService.JWT_ACCESS_TOKEN, tokenResponse.access_token);
+      await this.loadPlayerProfile();
+    }
   }
 
-  /*async authenticateGuest(): Promise<void> {
+  authenticateGuest(): Observable<AccessToken> {
     console.log('Authenticating as guest');
-
-    this.httpClient.post<AccessToken>(
-      '/api/users/guest-token', {}
+    return this.httpClient.post<AccessToken>(
+      '/api/guest-token', {}
     ).pipe(
       tap((token) => {
         console.log('Storing guest token in local storage');
         this.localStorageService.setItem(LocalStorageService.JWT_ACCESS_TOKEN, token.access_token);
       })
     );
-  }*/
+  }
 
-  authenticate(email: string, password: string): Observable<AccessToken> {
+  authenticate(email: string, password: string): Observable<Player | null> {
     console.log('Authenticating user:', email);
-
     const body = new URLSearchParams();
     body.set('grant_type', 'password');
     body.set('username', email);
@@ -79,23 +78,21 @@ export class UserService {
     ).pipe(
       tap((token) => {
         this.localStorageService.setItem(LocalStorageService.JWT_ACCESS_TOKEN, token.access_token);
-      })
+      }),
+      switchMap(() => from(this.loadPlayerProfile())),
+      map(() => this.currentPlayer)
     );
   }
 
   register(email: string, password: string, level: string): Observable<any> {
     console.log('Registering user');
-
-    const body = {
-      email: email,
-      password: password,
-      level: level
-    };
-
+    const body = { email, password, level };
     return this.httpClient.post('/api/register', body);
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
     this.localStorageService.removeItem(LocalStorageService.JWT_ACCESS_TOKEN);
+    this.playerSubject.next(null);
+    await this.init();
   }
 }

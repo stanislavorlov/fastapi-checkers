@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from bson import ObjectId
 from domain.profile.contact import Contact
@@ -5,6 +6,8 @@ from domain.profile.full_name import FullName
 from domain.profile.profile import Profile
 from infrastructure.mongo_context import MongoContext
 
+
+logger = logging.getLogger(__name__)
 
 class ProfileRepository:
 
@@ -53,9 +56,8 @@ class ProfileRepository:
         profile_document = self.db.profiles.find_one({"email": email})
 
         if profile_document is not None:
-            print(profile_document)
-
-            print(profile_document["first_name"], profile_document["last_name"])
+            logger.debug(f"Found profile for email: {email}")
+            logger.debug(f"Profile name: {profile_document.get('first_name')} {profile_document.get('last_name')}")
 
             return Profile(
                 _id=profile_document["_id"],

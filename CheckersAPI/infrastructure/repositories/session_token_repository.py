@@ -17,6 +17,6 @@ class SessionRepository:
             timezone=timezone,
         )
 
-        result = self.db.sessions.insert_one(document.model_dump())
+        result = self.db.sessions.insert_one(document.model_dump(mode='python', by_alias=True))
 
         return str(result.inserted_id)

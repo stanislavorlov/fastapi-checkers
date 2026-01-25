@@ -1,3 +1,4 @@
+import logging
 import secrets
 import string
 from datetime import timedelta, datetime, timezone
@@ -8,11 +9,13 @@ from jwt import InvalidTokenError
 from pwdlib import PasswordHash
 from infrastructure.settings import settings
 from infrastructure.repositories.profile_repository import ProfileRepository
+from infrastructure.repositories.player_repository import PlayerRepository
 from infrastructure.mappers import guest_user
-from web.models import AccessTokenData, AccessToken
+from web.models import AccessTokenData, AccessToken, PlayerUserDto
 
 password_hash = PasswordHash.recommended()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/token")
+logger = logging.getLogger(__name__)
 
 def nanoid(size: int = 21) -> str:
     """
@@ -28,18 +31,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_hash.verify(plain_password, hashed_password)
 
 def create_access_token(player_id: str, name: str, email: str, access_type: str):
-    """
-    Method creates an access token
-    iss - Issuer claim containing StringOrURI value
-    sub - Subject claim identifies the principal, should be globally unique value in the context of issuer
-    aud - Recipients that the JWT is intended for. If the principal doesn't identify itself with a value in "aud",
-    the token is rejected. StringOrURI value
-    exp - expiration date time (few minutes). Must be a number
-    nbf - current date time should be less than nbf value (not before)
-    iat - the time JWT was issued at. Number containing a NumericDate
-    jti - unique identifier for the JWT.
-    """
-
     data = AccessTokenData(
         sub=player_id,
         name=name,
@@ -72,10 +63,9 @@ def decode_access_token(token: str) -> AccessTokenData:
         aud=payload['aud'],
     )
 
-# profile_repository: Annotated[ProfileRepository, Depends(get_profile_repository)],
-# token: str = Depends(oauth2_scheme)
 async def get_current_user(
         profile_repository: ProfileRepository,
+        player_repository: PlayerRepository,
         token: str
 ):
     credentials_exception = HTTPException(
@@ -85,21 +75,50 @@ async def get_current_user(
     )
     try:
         payload = decode_access_token(token)
-        user_id, user_type = payload.sub, payload.type
+        player_id, user_type = payload.sub, payload.type
 
-        if user_type == "guest":
-            guest_random_id = nanoid(10)
-
-            return guest_user(guest_random_id)
-
-        if user_id is None:
-            print('User ID is None')
-
+        if player_id is None:
+            logger.error('Player ID (sub) is None in JWT payload')
             raise credentials_exception
 
-        return profile_repository.get(user_id)
+        player = player_repository.get_by_id(player_id)
+        if player is None:
+            logger.error(f'Player {player_id} not found')
+            raise credentials_exception
+        
+        if user_type == "guest":
+            return PlayerUserDto(
+                player_id=str(player.id),
+                email='',
+                first_name='Guest',
+                last_name='Guest',
+                country='',
+                anonymous=True
+            )
+
+        # For accounts, try to find the profile
+        if player.profile_id:
+            profile = profile_repository.get(str(player.profile_id))
+            if profile:
+                return PlayerUserDto(
+                    player_id=str(player.id),
+                    email=profile.contact.email,
+                    first_name=profile.full_name.first.value,
+                    last_name=profile.full_name.last.value,
+                    country=profile.country or '',
+                    anonymous=False
+                )
+
+        # Fallback if profile not found but it's not a guest
+        return PlayerUserDto(
+            player_id=str(player.id),
+            email='',
+            first_name=player.display_name.value,
+            last_name='',
+            country='',
+            anonymous=False
+        )
 
     except InvalidTokenError:
-        print('Invalid token')
-
+        logger.error('Invalid token')
         raise credentials_exception

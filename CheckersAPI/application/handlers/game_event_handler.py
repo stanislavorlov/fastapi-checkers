@@ -1,10 +1,14 @@
 import json
+import logging
 from domain.board.board import Board
 from domain.history_entry import HistoryEntry
 from domain.pdn_move import PdnMove
 from infrastructure.connnection_manager import ConnectionManager
 from infrastructure.repositories.game_repository import GameRepository
 
+# ... imports ...
+
+logger = logging.getLogger(__name__)
 
 class GameEventHandler:
 
@@ -13,18 +17,18 @@ class GameEventHandler:
         self.game_repository = game_repository
 
     async def handle(self, game_id: str, player_id: str, pdn_move: PdnMove):
-        print('Event handler called -> handle')
+        logger.info(f'Event handler called -> handle for game {game_id}')
 
         game = await self.game_repository.fetch(game_id)
 
-        print(f'Found history {game.history}')
+        logger.debug(f'Found history {game.history}')
 
         board = Board.from_history(game.history)
 
         if board.apply_move(pdn_move):
             history = HistoryEntry(
                 player_id=player_id,
-                move=pdn_move.as_string,
+                pdn_string=pdn_move.as_string,
                 captures=pdn_move.captured_squares,
                 sequence=len(game.history),
             )

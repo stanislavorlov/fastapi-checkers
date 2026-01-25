@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { UserService } from '../../services/user.service';
 
 @Component({
@@ -12,6 +12,7 @@ import { UserService } from '../../services/user.service';
 })
 export class SignupComponent {
   signupForm: FormGroup;
+  private readonly router = inject(Router);
 
   passwordMatchValidator: ValidatorFn = (control: AbstractControl): { [key: string]: boolean } | null => {
     const password = control.get('password');
@@ -61,5 +62,9 @@ export class SignupComponent {
     } else {
       this.signupForm.markAllAsTouched();
     }
+  }
+
+  backMenu(): void {
+    this.router.navigate(['/'], { queryParams: {} });
   }
 }

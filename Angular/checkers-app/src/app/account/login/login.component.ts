@@ -44,4 +44,8 @@ export class LoginComponent {
       this.loginForm.markAllAsTouched();
     }
   }
+
+  backMenu(): void {
+    this.router.navigate(['/'], { queryParams: {} });
+  }
 }

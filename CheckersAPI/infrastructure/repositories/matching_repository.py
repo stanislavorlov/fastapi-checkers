@@ -26,7 +26,7 @@ class MatchingRepository:
         # Let's update the schema to include player_id if it's missing or use session_id as player_id.
         # For now, I will use player_id as session_id.
         
-        queue_item.session_id = player_id
+        queue_item.player_id = player_id
         
-        result = self.db.matching_queue.insert_one(queue_item.model_dump(by_alias=True))
+        result = self.db.matching_queue.insert_one(queue_item.model_dump(mode='python', by_alias=True))
         return str(result.inserted_id)

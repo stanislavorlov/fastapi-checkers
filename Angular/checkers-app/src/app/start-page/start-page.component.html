@@ -1,0 +1,29 @@
+<div class="content game-menu">
+    <div class="left-side">
+        <h1>Welcome to Draughts Game!</h1>
+        <ul>
+            <li>
+                <button class="button-9 blue" (click)="play()" role="button">Play</button>
+            </li>
+            <li>
+                <hr>
+            </li>
+        </ul>
+        <div *ngIf="player$ | async as player">
+            Welcome, <b>{{ player.displayName }}</b>
+            <button *ngIf="!player.is_guest" class="button-31" role="button" (click)="logOut()">Log Out</button>
+        </div>
+
+        <ul *ngIf="!(player$ | async) || (player$ | async)?.is_guest">
+            <li>
+                <button class="button-9 green" (click)="signUp()" role="button">Sign Up</button>
+            </li>
+            <li>
+                <button class="button-9 red" (click)="logIn()" role="button">Log In</button>
+            </li>
+        </ul>
+    </div>
+    <div class="right-side">
+        <img src="./Draughts.png" alt="Checkers" width="90%" />
+    </div>
+</div>

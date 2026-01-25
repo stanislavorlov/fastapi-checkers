@@ -1,0 +1,46 @@
+.content {
+    display: flex;
+    justify-content: space-around;
+    /*width: 100%;
+    max-width: 700px; */
+    max-width: 1100px;
+    margin-bottom: 3rem;
+  }
+
+  .content h1 {
+    margin-top: 1.75rem;
+  }
+
+  .content p {
+    margin-top: 1.5rem;
+  }
+
+.left-side {
+  flex-shrink: 0;      /* prevent shrinking */
+  width: 250px;        /* fixed width */
+  padding: 1rem;
+}
+
+.right-side {
+  flex-grow: 1;         /* take remaining space */
+  padding: 1rem;
+}
+
+.divider {
+  width: 1px;
+  background: var(--red-to-pink-to-purple-vertical-gradient);
+  margin-inline: 0.5rem;
+}
+
+.game-menu{
+  background-color: azure;
+}
+
+.game-menu ul {
+  list-style: none;
+  padding: 0;
+}
+
+.game-menu li {
+  margin: 20px 0;
+}

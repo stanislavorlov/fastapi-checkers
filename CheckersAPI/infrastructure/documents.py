@@ -12,7 +12,10 @@ class PyObjectId(ObjectId):
     @classmethod
     def __get_pydantic_core_schema__(cls, _source_type: Any, _handler: Any) -> core_schema.CoreSchema:
         return core_schema.json_or_python_schema(
-            json_schema=core_schema.str_schema(),
+            json_schema=core_schema.chain_schema([
+                core_schema.str_schema(),
+                core_schema.no_info_plain_validator_function(cls.validate),
+            ]),
             python_schema=core_schema.union_schema([
                 core_schema.is_instance_schema(ObjectId),
                 core_schema.chain_schema([
@@ -21,7 +24,8 @@ class PyObjectId(ObjectId):
                 ]),
             ]),
             serialization=core_schema.plain_serializer_function_ser_schema(
-                lambda x: str(x)
+                lambda x: str(x),
+                when_used='json'
             ),
         )
 
@@ -144,7 +148,7 @@ class MatchingQueueSchema(BaseModel):
     """
     Player requests a game, enters matching.
     """
-    session_id: str
+    player_id: PyObjectId
     region: str
     rating_estimate: int
     rd: int
@@ -195,8 +199,8 @@ class GameSchema(BaseModel):
 
 class HistorySchema(BaseModel):
     game_id: PyObjectId
-    player_id: str
-    move: str
+    player_id: PyObjectId
+    pdn_string: str
     captures: List[str] = []
     sequence: int
 

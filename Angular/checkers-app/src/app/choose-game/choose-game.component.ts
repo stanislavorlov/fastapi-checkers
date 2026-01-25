@@ -1,27 +1,31 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CheckersService } from '../services/checkers.service';
-import { Router } from '@angular/router';
 import { ApiResult } from '../models/api-result';
-import { AsyncPipe, NgIf } from '@angular/common';
-//import { NewGameFactory } from '../models/new-game-factory';
+import { Router } from '@angular/router';
+import { NgIf } from '@angular/common';
+import { LocalStorageService } from '../services/local-storage.service';
 import { UserService } from '../services/user.service';
 
 @Component({
-  selector: 'app-start',
-  imports: [NgIf, AsyncPipe],
-  templateUrl: './start.component.html',
-  styleUrl: './start.component.css'
+  selector: 'app-game',
+  imports: [NgIf],
+  templateUrl: './choose-game.component.html',
+  styleUrl: './choose-game.component.css'
 })
-export class StartComponent {
+export class GameComponent implements OnInit {
   gameMode?: 'computer' | 'online' | null;
   singleSide?: 'red' | 'black' | null;
-  gameMenu: boolean;
-  private userService: UserService = inject(UserService);
-  player$ = this.userService.player$;
 
-  constructor(private checkersService: CheckersService, private router: Router) {
+  constructor(
+    private checkersService: CheckersService,
+    private localStorageService: LocalStorageService,
+    private userService: UserService,
+    private router: Router) {
     this.gameMode = null;
-    this.gameMenu = true;
+  }
+
+  async ngOnInit(): Promise<void> {
+    await this.userService.init();
   }
 
   choosePlayMode(mode: 'computer' | 'online'): void {
@@ -33,11 +37,11 @@ export class StartComponent {
   }
 
   newGame(): void {
-    const currentPlayer = this.userService.currentPlayer;
+    /*const currentPlayer = this.userService.currentPlayer;
     if (!currentPlayer) {
       console.error('Player data is not available.');
       return;
-    }
+    }*/
 
     //const newGame = NewGameFactory.createGame(currentPlayer.player_id, currentPlayer.is_guest, this.gameMode!, this.singleSide || null);
 
@@ -51,7 +55,7 @@ export class StartComponent {
             }
           }
         });
-      
+
         break;
       case 'online':
 
@@ -70,25 +74,7 @@ export class StartComponent {
     }
   }
 
-  logIn(): void {
-    this.router.navigate(['/account/login'], { queryParams: {} });
-  }
-
-  signUp(): void {
-    this.router.navigate(['/account/signup'], { queryParams: {} });
-  }
-
-  logOut(): void {
-    this.userService.logout();
-    this.gameMode = null;
-    this.singleSide = null;
-    this.router.navigate(['/'], { queryParams: {} });
-  }
-
   backMenu(): void {
-    this.gameMode = null;
-    this.singleSide = null;
-
     this.router.navigate(['/'], { queryParams: {} });
   }
 }

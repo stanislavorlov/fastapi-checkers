@@ -16,19 +16,20 @@ class GameRepository:
     def __init__(self, db: MongoContext):
         self.db = db
 
-    async def create(self, game: Game):
+    def create(self, game: Game):
         game_mode_schema = documents.GameMode.PVE
 
+        # Note: In a real implementation, player IDs would come from the game object
         player1 = GamePlayerSchema(
             snapshot={"display_name": "", "type": "account"},
-            player_id='',
-            color=''
+            player_id=ObjectId(), # Placeholder
+            color='white'
         )
 
         player2 = GamePlayerSchema(
             snapshot={"display_name": "", "type": "account"},
-            player_id='',
-            color=''
+            player_id=ObjectId(), # Placeholder
+            color='black'
         )
 
         game_schema = GameSchema(
@@ -38,28 +39,38 @@ class GameRepository:
             players=[player1, player2],
         )
 
-        result = await self.db.games.insert_one(game_schema.model_dump(by_alias=True))
+        result = self.db.games.insert_one(game_schema.model_dump(mode='python', by_alias=True))
 
         return result.inserted_id
 
-    async def append_history(self, game_id: str, history: HistoryEntry):
-        await self.db.history.insert_one({
-            "game_id": game_id,
-            "player_id": history.player_id,
-            "move": history.move,
-            "captures": history.captures,
-            "sequence": history.sequence,
-        })
+    def append_history(self, game_id: str, history: HistoryEntry):
+        history_document = documents.HistorySchema(
+            game_id=ObjectId(game_id),
+            player_id=ObjectId(history.player_id),
+            pdn_string=history.pdn_string,
+            captures=history.captures or [],
+            sequence=history.sequence
+        )
+        self.db.history.insert_one(history_document.model_dump(mode='python', by_alias=True))
 
-    async def fetch(self, game_id: str) -> Optional[Game]:
-        game_document = await self.db.games.find_one({"_id": ObjectId(game_id)})
+    def fetch(self, game_id: str) -> Optional[Game]:
+        game_document = self.db.games.find_one({"_id": ObjectId(game_id)})
+        
+        if not game_document:
+            return None
+            
         cursor = self.db.history.find({"game_id": ObjectId(game_id)}).sort("sequence", 1)
 
         game_result = GameResult()
         game_players: dict[Side, Player] = {}
         game_history: list[HistoryEntry] = []
 
-        async for document in cursor:
+        for document in cursor:
+            # We need to map 'pdn_string' back from the document if it exists
+            # HistoryEntry expects 'pdn_string', but we might have 'move' in old records
+            if 'pdn_string' not in document and 'move' in document:
+                document['pdn_string'] = document.pop('move')
+                
             entry = HistoryEntry(**document)
             game_history.append(entry)
 
