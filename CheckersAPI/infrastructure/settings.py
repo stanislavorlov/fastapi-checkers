@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     ISSUER: str | None = None
     ALGORITHM: str | None = None
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     AUDIENCE: str | None = None
     DATABASE_URL: str
     DATABASE_NAME: str

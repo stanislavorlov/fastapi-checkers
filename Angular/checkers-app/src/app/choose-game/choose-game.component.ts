@@ -30,51 +30,39 @@ export class GameComponent implements OnInit {
 
   choosePlayMode(mode: 'computer' | 'online'): void {
     this.gameMode = mode;
+    if (mode === 'online') {
+      this.startNewGame();
+    }
   }
 
   computerModeColor(color: 'red' | 'black'): void {
     this.singleSide = color;
+    this.startNewGame();
   }
 
-  newGame(): void {
-    /*const currentPlayer = this.userService.currentPlayer;
-    if (!currentPlayer) {
-      console.error('Player data is not available.');
-      return;
-    }*/
+  startNewGame(): void {
+    const request$ = this.gameMode === 'computer'
+      ? this.checkersService.requestComputerGame()
+      : this.checkersService.requestOnlineGame();
 
-    //const newGame = NewGameFactory.createGame(currentPlayer.player_id, currentPlayer.is_guest, this.gameMode!, this.singleSide || null);
-
-    switch (this.gameMode) {
-      case 'computer':
-
-        this.checkersService.requestComputerGame().subscribe({
-          next: (game_id: ApiResult<string>) => {
-            if (!!game_id) {
-              this.router.navigate(['/', game_id], { queryParams: {} });
-            }
-          }
-        });
-
-        break;
-      case 'online':
-
-        this.checkersService.requestOnlineGame().subscribe({
-          next: (game_id: ApiResult<string>) => {
-            if (!!game_id) {
-              this.router.navigate(['/', game_id], { queryParams: {} });
-            }
-          }
-        });
-
-        break;
-      default:
-        console.error('Invalid game mode selected.');
-        return;
-    }
+    request$.subscribe({
+      next: (game_id: ApiResult<string>) => {
+        if (game_id) {
+          this.router.navigate(['/', game_id], { queryParams: {} });
+        }
+      },
+      error: (err) => {
+        console.error('Failed to start game:', err);
+      }
+    });
   }
 
   backMenu(): void {
-    this.router.navigate(['/'], { queryParams: {} });
+    if (this.gameMode) {
+      this.gameMode = null;
+      this.singleSide = null;
+    } else {
+      this.router.navigate(['/'], { queryParams: {} });
+    }
   }
 }

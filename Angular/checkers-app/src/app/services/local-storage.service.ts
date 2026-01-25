@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 export class LocalStorageService {
 
   public static readonly JWT_ACCESS_TOKEN = 'jwt_access_token';
+  public static readonly JWT_REFRESH_TOKEN = 'jwt_refresh_token';
 
   setItem(key: string, value: string): void {
     try {

@@ -1,51 +1,83 @@
-<div class="content">
-    <div class="left-side">
-      <div>
-        <p>Current Turn: {{ board.turn }}</p>
-      </div>
-      <div>
-        Player 1 {{ opponentId }} Opponent Side: {{ opponentSide }}
-      </div>
-      <table class="chess-board">
-        <tbody>
-          <tr>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th></th>
-            <th></th>
-          </tr>
-            <tr *ngFor="let rowEntry of board">
-                <th>{{rowEntry.row+1}}</th>
-                <td *ngFor="let sq of rowEntry.squares" (click)="clickBoard(sq)" class="{{sq.color}} {{ sq.selected ? 'selected' : 'none' }}">
-                  <div class="watermark" *ngIf="+sq.id > 0">{{sq.id}}</div>
-                  <img *ngIf="board.pieces.get(sq)" src="./{{board.pieces.get(sq)?.image}}.png" class="piece" />
-                </td>
-            </tr>
-        </tbody>
-      </table>
-      <div style="margin-top: 10px;">
-        Player 2 {{ board.playerId }} Player Side: {{ playerSide }}
-      </div>
+<div class="game-container">
+  <header class="game-header">
+    <div class="game-info">
+      <span class="badge" [class.red]="board.turn === 'Red'" [class.black]="board.turn === 'Black'">
+        {{ board.turn }}'s Turn
+      </span>
+      <h1 class="game-title">Checkers Royale</h1>
     </div>
-    <div class="divider" role="separator" aria-label="Divider"></div>
-    <div class="right-side">
-      <div class="pill-group">
-        <button class="pill btn" (click)="backMenu()">
-          <span>New Game</span>
-        </button>
+    <div class="game-actions">
+      <button class="btn-danger-outline" (click)="backMenu()">
+        <span class="icon">🏠</span> Start Menu
+      </button>
+    </div>
+  </header>
+
+  <main class="game-layout">
+    <section class="player-section opponent">
+      <div class="player-card" [class.active]="board.turn === opponentSide">
+        <div class="avatar-wrapper">
+          <div class="avatar" [style.background-color]="opponentSide === 'red' ? '#ff4d4d' : '#333'">
+            {{ (opponentId || 'A')[0] | uppercase }}
+          </div>
+          <div class="status-indicator"></div>
+        </div>
+        <div class="player-details">
+          <span class="player-name">{{ opponentId || 'AI Bot' }}</span>
+          <span class="player-role">Opponent ({{ opponentSide | titlecase }})</span>
+        </div>
       </div>
-      <div class="history">
-        <h2>Game History</h2>
+    </section>
+
+    <section class="board-area">
+      <div class="board-wrapper">
+        <div class="board-grid">
+          <ng-container *ngFor="let rowEntry of board">
+            <div *ngFor="let sq of rowEntry.squares" (click)="clickBoard(sq)" class="square"
+              [class.light]="sq.color === 'light'" [class.dark]="sq.color === 'dark'" [class.selected]="sq.selected">
+
+              <div class="square-id" *ngIf="+sq.id > 0">{{sq.id}}</div>
+
+              <div class="piece-container" *ngIf="board.pieces.get(sq)">
+                <img [src]="'./' + board.pieces.get(sq)?.image + '.png'" [alt]="board.pieces.get(sq)?.color + ' piece'"
+                  class="piece-img" />
+              </div>
+
+              <!-- Available move indicator -->
+              <div class="move-indicator" *ngIf="sq.selected && !board.pieces.get(sq)"></div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </section>
+
+    <section class="player-section me">
+      <div class="player-card" [class.active]="board.turn === playerSide">
+        <div class="avatar-wrapper">
+          <div class="avatar" [style.background-color]="playerSide === 'red' ? '#ff4d4d' : '#333'">
+            {{ (board.playerId || 'P')[0] | uppercase }}
+          </div>
+          <div class="status-indicator"></div>
+        </div>
+        <div class="player-details">
+          <span class="player-name">You ({{ board.playerId | slice:0:8 }}...)</span>
+          <span class="player-role">Player ({{ playerSide | titlecase }})</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="game-sidebar">
+    <div class="sidebar-content glass">
+      <h3>Move History</h3>
+      <div class="history-list">
         <ul>
-          <li *ngFor="let move of board.getHistory()">
-            {{ move.move }}
+          <li *ngFor="let move of board.getHistory(); let i = index">
+            <span class="move-number">{{ i + 1 }}.</span>
+            <span class="move-text">{{ move.move }}</span>
           </li>
         </ul>
       </div>
     </div>
-  </div>
+  </aside>
+</div>

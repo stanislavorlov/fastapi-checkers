@@ -1,9 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, firstValueFrom, from, Observable, tap, switchMap, map } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, from, Observable, tap, switchMap, map, catchError, throwError } from 'rxjs';
 import { LocalStorageService } from './local-storage.service';
 import { Player } from '../models/player';
 import { AccessToken } from '../models/access_token';
+import { isPlatformBrowser } from '@angular/common';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +12,7 @@ import { AccessToken } from '../models/access_token';
 export class UserService {
   private playerSubject = new BehaviorSubject<Player | null>(null);
   public player$ = this.playerSubject.asObservable();
+  private platformId = inject(PLATFORM_ID);
 
   constructor(private localStorageService: LocalStorageService, private httpClient: HttpClient) { }
 
@@ -34,6 +36,9 @@ export class UserService {
   }
 
   async init(): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
     let token = this.localStorageService.getItem(LocalStorageService.JWT_ACCESS_TOKEN);
 
     if (token) {
@@ -41,13 +46,44 @@ export class UserService {
     }
 
     if (!this.currentPlayer) {
-      console.log('No valid session found, authenticating as guest');
-      const tokenResponse = await firstValueFrom(
-        this.httpClient.post<AccessToken>('/api/guest-token', {})
-      );
-      this.localStorageService.setItem(LocalStorageService.JWT_ACCESS_TOKEN, tokenResponse.access_token);
-      await this.loadPlayerProfile();
+      console.log('[UserService] No current player. Starting guest authentication.');
+      try {
+        const tokenResponse = await firstValueFrom(
+          this.httpClient.post<AccessToken>('/api/guest-token', {})
+        );
+        console.log('[UserService] Guest token received. Refresh token exists in response:', !!tokenResponse.refresh_token);
+
+        this.localStorageService.setItem(LocalStorageService.JWT_ACCESS_TOKEN, tokenResponse.access_token);
+        this.localStorageService.setItem(LocalStorageService.JWT_REFRESH_TOKEN, tokenResponse.refresh_token);
+
+        const storedRefresh = this.localStorageService.getItem(LocalStorageService.JWT_REFRESH_TOKEN);
+        console.log('[UserService] Verification: Refresh token stored in LocalStorage:', !!storedRefresh);
+
+        await this.loadPlayerProfile();
+      } catch (err) {
+        console.error('[UserService] Guest authentication failed:', err);
+      }
     }
+  }
+
+  refreshToken(): Observable<AccessToken> {
+    const refreshToken = this.localStorageService.getItem(LocalStorageService.JWT_REFRESH_TOKEN);
+    console.log('[UserService] refreshToken() called. Refresh token exists:', !!refreshToken);
+    if (!refreshToken) {
+      return throwError(() => new Error('No refresh token available'));
+    }
+
+    return this.httpClient.post<AccessToken>('/api/refresh', { refresh_token: refreshToken }).pipe(
+      tap((token) => {
+        console.log('[UserService] refreshToken() request successful. Storing new tokens.');
+        this.localStorageService.setItem(LocalStorageService.JWT_ACCESS_TOKEN, token.access_token);
+        this.localStorageService.setItem(LocalStorageService.JWT_REFRESH_TOKEN, token.refresh_token);
+      }),
+      catchError(err => {
+        console.error('[UserService] refreshToken() request failed:', err);
+        return throwError(() => err);
+      })
+    );
   }
 
   authenticateGuest(): Observable<AccessToken> {
@@ -56,8 +92,9 @@ export class UserService {
       '/api/guest-token', {}
     ).pipe(
       tap((token) => {
-        console.log('Storing guest token in local storage');
+        console.log('Storing guest tokens in local storage');
         this.localStorageService.setItem(LocalStorageService.JWT_ACCESS_TOKEN, token.access_token);
+        this.localStorageService.setItem(LocalStorageService.JWT_REFRESH_TOKEN, token.refresh_token);
       })
     );
   }
@@ -78,6 +115,7 @@ export class UserService {
     ).pipe(
       tap((token) => {
         this.localStorageService.setItem(LocalStorageService.JWT_ACCESS_TOKEN, token.access_token);
+        this.localStorageService.setItem(LocalStorageService.JWT_REFRESH_TOKEN, token.refresh_token);
       }),
       switchMap(() => from(this.loadPlayerProfile())),
       map(() => this.currentPlayer)
@@ -92,7 +130,9 @@ export class UserService {
 
   async logout(): Promise<void> {
     this.localStorageService.removeItem(LocalStorageService.JWT_ACCESS_TOKEN);
+    this.localStorageService.removeItem(LocalStorageService.JWT_REFRESH_TOKEN);
     this.playerSubject.next(null);
-    await this.init();
+    // Don't call init() here as it can cause infinite loops if authentication fails.
+    // The next navigation or manual login will handle re-initialization.
   }
 }

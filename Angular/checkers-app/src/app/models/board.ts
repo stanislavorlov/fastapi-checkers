@@ -38,6 +38,10 @@ export class Board {
         return this._playerId;
     }
 
+    public set playerId(playerId: string) {
+        this._playerId = playerId;
+    }
+
     public get turn(): string {
         return this._turn === PieceColor.BLACK ? 'Black' : 'Red';
     }
@@ -105,7 +109,7 @@ export class Board {
 
             pairs.forEach(([from, to]) => {
                 let [from_square, to_square] = this.getMoveSquaresById(from, to);
-                
+
                 if (!from_square || !to_square) {
                     console.error(`Invalid move: from ${from} or to ${to} not found on the board.`);
                 } else {
@@ -135,7 +139,7 @@ export class Board {
 
     public click(square: Square) {
         let last_action = this._actionHistory.peek();
-        let current_action : Action | null = null;
+        let current_action: Action | null = null;
 
         switch (last_action?.type) {
             case ActionType.SELECT: {
@@ -167,7 +171,7 @@ export class Board {
 
                         if (!!from_square) {
                             from_square.unselect();
-                            
+
                             for (let [moveSquare, move] of moves) {
                                 moveSquare.unselect();
                             }
@@ -212,7 +216,7 @@ export class Board {
                     this._moveHistory.push(this._move!);
                     this._move = null;
                 }
-                
+
                 this._move = new Move(this._playerId);
                 this._move.addSquare(square.id);
 
@@ -286,7 +290,7 @@ export class Board {
                     this._move = new Move(this._playerId);
                     this._move.addSquare(square.id);
                 }
-                
+
                 break;
             }
             case ActionType.PROMOTE:
@@ -336,15 +340,15 @@ export class Board {
         return null as any;
     }
 
-    private checkPromotionAvailability(from: Square, to: Square) : boolean {
+    private checkPromotionAvailability(from: Square, to: Square): boolean {
         let piece = this._pieces.get(to);
 
         if (!piece) {
             return false;
         }
 
-        return piece.color === PieceColor.BLACK && ['29','30','31','32'].includes(to.id) ||
-            piece.color === PieceColor.RED && ['1','2','3','4'].includes(to.id);
+        return piece.color === PieceColor.BLACK && ['29', '30', '31', '32'].includes(to.id) ||
+            piece.color === PieceColor.RED && ['1', '2', '3', '4'].includes(to.id);
     }
 
     private getSquareById(id: string): Square | undefined {

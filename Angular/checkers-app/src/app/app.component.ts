@@ -9,15 +9,15 @@ import { UserService } from './services/user.service';
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
-  
+
   private readonly router = inject(Router);
 
   constructor(private userService: UserService) {
-    
+
   }
 
   async ngOnInit(): Promise<void> {
-    //await this.userService.loadPlayerProfile();
+    await this.userService.init();
   }
 
   backMenu(): void {

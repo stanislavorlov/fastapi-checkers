@@ -30,8 +30,8 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_hash.verify(plain_password, hashed_password)
 
-def create_access_token(player_id: str, name: str, email: str, access_type: str):
-    data = AccessTokenData(
+def create_access_token(player_id: str, name: str, email: str, access_type: str) -> AccessToken:
+    access_token_data = AccessTokenData(
         sub=player_id,
         name=name,
         preferred_username=email,
@@ -41,9 +41,25 @@ def create_access_token(player_id: str, name: str, email: str, access_type: str)
         aud=settings.AUDIENCE,
     )
 
-    encoded_jwt = jwt.encode(data.model_dump(), settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+    access_token = jwt.encode(access_token_data.model_dump(), settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
-    return AccessToken(player_id=player_id, access_token=encoded_jwt)
+    refresh_token_data = AccessTokenData(
+        sub=player_id,
+        name=name,
+        preferred_username=email,
+        type=access_type,
+        exp=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        iss=settings.ISSUER,
+        aud=settings.AUDIENCE,
+    )
+
+    refresh_token = jwt.encode(refresh_token_data.model_dump(), settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+    return AccessToken(
+        player_id=player_id,
+        access_token=access_token,
+        refresh_token=refresh_token
+    )
 
 def decode_access_token(token: str) -> AccessTokenData:
     payload = jwt.decode(
@@ -119,6 +135,20 @@ async def get_current_user(
             anonymous=False
         )
 
-    except InvalidTokenError:
-        logger.error('Invalid token')
-        raise credentials_exception
+    except InvalidTokenError as e:
+        if "expired" in str(e).lower():
+            logger.info(f'Token expired: {e}')
+        else:
+            logger.error(f'Invalid token: {e}')
+            
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Could not validate credentials: {e}",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        logger.error(f'Unexpected error in get_current_user: {e}')
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {e}",
+        )

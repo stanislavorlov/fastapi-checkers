@@ -4,7 +4,7 @@ import { Move } from '../models/move';
 import { Square } from '../models/square';
 import { Board } from '../models/board';
 import { Piece } from '../models/piece';
-import { NgFor, NgIf } from '@angular/common';
+import { NgFor, NgIf, TitleCasePipe, UpperCasePipe, SlicePipe } from '@angular/common';
 import { CheckersService } from '../services/checkers.service';
 import { Game } from '../models/game';
 import { Subject } from 'rxjs';
@@ -12,7 +12,7 @@ import { UserService } from '../services/user.service';
 
 @Component({
   selector: 'app-play',
-  imports: [NgFor, NgIf],
+  imports: [NgFor, NgIf, TitleCasePipe, UpperCasePipe, SlicePipe],
   templateUrl: './play.component.html',
   styleUrl: './play.component.css'
 })
@@ -36,7 +36,7 @@ export class PlayComponent implements OnInit, OnDestroy {
   constructor(private checkersService: CheckersService, private userService: UserService) {
     this.gameMenu = true;
     this.event$ = new Subject<Move>();
-    //this.playerId = this.userService.currentPlayer?.player_id || '';
+    this.playerId = this.userService.currentPlayer?.player_id || '';
     this.board = new Board(this.playerId, this.gameId, this.event$);
     this.pieces = new Map<Square, Piece>();
 
@@ -45,39 +45,46 @@ export class PlayComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    if (!!this.gameId) {
-      this.checkersService.loadGame(this.gameId).subscribe((result: Game) => {
-        if (!result) {
-          console.error('Game not found or invalid response');
-          return;
-        }
+    const gameId = this.gameId;
 
-        // ToDo: display the payer side based on playerId and game data
-        if (this.playerId === result.light_player) {
-          this.playerSide = 'red';
-          this.opponentSide = 'black';
-          this.opponentId = result.dark_player;
-        } else if (this.playerId === result.dark_player) {
-          this.playerSide = 'black';
-          this.opponentSide = 'red';
-          this.opponentId = result.light_player;
-        } else {
-          console.error('Player not part of this game');
-          //return;
-        }
+    if (!!gameId) {
+      this.userService.player$.subscribe(player => {
+        if (!player) return;
 
-        this.board.load(result);
-        this.pieces = this.board.pieces;
+        this.playerId = player.player_id;
+        this.board.playerId = player.player_id;
 
-        this.connectWebSocket(this.gameId);
-
-        this.event$.asObservable().subscribe((move: Move) => {
-          console.log('Move event:', move.toJSONstring());
-
-          // ToDo: send to the API full move string, e.g. "22-18" or "6x13x22"
-          if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-            this.webSocket.send(move.toJSONstring());
+        this.checkersService.loadGame(gameId).subscribe((result: Game) => {
+          if (!result) {
+            console.error('Game not found or invalid response');
+            return;
           }
+
+          if (this.playerId === result.light_player) {
+            this.playerSide = 'red';
+            this.opponentSide = 'black';
+            this.opponentId = result.dark_player;
+          } else if (this.playerId === result.dark_player) {
+            this.playerSide = 'black';
+            this.opponentSide = 'red';
+            this.opponentId = result.light_player;
+          } else {
+            console.error('Player not part of this game', this.playerId, result.light_player, result.dark_player);
+            // return;
+          }
+
+          this.board.load(result);
+          this.pieces = this.board.pieces;
+
+          this.connectWebSocket(gameId);
+
+          this.event$.asObservable().subscribe((move: Move) => {
+            console.log('Move event:', move.toJSONstring());
+
+            if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+              this.webSocket.send(move.toJSONstring());
+            }
+          });
         });
       });
     }
@@ -125,12 +132,14 @@ export class PlayComponent implements OnInit, OnDestroy {
   }
 
   backMenu(): void {
-    this.gameMenu = true;
-    this.gameMode = null;
-    this.singleSide = null;
+    if (window.confirm("Are you sure to cancel this game?")) {
+      this.gameMenu = true;
+      this.gameMode = null;
+      this.singleSide = null;
 
-    this.router.navigate(['/'], { queryParams: {} });
-    this.closeWebSocket();
+      this.router.navigate(['/game'], { queryParams: {} });
+      this.closeWebSocket();
+    }
   }
 
 }

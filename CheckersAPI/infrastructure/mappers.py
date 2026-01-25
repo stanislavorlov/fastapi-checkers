@@ -4,17 +4,24 @@ from infrastructure.documents import GameSchema, HistorySchema
 from web.models import ReadGameDto, HistoryDto, PlayerUserDto
 
 
-def individual_game(game : GameSchema, history_cursor: Cursor[Mapping[str, HistorySchema]]) -> ReadGameDto:
-    # Note: GameSchema might not have all these fields. This mapper seems to expect a dict or a different schema.
-    # Assuming game is a dict for now if it has fields not in GameSchema, or we need to update GameSchema.
-    # But the type hint says GameSchema. 
-    # If GameSchema is Pydantic, we should use .name, but GameSchema doesn't have name.
-    # I will switch to attribute access but this might fail if fields are missing.
-    # For now, I'll assume the input might be a dict (from Mongo) despite the type hint, 
-    # OR I should update GameSchema.
-    # Given the ambiguity, I will leave this function as is but warn, or try to fix what I can.
-    # Actually, let's fix individual_history which is definitely using HistorySchema.
-    pass
+from domain.game.game import Game
+from domain.side import Side
+from datetime import datetime
+
+def individual_game(game: Game) -> ReadGameDto:
+    # Use side assignment from domain dictionary
+    light_player = game.players.get(Side.Light)
+    dark_player = game.players.get(Side.Dark)
+    
+    return ReadGameDto(
+        game_id=str(game.id),
+        name="Checkers Game", # Or get from domain if added
+        started=game.started_at or game.created_at, # Fallback to created_at
+        mode=game.mode.value,
+        light_player=str(light_player.id) if light_player else "",
+        dark_player=str(dark_player.id) if dark_player else "",
+        history=list_histories(game.history)
+    )
 
 def individual_user(user_dict):
     return {
