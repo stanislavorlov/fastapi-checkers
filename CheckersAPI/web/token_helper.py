@@ -57,7 +57,10 @@ def create_access_token(player_id: str, name: str, email: str, access_type: str)
     return AccessToken(
         player_id=player_id,
         access_token=access_token,
-        refresh_token=refresh_token
+        refresh_token=refresh_token,
+        name=name,
+        email=email,
+        type=access_type
     )
 
 def decode_access_token(token: str) -> AccessTokenData:
@@ -111,7 +114,6 @@ async def get_current_user(
                 anonymous=True
             )
 
-        # For accounts, try to find the profile
         if player.profile_id:
             profile = profile_repository.get(str(player.profile_id))
             if profile:
@@ -124,7 +126,6 @@ async def get_current_user(
                     anonymous=False
                 )
 
-        # Fallback if profile not found but it's not a guest
         return PlayerUserDto(
             player_id=str(player.id),
             email='',

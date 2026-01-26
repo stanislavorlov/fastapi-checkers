@@ -19,7 +19,7 @@ class GameEventHandler:
     async def handle(self, game_id: str, player_id: str, pdn_move: PdnMove):
         logger.info(f'Event handler called -> handle for game {game_id}')
 
-        game = await self.game_repository.fetch(game_id)
+        game = self.game_repository.fetch(game_id)
 
         logger.debug(f'Found history {game.history}')
 

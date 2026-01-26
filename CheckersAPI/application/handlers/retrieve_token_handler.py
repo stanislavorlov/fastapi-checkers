@@ -9,7 +9,7 @@ from infrastructure.repositories.player_repository import PlayerRepository
 from infrastructure.repositories.profile_repository import ProfileRepository
 from infrastructure.repositories.session_token_repository import SessionRepository
 from web.models import AccessToken
-from web.token_helper import create_access_token, verify_password
+from web.token_helper import create_access_token, verify_password, decode_access_token, InvalidTokenError
 
 logger = logging.getLogger(__name__)
 
@@ -47,19 +47,24 @@ class RetrieveTokenHandler:
         )
         
         if existing_token:
-            logger.info('Reusing existing session token for player %s', auth_result.player_id)
-            # We return a partial AccessToken or just enough to satisfy the contract
-            # Since the client needs the access_token, we can return it if it's still valid
-            # For simplicity, we create a DTO with the existing token
-            return AccessToken(
-                access_token=existing_token,
-                token_type='bearer',
-                player_id=auth_result.player_id,
-                name=auth_result.display_name,
-                email=auth_result.email,
-                type=auth_result.type,
-                refresh_token='' # Refresh token logic might need more care if we want to reuse it too
-            )
+            try:
+                # Validate the existing token before reusing it
+                decode_access_token(existing_token)
+                logger.info('Reusing valid existing session token for player %s', auth_result.player_id)
+                
+                return AccessToken(
+                    access_token=existing_token,
+                    token_type='bearer',
+                    player_id=auth_result.player_id,
+                    name=auth_result.display_name,
+                    email=auth_result.email,
+                    type=auth_result.type,
+                    refresh_token='' # Client should still have its refresh token, or we could fetch it too
+                )
+            except InvalidTokenError:
+                logger.info('Existing session token for player %s is expired or invalid, creating new one', auth_result.player_id)
+                # Proceed to create a new session
+                pass
 
         access_token = create_access_token(
             auth_result.player_id,
@@ -74,7 +79,7 @@ class RetrieveTokenHandler:
             request.client_host,
             agent=request.agent,
             region='',
-            timezone=''
+            timezone_name=''
         )
 
         return access_token

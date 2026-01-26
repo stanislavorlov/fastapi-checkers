@@ -49,6 +49,9 @@ class AccessToken(BaseModel):
     player_id: str
     access_token: str
     refresh_token: str
+    name: str = ""
+    email: str = ""
+    type: str = ""
     token_type: str = 'bearer'
 
 class RefreshTokenDto(BaseModel):
