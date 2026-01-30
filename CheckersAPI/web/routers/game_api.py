@@ -8,14 +8,15 @@ from infrastructure.repositories.game_repository import GameRepository
 from infrastructure.repositories.player_repository import PlayerRepository
 from infrastructure.repositories.matching_repository import MatchingRepository
 from web.dependencies import (
-    get_game_repository, 
-    get_player_repository, 
-    get_matching_repository, 
-    get_create_player_handler,
-    get_resolve_guest_player_handler
+    get_game_repository,
+    get_player_repository,
+    get_matching_repository,
+    get_resolve_guest_player_handler,
+    get_game_event_handler, get_create_player_handler
 )
+from application.handlers.game_event_handler import GameEventHandler
 from application.handlers.resolve_guest_player_handler import ResolveGuestPlayerHandler
-from web.models import RequestGameResponse, ReadGameDto
+from web.models import RequestGameResponse, ReadGameDto, StartComputerGameDto
 from infrastructure.mappers import individual_game
 from web.token_helper import decode_access_token
 from application.handlers.create_player_handler import CreatePlayerHandler
@@ -39,23 +40,29 @@ router = APIRouter(
 )
 
 @router.get('/{game_id}', response_model=ReadGameDto)
-def get_game(
+async def get_game(
         game_id: str,
-        repository: Annotated[GameRepository, Depends(get_game_repository)]
+        repository: Annotated[GameRepository, Depends(get_game_repository)],
+        handler: Annotated[GameEventHandler, Depends(get_game_event_handler)]
 ):
     game = repository.fetch(game_id)
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
+
+    logger.debug("Trigger AI move check to ensure AI moves first if it's its turn")
+    await handler.trigger_ai_move(game)
         
     return individual_game(game)
 
 @router.post("/computer")
 async def request_computer_game(
         request: Request,
+        data: StartComputerGameDto,
         repository: Annotated[GameRepository, Depends(get_game_repository)],
         player_repository: Annotated[PlayerRepository, Depends(get_player_repository)],
         player_handler: Annotated[CreatePlayerHandler, Depends(get_create_player_handler)],
-        resolve_guest_player_handler: Annotated[ResolveGuestPlayerHandler, Depends(get_resolve_guest_player_handler)]
+        resolve_guest_player_handler: Annotated[ResolveGuestPlayerHandler, Depends(get_resolve_guest_player_handler)],
+        handler: Annotated[GameEventHandler, Depends(get_game_event_handler)]
 ):
     player_id = await _get_or_create_player_id(request, player_handler, resolve_guest_player_handler)
     player = player_repository.get_by_id(player_id)
@@ -63,23 +70,33 @@ async def request_computer_game(
     # Create AI bot player object
     ai_bot = Player(
         display_name=DisplayName(display_name="AI Bot"),
-        type_=DomainPlayerType.GUEST,
-        rank=Rank.intermediate(),
-        stats=PlayerStats.create_empty()
+        _type=DomainPlayerType.AI,
+        _rank=Rank.intermediate(),
+        _stats=PlayerStats.create_empty()
     )
     
+    player_side = Side.Light if data.singleSide == "red" else Side.Dark
+    ai_side = Side.Dark if player_side == Side.Light else Side.Light
+
     new_game = Game(
         created_at=datetime.now(timezone.utc),
         mode=GameMode.PVE,
         players={
-            Side.Light: player,
-            Side.Dark: ai_bot
+            Side.Light : ai_bot if ai_side == Side.Light else player,
+            Side.Dark : ai_bot if ai_side == Side.Dark else player
         },
         history=[],
         result={}
     )
     
     game_id = repository.create(new_game)
+    
+    # Set the ID on the domain object so trigger_ai_move can use it if needed
+    new_game.id = PyObjectId(game_id)
+    
+    # Trigger AI move immediately on creation
+    await handler.trigger_ai_move(new_game)
+    
     return str(game_id)
 
 @router.post("/online", response_model=RequestGameResponse)

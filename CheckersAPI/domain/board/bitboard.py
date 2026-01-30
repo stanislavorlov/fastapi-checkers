@@ -12,6 +12,17 @@ class BitboardCheckers:
         """Return bit mask for square (1–32)."""
         return 1 << (square - 1)
 
+    def copy(self):
+        """Return a copy of the bitboard."""
+        copy_bitboard = BitboardCheckers()
+
+        copy_bitboard.black_men = self.black_men
+        copy_bitboard.black_kings = self.black_kings
+        copy_bitboard.white_men = self.white_men
+        copy_bitboard.white_kings = self.white_kings
+
+        return copy_bitboard
+
     def set_piece(self, square: int, piece: str):
         """Place a piece on the board."""
         mask = self.bit(square)

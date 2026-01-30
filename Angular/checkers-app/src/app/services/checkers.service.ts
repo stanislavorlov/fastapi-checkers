@@ -16,8 +16,8 @@ export class CheckersService {
     return this.httpClient.post<ApiResult<string>>('/api/games/online', {});
   }
 
-  requestComputerGame() {
-    return this.httpClient.post<ApiResult<string>>('/api/games/computer', {});
+  requestComputerGame(singleSide: string) {
+    return this.httpClient.post<ApiResult<string>>('/api/games/computer', { singleSide });
   }
 
   loadGame(gameId: string) {

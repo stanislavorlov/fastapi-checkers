@@ -125,8 +125,10 @@ export class PlayComponent implements OnInit, OnDestroy {
   }
 
   clickBoard(square: Square): void {
+    const isYourTurn = (this.playerSide === 'red' && this.board.turn === 'Red') ||
+      (this.playerSide === 'black' && this.board.turn === 'Black');
 
-    if (square.canSelect) {
+    if (square.canSelect && isYourTurn) {
       this.board.click(square);
     }
   }

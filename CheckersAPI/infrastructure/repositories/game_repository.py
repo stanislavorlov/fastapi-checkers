@@ -1,5 +1,6 @@
 from typing import Optional
 from bson import ObjectId
+import domain.player.player_type
 from domain.game.game import Game
 from domain.game.game_mode import GameMode
 from domain.game.game_result import GameResult
@@ -86,24 +87,30 @@ class GameRepository:
             
             # Fallback: create a basic player from snapshot if repository is missing or player not found
             # This ensures the game object is still functional even without repository ref
+
             snapshot = p.get("snapshot", {})
             game_players[side] = Player(
-                id=ObjectId(player_id),
+                _id=ObjectId(player_id),
                 display_name=DisplayName(display_name=snapshot.get("display_name", "Unknown")),
-                type_=documents.PlayerType(snapshot.get("type", "guest")),
-                rank=Rank.intermediate(),
-                stats=PlayerStats.create_empty()
+                _type=domain.player.player_type.PlayerType(snapshot.get("type", "guest")),
+                _rank=Rank.intermediate(),
+                _stats=PlayerStats.create_empty()
             )
 
         game_history: list[HistoryEntry] = []
 
         for document in cursor:
-            # We need to map 'pdn_string' back from the document if it exists
-            # HistoryEntry expects 'pdn_string', but we might have 'move' in old records
-            if 'pdn_string' not in document and 'move' in document:
-                document['pdn_string'] = document.pop('move')
-                
-            entry = HistoryEntry(**document)
+            # Map 'pdn_string' from document or fallback to 'move'
+            pdn = document.get('pdn_string') or document.get('move', '')
+            
+            # Explicitly create domain HistoryEntry with string player_id 
+            # and only the fields the domain model expects.
+            entry = HistoryEntry(
+                player_id=str(document["player_id"]),
+                pdn_string=pdn,
+                sequence=document["sequence"],
+                captures=document.get("captures", [])
+            )
             game_history.append(entry)
 
         return Game(

@@ -24,6 +24,9 @@ class RequestComputerGameDto(BaseModel):
     player: GamePlayerDto
     side: str
 
+class StartComputerGameDto(BaseModel):
+    singleSide: str
+
 class RequestOnlineGameDto(BaseModel):
     player: GamePlayerDto
 

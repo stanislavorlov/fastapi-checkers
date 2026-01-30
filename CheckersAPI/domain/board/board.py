@@ -2,6 +2,7 @@ from itertools import pairwise
 from typing import List
 from domain.board.bitboard import BitboardCheckers
 from domain.board.board_history import BoardHistory
+from domain.history_entry import HistoryEntry
 from domain.king import King
 from domain.man import Man
 from domain.pdn_move import PdnMove
@@ -30,7 +31,7 @@ class Board:
     def from_history(history: BoardHistory):
         board = Board()
         for item in history:
-            board.apply_move(item.move)    # pdn move
+            board.apply_move(PdnMove(item.pdn_string, item.captures))
 
         board._history = history
 
@@ -40,6 +41,7 @@ class Board:
         squares = pdn_move.move_squares
 
         if not len(squares):
+            print(f'There are no squares in pdn_move: {pdn_move.as_string}')
             return False
 
         from_square = squares[0]
@@ -115,10 +117,24 @@ class Board:
             board.append(" ".join(line))
         print("\n".join(board))
 
+    def display_squares(self):
+        """Print all 32 squares and their piece values."""
+        lines = []
+        for sq in range(1, 33):
+            piece_bit = self._bitboard.piece_at(sq)
+            piece = PieceFactory.get_piece(piece_bit)
+            val = piece.acronym if piece else "EMPTY"
+            lines.append(f"Square {sq:2}: {val}")
+        
+        print("\n--- Board Square State ---")
+        for i in range(0, 32, 4):
+            print(" | ".join(lines[i:i+4]))
+        print("--------------------------\n")
+
     def copy(self):
         new_board = Board()
         new_board._turn = self._turn
-        new_board._bitboard = self._bitboard
+        new_board._bitboard = self._bitboard.copy()
 
         return new_board
 

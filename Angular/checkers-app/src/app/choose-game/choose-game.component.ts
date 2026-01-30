@@ -42,7 +42,7 @@ export class GameComponent implements OnInit {
 
   startNewGame(): void {
     const request$ = this.gameMode === 'computer'
-      ? this.checkersService.requestComputerGame()
+      ? this.checkersService.requestComputerGame(this.singleSide!)
       : this.checkersService.requestOnlineGame();
 
     request$.subscribe({
