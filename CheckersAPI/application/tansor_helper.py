@@ -10,7 +10,7 @@ class TensorHelper:
         tensor = np.zeros([8, 8, 3])
 
         for i in range(1, 33):
-            piece = board.piece_at(i)
+            piece = board.get_piece(i)
             if piece:
                 r = (i - 1) // 4
                 c = 2 * ((i - 1) % 4) + (1 if r % 2 == 0 else 0)
@@ -34,7 +34,7 @@ class TensorHelper:
         tensor = np.zeros([8, 4, 5])
 
         for i in range(1, 33):
-            piece = board.piece_at(i)
+            piece = board.get_piece(i)
             if len(piece):
                 row = (i - 1) // 4
                 col = (i - 1) % 4
@@ -58,7 +58,7 @@ class TensorHelper:
         white_pieces = ''
 
         for i in range(1, 33):
-            match board.piece_at(i):
+            match board.get_piece(i):
                 case 'b':
                     black_pieces += f"b{i},"
                 case 'B':

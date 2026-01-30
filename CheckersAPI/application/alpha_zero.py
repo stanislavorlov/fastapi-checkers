@@ -1,10 +1,8 @@
-import random
 from application.monte_carlo_tree import MCTS
 from application.neural_network import NeuralNetwork
 from application.tansor_helper import TensorHelper
 from domain.board.board import Board
 from domain.side import Side
-from domain.move import Move
 
 
 # --- Self-Play Training Loop (Conceptual) ---
@@ -32,7 +30,7 @@ def self_play_training(num_games : int, num_simulations_per_move : int, neural_n
             board_state_nn = TensorHelper.board_to_8_8_3_tensor(board)
             game_history.append((board_state_nn, simulation_result.policy, simulation_result.best_move))
 
-            board.move_piece(simulation_result.best_move.from_, simulation_result.best_move.to_)
+            board.move_piece(simulation_result.best_move)
 
         game_winner = board.get_winner()
         game_result = 0
@@ -56,53 +54,3 @@ def self_play_training(num_games : int, num_simulations_per_move : int, neural_n
 
     print("\n--- Self-Play Training Complete ---")
     return training_data
-
-
-# --- Main Execution (Conceptual) ---
-if __name__ == "__main__":
-    board_input_shape = (8, 8, 3)
-    action_space_size = 64 * 4
-
-    checkers_nn = NeuralNetwork(board_input_shape, action_space_size)
-
-    trained_data = self_play_training(num_games=2, num_simulations_per_move=10, neural_network=checkers_nn)
-
-    print("\n--- Demonstration of AI playing after (conceptual) training ---")
-    game_board = Board()
-    #print("Initial Board:")
-    #game_board.display()
-
-    while not game_board.is_game_over():
-        if game_board.turn == Side.Light:
-            print("\nRed's Turn (Human Player - Random Move)")
-            red_moves = game_board.get_legal_moves(Side.Light)
-            if red_moves:
-                chosen_move : Move = random.choice(red_moves)
-                print(f"Red chooses move: {chosen_move}")
-                game_board.move_piece(chosen_move.from_, chosen_move.to)
-            else:
-                print("Red has no legal moves. Game Over.")
-                break
-        else:  # Black's Turn (AlphaZero AI)
-            print("\nBlack's Turn (AlphaZero AI)")
-            mcts_agent = MCTS(checkers_nn)
-            result = mcts_agent.run(game_board.copy(), num_simulations=50)
-
-            ai_best_move = result.best_move
-
-            if ai_best_move:
-                print(f"AI (Black) makes move: {ai_best_move}")
-                game_board.move_piece(ai_best_move.from_, ai_best_move.to_)
-            else:
-                print("AI (Black) has no legal moves. Game Over.")
-                break
-
-        game_board.display()
-
-    winner = game_board.get_winner()
-    if winner == Side.Light:
-        print("\nGame Over! Red Wins!")
-    elif winner == Side.Dark:
-        print("\nGame Over! Black Wins!")
-    else:
-        print("\nGame Over! It's a Draw (no more moves for current player).")

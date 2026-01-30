@@ -8,8 +8,7 @@ from domain.player.player_type import PlayerType
 from infrastructure.connnection_manager import ConnectionManager
 from infrastructure.repositories.game_repository import GameRepository
 from domain.game.game_mode import GameMode
-from domain.side import Side
-from infrastructure.ai.move_predictor import AiMovePredictor
+from application.alpha_zero_predictor import AlphaZeroPredictor
 
 logger = logging.getLogger(__name__)
 
@@ -80,10 +79,10 @@ class GameEventHandler:
         logger.debug(f"Player {ai_player.display_name}. Board turn {board.turn}")
 
         if ai_player and ai_player.type_ == PlayerType.AI:
-            logger.info(f"AI's turn ({ai_side}). Predicting move...")
+            logger.info(f"AI's turn ({ai_side}). Predicting move with AlphaZero (MCTS)...")
             
-            predictor = AiMovePredictor()
-            ai_pdn = predictor.predict(board)
+            predictor = AlphaZeroPredictor()
+            ai_pdn = predictor.predict(board, num_simulations=100) # Balanced simulation count
             
             if ai_pdn:
                 logger.info(f"AI predicted move: {ai_pdn.as_string}")

@@ -79,7 +79,7 @@ class AiMovePredictor:
             None: 0
         }
         for sq in range(1, 33):
-            piece_bit = board._bitboard.piece_at(sq)
+            piece_bit = board.get_piece(sq)
             vector.append(mapping.get(piece_bit, 0))
         return vector
 
@@ -111,9 +111,7 @@ class AiMovePredictor:
                 if match and isinstance(match, CapturedMove):
                     captured_sqs.append(str(match.jumped))
                     # Simulate partial move
-                    current_board._bitboard.remove_piece(temp_from)
-                    current_board._bitboard.remove_piece(match.jumped)
-                    current_board._bitboard.set_piece(next_sq, 'b' if board.turn == Side.Dark else 'r')
+                    current_board.move_piece(match)
                     temp_from = next_sq
                 else:
                     return None

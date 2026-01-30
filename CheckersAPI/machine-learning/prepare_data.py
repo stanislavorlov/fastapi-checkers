@@ -29,7 +29,7 @@ def map_piece_to_int(piece_acronym):
 def get_board_vector(board):
     vector = []
     for sq in range(1, 33):
-        piece_bit = board._bitboard.piece_at(sq)
+        piece_bit = board.get_piece(sq)
         vector.append(map_piece_to_int(piece_bit))
     return vector
 
