@@ -12,6 +12,9 @@ from infrastructure.repositories.profile_repository import ProfileRepository
 from infrastructure.repositories.session_token_repository import SessionRepository
 from infrastructure.repositories.matching_repository import MatchingRepository
 from infrastructure.runtime import connection_manager as manager
+from application.handlers.resolve_player_handler import ResolvePlayerHandler
+from application.handlers.start_computer_game_handler import StartComputerGameHandler
+from application.handlers.join_queue_handler import JoinQueueHandler
 
 # created once at startup
 mongo_context = MongoContext()
@@ -102,3 +105,21 @@ def get_create_player_handler(
     player_repository = PlayerRepository(db)
 
     return CreatePlayerHandler(profile_repository, player_repository)
+
+def get_resolve_player_handler(
+        player_handler = Depends(get_create_player_handler),
+        resolve_guest_player_handler = Depends(get_resolve_guest_player_handler)
+) -> ResolvePlayerHandler:
+    return ResolvePlayerHandler(player_handler, resolve_guest_player_handler)
+
+def get_start_computer_game_handler(
+        game_repository = Depends(get_game_repository),
+        player_repository = Depends(get_player_repository),
+        game_event_handler = Depends(get_game_event_handler)
+) -> StartComputerGameHandler:
+    return StartComputerGameHandler(game_repository, player_repository, game_event_handler)
+
+def get_join_queue_handler(
+        matching_repository = Depends(get_matching_repository)
+) -> JoinQueueHandler:
+    return JoinQueueHandler(matching_repository)
