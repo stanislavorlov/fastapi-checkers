@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Move } from '../models/move';
 import { Square } from '../models/square';
@@ -17,7 +17,9 @@ import { PieceColor } from '../models/piece-color';
   templateUrl: './play.component.html',
   styleUrl: './play.component.css'
 })
-export class PlayComponent implements OnInit, OnDestroy {
+export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
+  @ViewChild('historyList') private historyList!: ElementRef;
+  private lastMoveCount = 0;
   board: Board;
   pieces: Map<Square, Piece>;
   private readonly route = inject(ActivatedRoute);
@@ -149,6 +151,23 @@ export class PlayComponent implements OnInit, OnDestroy {
 
       this.router.navigate(['/game'], { queryParams: {} });
       this.closeWebSocket();
+    }
+  }
+
+  ngAfterViewChecked() {
+    const currentCount = this.board.getHistory().length;
+    if (currentCount !== this.lastMoveCount) {
+      this.lastMoveCount = currentCount;
+      this.scrollToBottom();
+    }
+  }
+
+  scrollToBottom(): void {
+    if (this.historyList) {
+      const element = this.historyList.nativeElement;
+      setTimeout(() => {
+        element.scrollTop = element.scrollHeight;
+      }, 50);
     }
   }
 

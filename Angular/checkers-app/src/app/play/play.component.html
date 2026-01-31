@@ -70,7 +70,7 @@
   <aside class="game-sidebar">
     <div class="sidebar-content glass">
       <h3>Move History</h3>
-      <div class="history-list">
+      <div class="history-list" #historyList>
         <ul>
           <li *ngFor="let move of board.getHistory(); let i = index">
             <span class="move-number">{{ i + 1 }}.</span>
