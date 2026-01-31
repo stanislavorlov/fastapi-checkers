@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 from bson import ObjectId
 import domain.player.player_type
@@ -63,6 +64,15 @@ class GameRepository:
             "finished_at": game.finished_at,
             "result": game.result
         }
+        
+        # If the game is finished, archive the history and clear the individual history documents
+        if game.finished_at:
+            archived_history = json.dumps([h.model_dump() for h in game.history])
+            update_data["archived_history"] = archived_history
+            
+            # Delete from history collection
+            self.db.history.delete_many({"game_id": ObjectId(game.id or game.id_)})
+
         self.db.games.update_one({"_id": ObjectId(game.id or game.id_)}, {"$set": update_data})
 
     def fetch(self, game_id: str) -> Optional[Game]:
@@ -105,20 +115,25 @@ class GameRepository:
             )
 
         game_history: list[HistoryEntry] = []
-
-        for document in cursor:
-            # Map 'pdn_string' from document or fallback to 'move'
-            pdn = document.get('pdn_string') or document.get('move', '')
-            
-            # Explicitly create domain HistoryEntry with string player_id 
-            # and only the fields the domain model expects.
-            entry = HistoryEntry(
-                player_id=str(document["player_id"]),
-                pdn_string=pdn,
-                sequence=document["sequence"],
-                captures=document.get("captures", [])
-            )
-            game_history.append(entry)
+        archived_raw = game_document.get("archived_history")
+        
+        if archived_raw:
+            history_data = json.loads(archived_raw)
+            game_history = [HistoryEntry(**h) for h in history_data]
+        else:
+            for document in cursor:
+                # Map 'pdn_string' from document or fallback to 'move'
+                pdn = document.get('pdn_string') or document.get('move', '')
+                
+                # Explicitly create domain HistoryEntry with string player_id 
+                # and only the fields the domain model expects.
+                entry = HistoryEntry(
+                    player_id=str(document["player_id"]),
+                    pdn_string=pdn,
+                    sequence=document["sequence"],
+                    captures=document.get("captures", [])
+                )
+                game_history.append(entry)
 
         return Game(
             _id=game_document["_id"],
