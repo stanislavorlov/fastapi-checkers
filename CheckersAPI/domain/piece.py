@@ -24,3 +24,8 @@ class Piece(ABC):
     @abstractmethod
     def is_king(self):
         ...
+
+    @property
+    @abstractmethod
+    def jump_directions(self) -> list[tuple[int, int]]:
+        ...

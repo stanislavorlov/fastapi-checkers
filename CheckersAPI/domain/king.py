@@ -18,3 +18,7 @@ class King(Piece):
     @property
     def acronym(self):
         return self._color.value.upper()
+
+    @property
+    def jump_directions(self) -> list[tuple[int, int]]:
+        return [(-1, -1), (-1, 1), (1, -1), (1, 1)]

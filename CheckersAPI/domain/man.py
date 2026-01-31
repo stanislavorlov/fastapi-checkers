@@ -18,3 +18,9 @@ class Man(Piece):
     @property
     def acronym(self):
         return self._color.value.lower()
+
+    @property
+    def jump_directions(self) -> list[tuple[int, int]]:
+        if self._color == Side.Dark:
+            return [(1, -1), (1, 1)]
+        return [(-1, -1), (-1, 1)]

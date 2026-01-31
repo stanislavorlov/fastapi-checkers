@@ -94,18 +94,19 @@ class BitboardCheckers:
         moves = []
         if color == "black":
             men, kings = self.black_men, self.black_kings
-            forward_dirs = [(-1, -1), (-1, 1)]  # downwards
+            forward_dirs = [(1, -1), (1, 1)]  # downwards
         else:
             men, kings = self.white_men, self.white_kings
-            forward_dirs = [(1, -1), (1, 1)]  # upwards
+            forward_dirs = [(-1, -1), (-1, 1)]  # upwards
 
         occ = self.occupancy()
         # Generate moves for men
         for sq in range(1, 33):
             if not (men & self.bit(sq)): continue
-            for neigh, _ in self.MOVE_MAP[sq]:
-                if not (occ & self.bit(neigh)):
-                    moves.append((sq, neigh))
+            for neigh, direction in self.MOVE_MAP[sq]:
+                if direction in forward_dirs:
+                    if not (occ & self.bit(neigh)):
+                        moves.append((sq, neigh))
         # Generate moves for kings (both directions)
         for sq in range(1, 33):
             if not (kings & self.bit(sq)): continue
@@ -119,19 +120,27 @@ class BitboardCheckers:
         captures = []
         if color == "black":
             men, kings = self.black_men, self.black_kings
-            my_pieces = men | kings
             opp_pieces = self.white_men | self.white_kings
+            forward_dirs = [(1, -1), (1, 1)]  # downwards
         else:
             men, kings = self.white_men, self.white_kings
-            my_pieces = men | kings
             opp_pieces = self.black_men | self.black_kings
+            forward_dirs = [(-1, -1), (-1, 1)]  # upwards
 
         occ = self.occupancy()
+        # Captures for men (only forward)
         for sq in range(1, 33):
-            if not (my_pieces & self.bit(sq)): continue
-            for neigh, land in self.CAPTURE_MAP[sq]:
-                if (opp_pieces & self.bit(neigh)) and not (occ & self.bit(land)):
-                    captures.append((sq, land, neigh))  # (from, to, jumped)
+            if not (men & self.bit(sq)): continue
+            for jumped, land, direction in self.CAPTURE_MAP[sq]:
+                if direction in forward_dirs:
+                    if (opp_pieces & self.bit(jumped)) and not (occ & self.bit(land)):
+                        captures.append((sq, land, jumped))
+        # Captures for kings (all directions)
+        for sq in range(1, 33):
+            if not (kings & self.bit(sq)): continue
+            for jumped, land, _ in self.CAPTURE_MAP[sq]:
+                if (opp_pieces & self.bit(jumped)) and not (occ & self.bit(land)):
+                    captures.append((sq, land, jumped))
         return captures
 
     @staticmethod
@@ -156,9 +165,9 @@ class BitboardCheckers:
                 for dr, dc in directions:
                     nr, nc = row + dr, col + dc
                     if 0 <= nr < 8 and 0 <= nc < 8 and board[nr][nc] != 0:
-                        move_map[square].append((board[nr][nc], None))
+                        move_map[square].append((board[nr][nc], (dr, dc)))
                     jr, jc = row + 2 * dr, col + 2 * dc
                     if (0 <= jr < 8 and 0 <= jc < 8
                             and board[nr][nc] != 0 and board[jr][jc] != 0):
-                        capture_map[square].append((board[nr][nc], board[jr][jc]))
+                        capture_map[square].append((board[nr][nc], board[jr][jc], (dr, dc)))
         return move_map, capture_map
