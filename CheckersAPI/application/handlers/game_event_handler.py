@@ -5,6 +5,7 @@ from domain.game.game import Game
 from domain.history_entry import HistoryEntry
 from domain.pdn_move import PdnMove
 from domain.player.player_type import PlayerType
+from domain.side import Side
 from infrastructure.connnection_manager import ConnectionManager
 from infrastructure.repositories.game_repository import GameRepository
 from domain.game.game_mode import GameMode
@@ -45,6 +46,7 @@ class GameEventHandler:
 
             response = pdn_move.to_dict()
             response['player_id'] = player_id
+            response['player_color'] = Side.Dark.value if str(game.players[Side.Dark].id) == player_id else Side.Light.value
 
             await self.manager.broadcast(game_id, json.dumps(response))
 
@@ -61,9 +63,6 @@ class GameEventHandler:
         if game.mode != GameMode.PVE:
             logger.error(f"Game does not have PVE mode")
             return
-
-        logger.debug(f"Board history {game.history}")
-
         board = Board.from_history(game.history)
         if board.is_game_over():
             logger.error(f"Game has ended")
@@ -71,8 +70,6 @@ class GameEventHandler:
 
         ai_side = board.turn
         ai_player = game.players.get(ai_side)
-
-        logger.debug(ai_player)
 
         logger.debug(f"Player {ai_player.display_name}. Board turn {board.turn}")
 
@@ -97,6 +94,7 @@ class GameEventHandler:
                     
                     ai_response = ai_pdn.to_dict()
                     ai_response['player_id'] = str(ai_player.id)
+                    ai_response['player_color'] = ai_side.value
                     await self.manager.broadcast(game.id, json.dumps(ai_response))
                 else:
                     logger.error("AI predicted an illegal move!")

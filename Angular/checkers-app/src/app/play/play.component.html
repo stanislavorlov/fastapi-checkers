@@ -74,6 +74,8 @@
         <ul>
           <li *ngFor="let move of board.getHistory(); let i = index">
             <span class="move-number">{{ i + 1 }}.</span>
+            <span class="player-indicator" [class.dark]="move.playerSide === 'Dark'"
+              [class.light]="move.playerSide === 'Light'"></span>
             <span class="move-text">{{ move.move }}</span>
           </li>
         </ul>

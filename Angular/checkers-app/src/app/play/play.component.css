@@ -266,6 +266,22 @@
   font-family: monospace;
 }
 
+.player-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  align-self: center;
+}
+
+.player-indicator.dark {
+  background-color: #333;
+}
+
+.player-indicator.light {
+  background-color: #ff4d4d;
+}
+
 .btn-secondary {
   background: transparent;
   border: 1px solid var(--border-color);

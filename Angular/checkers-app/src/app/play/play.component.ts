@@ -9,6 +9,7 @@ import { CheckersService } from '../services/checkers.service';
 import { Game } from '../models/game';
 import { Subject } from 'rxjs';
 import { UserService } from '../services/user.service';
+import { PieceColor } from '../models/piece-color';
 
 @Component({
   selector: 'app-play',
@@ -112,7 +113,14 @@ export class PlayComponent implements OnInit, OnDestroy {
       const data = JSON.parse(event.data);
       console.log('Received data:', data);
 
-      this.board.replay(data.pdn, data.captured, data.player_id);
+      let dataSide = PieceColor.BLACK;  //"R" or "B"
+      if (data.player_color === "R") {
+        dataSide = PieceColor.RED;
+      } else {
+        dataSide = PieceColor.BLACK;
+      }
+
+      this.board.replay(data.pdn, data.captured, data.player_id, dataSide);
     };
 
     this.webSocket.onclose = () => {

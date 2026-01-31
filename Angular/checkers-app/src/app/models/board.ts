@@ -81,7 +81,7 @@ export class Board {
                 const squares = Utils.parsePDN(entry.move);
                 const pairs = Utils.pairwise(squares);
 
-                const move = new Move(entry.player_id);
+                const move = new Move(entry.player_id, entry.player_id == game.dark_player ? PieceColor.BLACK : PieceColor.RED);
                 move.addSquare(squares[0]);
 
                 let captureIdx = 0;
@@ -115,13 +115,13 @@ export class Board {
         }
     }
 
-    public replay(pdn: string, captured: string[], player_id: string) {
+    public replay(pdn: string, captured: string[], player_id: string, player_color: PieceColor) {
         if (this._playerId !== player_id) {
             const isCapture = pdn.includes('x');
             const squares = Utils.parsePDN(pdn);
             const pairs = Utils.pairwise(squares);
 
-            const move = new Move(player_id);
+            const move = new Move(player_id, player_color);
             move.addSquare(squares[0]);
 
             let captureIdx = 0;
@@ -237,7 +237,7 @@ export class Board {
                         if (isPlayersPiece) {
                             square.select();
                             current_action = new Action(ActionType.SELECT, square.id, this._playerId);
-                            this._move = new Move(this._playerId);
+                            this._move = new Move(this._playerId, this._playerColor!);
                             this._move.addSquare(square.id);
                             let moves = this.getAvailableMoves(square);
                             for (let [moveSquare, move] of moves) {
@@ -256,7 +256,7 @@ export class Board {
                 if (isPlayersPiece) {
                     square.select();
                     current_action = new Action(ActionType.SELECT, square.id, this._playerId);
-                    this._move = new Move(this._playerId);
+                    this._move = new Move(this._playerId, this._playerColor!);
                     this._move.addSquare(square.id);
                     let moves = this.getAvailableMoves(square);
                     for (let [moveSquare, move] of moves) {
@@ -271,7 +271,7 @@ export class Board {
                 if (isPlayersPiece) {
                     square.select();
                     current_action = new Action(ActionType.SELECT, square.id, this._playerId);
-                    this._move = new Move(this._playerId);
+                    this._move = new Move(this._playerId, this._playerColor!);
                     this._move.addSquare(square.id);
                     let moves = this.getAvailableMoves(square);
                     for (let [moveSquare, move] of moves) {
@@ -362,6 +362,7 @@ export class Board {
 
     private switch_turn(): void {
         this._turn = this._turn === PieceColor.BLACK ? PieceColor.RED : PieceColor.BLACK;
+        console.log("Turn changed to: " + PieceColor[this._turn]);
     }
 
     private initialize() {

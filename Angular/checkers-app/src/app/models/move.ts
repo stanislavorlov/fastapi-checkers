@@ -1,17 +1,25 @@
+import { PieceColor } from "./piece-color";
+
 export class Move {
     private _path: string[];
     private _captured: string[];
     private _playerId: string;
+    private _playerSide: PieceColor;
     private _isCapture: boolean = false;
 
-    constructor(playerId: string) {
+    constructor(playerId: string, playerSide: PieceColor) {
         this._path = [];
         this._captured = [];
         this._playerId = playerId;
+        this._playerSide = playerSide;
     }
 
     get playerId(): string {
         return this._playerId;
+    }
+
+    get playerSide(): string {
+        return this._playerSide == PieceColor.BLACK ? 'Dark' : 'Light';
     }
 
     get move(): string {
