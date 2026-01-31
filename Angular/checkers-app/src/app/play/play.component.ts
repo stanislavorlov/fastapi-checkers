@@ -37,7 +37,10 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   opponentSide?: 'red' | 'black';
 
   isGameOver = false;
+  showGameOverOverlay = false;
   gameOverResult: any = null;
+  currentReplayIndex = -1;
+  cachedGame: Game | null = null;
 
   constructor(private checkersService: CheckersService, private userService: UserService) {
     this.gameMenu = true;
@@ -78,9 +81,12 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
 
           this.board.load(result);
           this.pieces = this.board.pieces;
+          this.cachedGame = result;
 
           if (result.finished_at) {
             this.isGameOver = true;
+            this.showGameOverOverlay = true;
+            this.currentReplayIndex = (result.history?.length || 0) - 1;
             this.gameOverResult = {
               ...result.result,
               winner_side: result.result?.winner === result.dark_player ? 'dark' : (result.result?.winner === result.light_player ? 'light' : null)
@@ -125,6 +131,8 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
 
       if (data.type === 'game_over') {
         this.isGameOver = true;
+        this.showGameOverOverlay = true;
+        this.board.finished = true;
         this.gameOverResult = data;
         return;
       }
@@ -168,6 +176,30 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.router.navigate(['/game'], { queryParams: {} });
       this.closeWebSocket();
     }
+  }
+
+  goBack(): void {
+    if (this.currentReplayIndex > -1 && this.cachedGame) {
+      this.currentReplayIndex--;
+      if (this.currentReplayIndex === -1) {
+        this.board.reset();
+      } else {
+        this.board.showMove(this.currentReplayIndex, this.cachedGame);
+      }
+      this.pieces = this.board.pieces;
+    }
+  }
+
+  goForward(): void {
+    if (this.cachedGame && this.currentReplayIndex < (this.cachedGame.history?.length || 0) - 1) {
+      this.currentReplayIndex++;
+      this.board.showMove(this.currentReplayIndex, this.cachedGame);
+      this.pieces = this.board.pieces;
+    }
+  }
+
+  startReplay(): void {
+    this.showGameOverOverlay = false;
   }
 
   ngAfterViewChecked() {

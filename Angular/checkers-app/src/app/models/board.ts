@@ -22,6 +22,7 @@ export class Board {
     private _playerColor?: PieceColor;
     private _gameId: string;
     private _started: boolean;
+    private _finished: boolean = false;
     private _event$: Subject<Move>;
 
     constructor(playerId: string, gameId: string, event$: Subject<Move>) {
@@ -44,6 +45,14 @@ export class Board {
 
     public get turn(): string {
         return this._turn === PieceColor.BLACK ? 'Black' : 'Red';
+    }
+
+    public get finished(): boolean {
+        return this._finished;
+    }
+
+    public set finished(value: boolean) {
+        this._finished = value;
     }
 
     *[Symbol.iterator]() {
@@ -77,43 +86,68 @@ export class Board {
 
         if (!!game.history) {
             game.history.sort((a, b) => a.sequence - b.sequence).forEach((entry: HistoryEntry) => {
-                const isCapture = entry.move.includes('x');
-                const squares = Utils.parsePDN(entry.move);
-                const pairs = Utils.pairwise(squares);
-
-                const move = new Move(entry.player_id, entry.player_id == game.dark_player ? PieceColor.BLACK : PieceColor.RED);
-                move.addSquare(squares[0]);
-
-                let captureIdx = 0;
-                pairs.forEach(([from, to]) => {
-                    const [from_square, to_square] = this.getMoveSquaresById(from, to);
-
-                    if (from_square && to_square) {
-                        this.move_piece(from_square, to_square, entry.player_id);
-
-                        if (isCapture && entry.captures && entry.captures[captureIdx]) {
-                            const capSquare = this.getSquareById(entry.captures[captureIdx]);
-                            if (capSquare) {
-                                this.capture_piece(capSquare, entry.player_id);
-                                move.addCapture(to, capSquare.id);
-                            }
-                            captureIdx++;
-                        } else {
-                            move.addSquare(to);
-                        }
-
-                        if (this.checkPromotionAvailability(from_square, to_square)) {
-                            this.promote_piece(to_square, entry.player_id);
-                        }
-                    }
-                });
-
-                this._moveHistory.push(move);
-                this.switch_turn();
-                this.recordAction(new Action(isCapture ? ActionType.CAPTURE : ActionType.MOVE, squares[squares.length - 1], entry.player_id));
+                this.applyHistoryEntry(entry, game.dark_player);
             });
         }
+
+        if (game.finished_at) {
+            this._finished = true;
+        }
     }
+
+    private applyHistoryEntry(entry: HistoryEntry, darkPlayerId: string) {
+        const isCapture = entry.move.includes('x');
+        const squares = Utils.parsePDN(entry.move);
+        const pairs = Utils.pairwise(squares);
+
+        const move = new Move(entry.player_id, entry.player_id == darkPlayerId ? PieceColor.BLACK : PieceColor.RED);
+        move.addSquare(squares[0]);
+
+        let captureIdx = 0;
+        pairs.forEach(([from, to]) => {
+            const [from_square, to_square] = this.getMoveSquaresById(from, to);
+
+            if (from_square && to_square) {
+                this.move_piece(from_square, to_square, entry.player_id);
+
+                if (isCapture && entry.captures && entry.captures[captureIdx]) {
+                    const capSquare = this.getSquareById(entry.captures[captureIdx]);
+                    if (capSquare) {
+                        this.capture_piece(capSquare, entry.player_id);
+                        move.addCapture(to, capSquare.id);
+                    }
+                    captureIdx++;
+                } else {
+                    move.addSquare(to);
+                }
+
+                if (this.checkPromotionAvailability(from_square, to_square)) {
+                    this.promote_piece(to_square, entry.player_id);
+                }
+            }
+        });
+
+        this._moveHistory.push(move);
+        this.switch_turn();
+        this.recordAction(new Action(isCapture ? ActionType.CAPTURE : ActionType.MOVE, squares[squares.length - 1], entry.player_id));
+    }
+
+    public reset() {
+        this._pieces.clear();
+        this._moveHistory = [];
+        this._actionHistory = new Stack<Action>();
+        this._turn = PieceColor.BLACK;
+        this.initialize();
+    }
+
+    public showMove(index: number, game: Game) {
+        this.reset();
+        const moves = [...game.history].sort((a, b) => a.sequence - b.sequence);
+        for (let i = 0; i <= index; i++) {
+            this.applyHistoryEntry(moves[i], game.dark_player);
+        }
+    }
+
 
     public replay(pdn: string, captured: string[], player_id: string, player_color: PieceColor) {
         if (this._playerId !== player_id) {
@@ -155,6 +189,8 @@ export class Board {
     }
 
     public click(square: Square) {
+        if (this._finished) return;
+
         let last_action = this._actionHistory.peek();
         let current_action: Action | null = null;
 

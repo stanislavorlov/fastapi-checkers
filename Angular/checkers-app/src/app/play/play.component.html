@@ -51,6 +51,18 @@
       </div>
     </section>
 
+    <section class="replay-navigation" *ngIf="isGameOver && !showGameOverOverlay">
+      <div class="replay-controls-bar glass">
+        <button class="secondary-button" (click)="goBack()" [disabled]="currentReplayIndex <= -1">← Back</button>
+        <div class="replay-status">
+          <span class="label">Move</span>
+          <span class="value">{{ currentReplayIndex + 1 }} / {{ cachedGame?.history?.length }}</span>
+        </div>
+        <button class="secondary-button" (click)="goForward()"
+          [disabled]="currentReplayIndex >= (cachedGame?.history?.length || 0) - 1">Forward →</button>
+      </div>
+    </section>
+
     <section class="player-section me">
       <div class="player-card" [class.active]="board.turn === playerSide">
         <div class="avatar-wrapper">
@@ -82,7 +94,7 @@
       </div>
     </div>
     <!-- Game Over Overlay -->
-    <div class="game-over-overlay glass" *ngIf="isGameOver">
+    <div class="game-over-overlay glass" *ngIf="showGameOverOverlay">
       <div class="game-over-content">
         <h2>Game Over</h2>
         <div class="winner-info" [class.dark]="gameOverResult?.winner_side === 'dark'"
@@ -91,7 +103,11 @@
           <span class="winner-name">{{ gameOverResult?.winner_side === 'dark' ? 'Dark' : 'Light' }}</span>
         </div>
         <p class="reason">{{ gameOverResult?.reason }}</p>
-        <button class="primary-button" (click)="backMenu()">Back to Menu</button>
+
+        <div class="actions">
+          <button class="primary-button premium" (click)="startReplay()">Replay Game</button>
+          <button class="primary-button" (click)="backMenu()">Back to Menu</button>
+        </div>
       </div>
     </div>
   </aside>
