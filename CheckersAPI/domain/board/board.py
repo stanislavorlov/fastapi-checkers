@@ -1,7 +1,8 @@
 from itertools import pairwise
-from typing import List
+from typing import List, Tuple
 from domain.board.bitboard import BitboardCheckers
 from domain.board.board_history import BoardHistory
+from domain.history_entry import HistoryEntry
 from domain.king import King
 from domain.man import Man
 from domain.pdn_move import PdnMove
@@ -16,6 +17,7 @@ class Board:
         self._turn = Side.Dark
         self._bitboard = BitboardCheckers()
         self._history = BoardHistory.empty()
+        self._active_piece_sq = None # Square of piece that MUST continue jumping
 
         for sq in range(1, 13):  # white men
             self.set_piece(sq, Man(Side.Dark).acronym)
@@ -32,65 +34,42 @@ class Board:
         return self._bitboard.copy()
 
     @staticmethod
-    def from_history(history: BoardHistory):
+    def from_history(history: List[HistoryEntry]): # Accept List[HistoryEntry]
         board = Board()
+        board._history = BoardHistory(history) # Store as BoardHistory
+        
+        # Replay history
         for item in history:
             board.apply_move(PdnMove(item.pdn_string, item.captures))
-
-        board._history = history
 
         return board
 
     def apply_move(self, pdn_move: PdnMove) -> bool:
         squares = pdn_move.move_squares
 
-        if not len(squares):
+        print('board before applying move')
+        self.display_squares()
+        print(f'Applying move: {pdn_move.as_string}')
+
+        if not squares:
             print(f'There are no squares in pdn_move: {pdn_move.as_string}')
-            return False
-
-        from_square = squares[0]
-
-        piece_bit = self.get_piece(from_square)
-        piece = PieceFactory.get_piece(piece_bit)
-
-        if not piece:
-            print(f"Piece at {from_square} not found in the board")
-            return False
-
-        if piece.color != self._turn:
-            print(f"It is not {self._turn}'s turn")
             return False
 
         for prev, cur in pairwise(squares):
             legal_moves = self.get_legal_moves(self._turn)
+
+            print(f'Legal moves: {legal_moves}')
+
             legal_move = next((m for m in legal_moves if m.from_ == prev and m.to_ == cur), None)
 
             if not legal_move:
-                print(f"There is no legal move from {prev} to {cur} found in the board")
+                print(f"There is no legal move from {prev} to {cur} found in the board (Turn: {self._turn})")
                 return False
 
-            self.remove_piece(prev)
+            self.move_piece(legal_move)
 
-            if isinstance(legal_move, CapturedMove):
-                if int(pdn_move.next_captured_square) != legal_move.jumped:
-                    print('Captured square does not match calculated one')
-                    return False
-
-                print(f'Captured move, removing piece at {legal_move.jumped}')
-                self.remove_piece(legal_move.jumped)
-
-            self.set_piece(cur, piece.acronym)
-
-        # detect promotions
-        if piece.color == Side.Dark and piece.is_man and 29 <= squares[-1] <= 32:
-            piece = King(piece.color)
-        elif piece.color == Side.Light and piece.is_man and 1 <= squares[-1] <= 4:
-            piece = King(piece.color)
-
-        self.set_piece(squares[-1], piece.acronym)
-
-        # switch turn
-        self.switch_turn()
+        print('board after applying move')
+        self.display_squares()
 
         return True
 
@@ -162,6 +141,8 @@ class Board:
     def copy(self):
         new_board = Board()
         new_board._turn = self._turn
+        new_board._active_piece_sq = self._active_piece_sq
+        new_board._history = BoardHistory(self._history.items[:])
         new_board._bitboard = self.bitboard # Use property which returns a copy
 
         return new_board
@@ -196,7 +177,7 @@ class Board:
     def move_piece(self, legal_move: LegalMove):
         """
         Apply a single legal move (one segment) to the board.
-        Used primarily by MCTS.
+        Used by MCTS and apply_move.
         """
         from_sq = legal_move.from_
         to_sq = legal_move.to_
@@ -207,34 +188,41 @@ class Board:
         if not piece:
             return False
 
+        is_capture = isinstance(legal_move, CapturedMove)
+
         # 1. Remove from source
         self.remove_piece(from_sq)
         
         # 2. Handle capture
-        is_capture = False
         if isinstance(legal_move, CapturedMove):
             self.remove_piece(legal_move.jumped)
-            is_capture = True
             
         # 3. Handle promotion
+        is_promoted = False
         if piece.color == Side.Dark and piece.is_man and 29 <= to_sq <= 32:
             piece = King(piece.color)
+            is_promoted = True
         elif piece.color == Side.Light and piece.is_man and 1 <= to_sq <= 4:
             piece = King(piece.color)
+            is_promoted = True
             
         # 4. Set at destination
         self.set_piece(to_sq, piece.acronym)
         
-        # 5. Turn switching logic
-        # In checkers, if you jump, you MUST continue jumping if possible with the same piece.
+        # 5. Turn switching and Multi-jump logic
         can_continue_jump = False
-        if is_capture:
+        if is_capture and not is_promoted:
             # Check for further captures from the destination square with the same piece
-            all_captures = self.generate_captures("black" if piece.color == Side.Dark else "white")
+            color_str = "black" if piece.color == Side.Dark else "white"
+            all_captures = self._bitboard.generate_captures(color_str)
             if any(c[0] == to_sq for c in all_captures):
                 can_continue_jump = True
         
-        if not can_continue_jump:
+        if can_continue_jump:
+            self._active_piece_sq = to_sq
+            # Turn does NOT switch
+        else:
+            self._active_piece_sq = None
             self.switch_turn()
             
         return True
@@ -243,12 +231,24 @@ class Board:
         legal_moves : List[LegalMove] = []
         color = "black" if player == Side.Dark else "white"
 
+        # 1. Multi-jump logic: if a piece is in the middle of jumping, it MUST continue
+        if self._active_piece_sq:
+            captures = self.generate_captures(color)
+            for capture in captures:
+                if capture[0] == self._active_piece_sq:
+                    legal_moves.append(CapturedMove(capture[0], capture[1], capture[2]))
+            return legal_moves
+
+        # 2. Mandatory captures: if any capture is possible, only captures are legal
+        captures = self.generate_captures(color)
+        if captures:
+            for capture in captures:
+                legal_moves.append(CapturedMove(capture[0], capture[1], capture[2]))
+            return legal_moves
+
+        # 3. Normal moves
         moves = self.generate_moves(color)
         for move in moves:
             legal_moves.append(LegalMove(move[0], move[1]))
-
-        captures = self.generate_captures(color)
-        for capture in captures:
-            legal_moves.append(CapturedMove(capture[0], capture[1], capture[2]))
 
         return legal_moves

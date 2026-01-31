@@ -30,8 +30,6 @@ class GameEventHandler:
 
         board = Board.from_history(game.history)
 
-        board.display_squares()
-
         logger.debug(f"Applying move: {pdn_move.as_string}")
 
         if board.apply_move(pdn_move):
@@ -86,7 +84,6 @@ class GameEventHandler:
             
             if ai_pdn:
                 logger.info(f"AI predicted move: {ai_pdn.as_string}")
-                board.display_squares()
                 if board.apply_move(ai_pdn):
                     logger.debug("applying predicted move")
                     ai_history = HistoryEntry(
