@@ -45,9 +45,6 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.playerId = this.userService.currentPlayer?.player_id || '';
     this.board = new Board(this.playerId, this.gameId, this.event$);
     this.pieces = new Map<Square, Piece>();
-
-    console.log("Game ID:", this.gameId);
-    console.log("Player ID:", this.playerId);
   }
 
   ngOnInit(): void {

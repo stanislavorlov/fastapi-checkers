@@ -362,7 +362,6 @@ export class Board {
 
     private switch_turn(): void {
         this._turn = this._turn === PieceColor.BLACK ? PieceColor.RED : PieceColor.BLACK;
-        console.log("Turn changed to: " + PieceColor[this._turn]);
     }
 
     private initialize() {
