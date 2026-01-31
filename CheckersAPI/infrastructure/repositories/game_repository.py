@@ -11,7 +11,7 @@ from domain.player.rank import Rank
 from domain.player.stats import PlayerStats
 from domain.side import Side
 from infrastructure import documents
-from infrastructure.documents import GameSchema, GamePlayerSchema
+from infrastructure.documents import GameSchema, GamePlayerSchema, PyObjectId
 from infrastructure.mongo_context import MongoContext
 from infrastructure.repositories.player_repository import PlayerRepository
 
@@ -58,6 +58,13 @@ class GameRepository:
         )
         self.db.history.insert_one(history_document.model_dump(mode='python', by_alias=True))
 
+    def save(self, game: Game):
+        update_data = {
+            "finished_at": game.finished_at,
+            "result": game.result
+        }
+        self.db.games.update_one({"_id": ObjectId(game.id or game.id_)}, {"$set": update_data})
+
     def fetch(self, game_id: str) -> Optional[Game]:
         game_document = self.db.games.find_one({"_id": ObjectId(game_id)})
         
@@ -66,10 +73,10 @@ class GameRepository:
             
         cursor = self.db.history.find({"game_id": ObjectId(game_id)}).sort("sequence", 1)
 
-        result_doc = game_document.get("result")
+        result_doc = game_document.get("result") or {}
         game_result = GameResult(
-            result_doc.get("winner") if result_doc else None,
-            result_doc.get("reason") if result_doc else None
+            winner=PyObjectId(result_doc.get("winner")) if result_doc.get("winner") else None,
+            reason=result_doc.get("reason")
         )
         
         game_players: dict[Side, Player] = {}

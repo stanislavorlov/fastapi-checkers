@@ -20,7 +20,9 @@ def individual_game(game: Game) -> ReadGameDto:
         mode=game.mode.value,
         light_player=str(light_player.id) if light_player else "",
         dark_player=str(dark_player.id) if dark_player else "",
-        history=list_histories(game.history)
+        history=list_histories(game.history),
+        finished_at=game.finished_at,
+        result=game.result
     )
 
 def individual_user(user_dict):

@@ -81,5 +81,18 @@
         </ul>
       </div>
     </div>
+    <!-- Game Over Overlay -->
+    <div class="game-over-overlay glass" *ngIf="isGameOver">
+      <div class="game-over-content">
+        <h2>Game Over</h2>
+        <div class="winner-info" [class.dark]="gameOverResult?.winner_side === 'dark'"
+          [class.light]="gameOverResult?.winner_side === 'light'">
+          <span class="winner-label">Winner:</span>
+          <span class="winner-name">{{ gameOverResult?.winner_side === 'dark' ? 'Dark' : 'Light' }}</span>
+        </div>
+        <p class="reason">{{ gameOverResult?.reason }}</p>
+        <button class="primary-button" (click)="backMenu()">Back to Menu</button>
+      </div>
+    </div>
   </aside>
 </div>

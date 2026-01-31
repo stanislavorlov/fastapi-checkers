@@ -1,12 +1,14 @@
 import time
 from datetime import datetime
 from typing import Optional
+from bson import ObjectId
 from pydantic import Field
 from domain.game.game_mode import GameMode
 from domain.history_entry import HistoryEntry
 from domain.kernel.aggregate_root import AggregateRoot
 from domain.player.player import Player
 from domain.side import Side
+from domain.game.game_result import GameResult
 
 
 class Game(AggregateRoot):
@@ -30,3 +32,7 @@ class Game(AggregateRoot):
 
     def append_history(self, history: HistoryEntry):
         self.history.append(history)
+
+    def finish_game(self, winner_id: Optional[str], reason: str):
+        self.finished_at = datetime.now()
+        self.result = GameResult(winner=ObjectId(winner_id) if winner_id else None, reason=reason).to_dict()

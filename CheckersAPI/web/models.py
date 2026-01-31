@@ -15,6 +15,8 @@ class ReadGameDto(BaseModel):
     light_player: str
     dark_player: str
     history: list[HistoryDto]
+    finished_at: datetime | None = None
+    result: dict | None = None
 
 class GamePlayerDto(BaseModel):
     player_id: str

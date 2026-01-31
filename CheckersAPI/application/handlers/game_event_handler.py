@@ -50,6 +50,21 @@ class GameEventHandler:
 
             await self.manager.broadcast(game_id, json.dumps(response))
 
+            if board.is_game_over():
+                winner_side = board.get_winner()
+                winner_player = game.players.get(winner_side) if winner_side else None
+                game.finish_game(str(winner_player.id) if winner_player else None, "Game over")
+                self.game_repository.save(game)
+                
+                over_response = {
+                    "type": "game_over",
+                    "winner_id": str(winner_player.id) if winner_player else None,
+                    "winner_side": winner_side.value if winner_side else None,
+                    "reason": "Game over"
+                }
+                await self.manager.broadcast(game_id, json.dumps(over_response))
+                return
+
             # Trigger AI move if it's a PVE game and it's AI's turn
             await self.trigger_ai_move(game)
 
@@ -96,6 +111,20 @@ class GameEventHandler:
                     ai_response['player_id'] = str(ai_player.id)
                     ai_response['player_color'] = ai_side.value
                     await self.manager.broadcast(game.id, json.dumps(ai_response))
+
+                    if board.is_game_over():
+                        winner_side = board.get_winner()
+                        winner_player = game.players.get(winner_side) if winner_side else None
+                        game.finish_game(str(winner_player.id) if winner_player else None, "Game over")
+                        self.game_repository.save(game)
+
+                        over_response = {
+                            "type": "game_over",
+                            "winner_id": str(winner_player.id) if winner_player else None,
+                            "winner_side": winner_side.value if winner_side else None,
+                            "reason": "Game over"
+                        }
+                        await self.manager.broadcast(game.id, json.dumps(over_response))
                 else:
                     logger.error("AI predicted an illegal move!")
             else:

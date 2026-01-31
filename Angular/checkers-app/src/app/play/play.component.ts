@@ -36,6 +36,9 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   opponentId?: string;
   opponentSide?: 'red' | 'black';
 
+  isGameOver = false;
+  gameOverResult: any = null;
+
   constructor(private checkersService: CheckersService, private userService: UserService) {
     this.gameMenu = true;
     this.event$ = new Subject<Move>();
@@ -79,6 +82,14 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.board.load(result);
           this.pieces = this.board.pieces;
 
+          if (result.finished_at) {
+            this.isGameOver = true;
+            this.gameOverResult = {
+              ...result.result,
+              winner_side: result.result?.winner === result.dark_player ? 'dark' : (result.result?.winner === result.light_player ? 'light' : null)
+            };
+          }
+
           this.connectWebSocket(gameId);
 
           this.event$.asObservable().subscribe((move: Move) => {
@@ -115,6 +126,12 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
       const data = JSON.parse(event.data);
       console.log('Received data:', data);
 
+      if (data.type === 'game_over') {
+        this.isGameOver = true;
+        this.gameOverResult = data;
+        return;
+      }
+
       let dataSide = PieceColor.BLACK;  //"R" or "B"
       if (data.player_color === "R") {
         dataSide = PieceColor.RED;
@@ -135,6 +152,8 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   clickBoard(square: Square): void {
+    if (this.isGameOver) return;
+
     const isYourTurn = (this.playerSide === 'red' && this.board.turn === 'Red') ||
       (this.playerSide === 'black' && this.board.turn === 'Black');
 
