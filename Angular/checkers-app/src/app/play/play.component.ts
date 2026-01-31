@@ -108,6 +108,9 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   ngOnDestroy(): void {
+    if (!this.isGameOver && this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+      this.webSocket.send(JSON.stringify({ type: 'abandon' }));
+    }
     this.closeWebSocket();
   }
 
@@ -119,7 +122,7 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   connectWebSocket(gameId: string): void {
-    this.webSocket = new WebSocket(`ws://localhost:8000/ws/${gameId}`);
+    this.webSocket = new WebSocket(`ws://localhost:8000/ws/${gameId}?player_id=${this.playerId}`);
 
     this.webSocket.onopen = (event) => {
       console.log('WebSocket connection established');
@@ -169,6 +172,9 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   backMenu(): void {
     if (window.confirm("Are you sure to cancel this game?")) {
+      if (!this.isGameOver && this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+        this.webSocket.send(JSON.stringify({ type: 'abandon' }));
+      }
       this.gameMenu = true;
       this.gameMode = null;
       this.singleSide = null;

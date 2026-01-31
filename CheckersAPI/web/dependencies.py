@@ -15,6 +15,7 @@ from infrastructure.runtime import connection_manager as manager
 from application.handlers.resolve_player_handler import ResolvePlayerHandler
 from application.handlers.start_computer_game_handler import StartComputerGameHandler
 from application.handlers.join_queue_handler import JoinQueueHandler
+from application.handlers.abandon_game_handler import AbandonGameHandler
 
 # created once at startup
 mongo_context = MongoContext()
@@ -123,3 +124,8 @@ def get_join_queue_handler(
         matching_repository = Depends(get_matching_repository)
 ) -> JoinQueueHandler:
     return JoinQueueHandler(matching_repository)
+
+def get_abandon_game_handler(
+        game_repository = Depends(get_game_repository)
+) -> AbandonGameHandler:
+    return AbandonGameHandler(game_repository)

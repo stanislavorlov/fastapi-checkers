@@ -6,7 +6,8 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from application.handlers.game_event_handler import GameEventHandler
 from infrastructure.event_parser import EventParser
-from web.dependencies import get_event_parser, get_game_event_handler
+from web.dependencies import get_event_parser, get_game_event_handler, get_abandon_game_handler
+from application.handlers.abandon_game_handler import AbandonGameHandler
 from web.routers import game_api, accounts_api, session_api
 from infrastructure.runtime import connection_manager as manager
 from web.exception_handlers import global_exception_handler
@@ -56,12 +57,31 @@ app.include_router(game_api.router)
 app.include_router(accounts_api.router)
 app.include_router(session_api.router)
 
-async def message_loop(game_id: str, websocket: WebSocket, parser: EventParser, handler: GameEventHandler):
+async def message_loop(
+    game_id: str, 
+    websocket: WebSocket, 
+    parser: EventParser, 
+    handler: GameEventHandler,
+    abandon_handler: AbandonGameHandler,
+    player_id: str = None
+):
     while True:
         move_message = await websocket.receive_text()
         logger.debug(f"message received: {move_message}")
 
         try:
+            # Check if it's a special message like abandonment
+            try:
+                data = json.loads(move_message)
+                if isinstance(data, dict) and data.get('type') == 'abandon':
+                    logger.info(f"Abandonment signal received for game {game_id} from player {player_id}")
+                    if player_id:
+                        await abandon_handler.handle(game_id, player_id)
+                    break
+            except json.JSONDecodeError:
+                # Not a JSON message, probably a standard move string
+                pass
+
             player, pdn_move = parser.parse(move_message)
             await handler.handle(game_id, player, pdn_move)
 
@@ -74,12 +94,14 @@ async def message_loop(game_id: str, websocket: WebSocket, parser: EventParser, 
 async def websocket_endpoint(
         websocket: WebSocket,
         game_id: str,
+        player_id: str = None,
         parser: EventParser = Depends(get_event_parser),
-        handler: GameEventHandler = Depends(get_game_event_handler)
+        handler: GameEventHandler = Depends(get_game_event_handler),
+        abandon_handler: AbandonGameHandler = Depends(get_abandon_game_handler)
 ):
     await manager.connect(game_id, websocket)
 
     try:
-        await message_loop(game_id, websocket, parser, handler)
+        await message_loop(game_id, websocket, parser, handler, abandon_handler, player_id)
     except WebSocketDisconnect:
         await manager.disconnect(game_id, websocket)
