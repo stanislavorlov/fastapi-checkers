@@ -47,18 +47,12 @@ class Board:
     def apply_move(self, pdn_move: PdnMove) -> bool:
         squares = pdn_move.move_squares
 
-        print('board before applying move')
-        self.display_squares()
-        print(f'Applying move: {pdn_move.as_string}')
-
         if not squares:
             print(f'There are no squares in pdn_move: {pdn_move.as_string}')
             return False
 
         for prev, cur in pairwise(squares):
             legal_moves = self.get_legal_moves(self._turn)
-
-            print(f'Legal moves: {legal_moves}')
 
             legal_move = next((m for m in legal_moves if m.from_ == prev and m.to_ == cur), None)
 
@@ -67,9 +61,6 @@ class Board:
                 return False
 
             self.move_piece(legal_move)
-
-        print('board after applying move')
-        self.display_squares()
 
         return True
 
