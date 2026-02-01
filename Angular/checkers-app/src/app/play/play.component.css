@@ -166,8 +166,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: default;
   transition: background 0.2s ease;
+}
+
+.square.clickable {
+  cursor: pointer;
 }
 
 .square.light {
@@ -214,6 +218,12 @@
 .piece-img {
   width: 100%;
   height: auto;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.square:not(.clickable) .piece-img {
+  opacity: 0.5;
+  filter: grayscale(0.3);
 }
 
 .move-indicator {

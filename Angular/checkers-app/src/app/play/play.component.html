@@ -34,7 +34,8 @@
         <div class="board-grid">
           <ng-container *ngFor="let rowEntry of board">
             <div *ngFor="let sq of rowEntry.squares" (click)="clickBoard(sq)" class="square"
-              [class.light]="sq.color === 'light'" [class.dark]="sq.color === 'dark'" [class.selected]="sq.selected">
+              [class.light]="sq.color === 'light'" [class.dark]="sq.color === 'dark'" [class.selected]="sq.selected"
+              [class.clickable]="board.isSquareClickable(sq)">
 
               <div class="square-id" *ngIf="+sq.id > 0">{{sq.id}}</div>
 

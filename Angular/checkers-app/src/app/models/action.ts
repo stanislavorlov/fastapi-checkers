@@ -22,10 +22,10 @@ export class Action {
     }
 }
 
-export class ActionType {
-    static readonly MOVE = 'move';
-    static readonly SELECT = 'select';
-    static readonly UNSELECT = 'unselect';
-    static readonly CAPTURE = 'capture';
-    static readonly PROMOTE = 'promote';
+export enum ActionType {
+    MOVE = 'move',
+    SELECT = 'select',
+    UNSELECT = 'unselect',
+    CAPTURE = 'capture',
+    PROMOTE = 'promote',
 }

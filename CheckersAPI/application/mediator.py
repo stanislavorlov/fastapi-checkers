@@ -9,7 +9,6 @@ class Mediator:
 
     def register(self, request_type: Type, handler: Any):
         self._handlers[request_type] = handler
-        logger.debug(f"Registered handler for request type: {request_type.__name__}")
 
     async def send(self, request: Any) -> Any:
         request_type = type(request)
@@ -22,6 +21,7 @@ class Mediator:
                         return await handler.handle(request)
                     else:
                         return handler.handle(request)
+                return None
             else:
                 logger.error(f"Handler for {request_type.__name__} does not have a 'handle' method")
                 raise Exception(f"Handler for {request_type.__name__} does not have a 'handle' method")

@@ -166,7 +166,7 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
     const isYourTurn = (this.playerSide === 'red' && this.board.turn === 'Red') ||
       (this.playerSide === 'black' && this.board.turn === 'Black');
 
-    if (square.canSelect && isYourTurn) {
+    if (isYourTurn && this.board.isSquareClickable(square)) {
       this.board.click(square);
     }
   }
