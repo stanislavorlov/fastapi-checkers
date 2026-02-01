@@ -8,6 +8,7 @@ from infrastructure.repositories.player_repository import PlayerRepository
 from web.dependencies import get_profile_repository, get_mediator, get_player_repository
 from web.models import RefreshTokenDto
 from web.token_helper import get_current_user, oauth2_scheme, decode_access_token, create_access_token, InvalidTokenError
+from web.client_helper import get_client_context
 
 router = APIRouter(
     prefix="/api",
@@ -20,12 +21,15 @@ async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     mediator: Annotated[Mediator, Depends(get_mediator)]
 ):
+    context = get_client_context(request)
     retrieve_token = RetrieveProfileToken(
         client_host=request.client.host,
-        accept_language=request.headers.get("accept-language", ""),
+        accept_language=context.accept_language,
         username=form_data.username,
         password=form_data.password,
-        agent=request.headers.get("user-agent", ""),
+        agent=context.agent,
+        region=context.region,
+        timezone=context.timezone
     )
 
     print(f"Headers: {request.headers}")
@@ -44,15 +48,14 @@ async def guest_token(
     request: Request,
     mediator: Annotated[Mediator, Depends(get_mediator)],
 ):
+    context = get_client_context(request)
     retrieve_token = RetrieveGuestToken(
         client_host=request.client.host,
-        accept_language=request.headers.get("accept-language", ""),
-        agent=request.headers.get("user-agent", ""),
+        accept_language=context.accept_language,
+        agent=context.agent,
+        region=context.region,
+        timezone=context.timezone
     )
-
-    print(f"Headers: {request.headers}")
-    print(f"user agent: {retrieve_token.agent}")
-
     access_token = await mediator.send(retrieve_token)
 
     return access_token

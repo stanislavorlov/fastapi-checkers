@@ -1,6 +1,31 @@
+from collections import namedtuple
+from fastapi import Request
 import logging
 import requests
 
+ClientContext = namedtuple('ClientContext', ['accept_language', 'region', 'agent', 'timezone'])
+
+def get_client_context(request: Request) -> ClientContext:
+    """
+    Extracts client context from request headers.
+    """
+    accept_language = request.headers.get("accept-language", "")
+    
+    # Simple region detection logic based on language headers
+    region = "EU" if "eu" in accept_language.lower() or "gb" in accept_language.lower() else "NA"
+    
+    # Timezone detection from optional header
+    timezone_str = request.headers.get("x-timezone") or "UTC"
+    
+    # User agent
+    agent = request.headers.get("user-agent", "")
+    
+    return ClientContext(
+        accept_language=accept_language,
+        region=region,
+        agent=agent,
+        timezone=timezone_str
+    )
 
 def get_ip_info(ip: str = "") -> dict:
     """Fetch IP and location info from ipapi.co"""

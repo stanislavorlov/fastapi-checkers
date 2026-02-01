@@ -73,10 +73,30 @@ class RetrieveTokenHandler(RequestHandler[RetrieveToken, AccessToken]):
         # Add session to player aggregate
         player = self.player_repository.get_by_id(auth_result.player_id)
         if player:
+            from domain.sessions.region import Region
+            from datetime import timezone
+            try:
+                from zoneinfo import ZoneInfo
+            except ImportError:
+                # Fallback for environments without zoneinfo (though Python 3.9+ should have it)
+                ZoneInfo = None
+
+            # Use request context if available
+            session_region = Region(code=request.region) if request.region else None
+            
+            session_tz = timezone.utc
+            if request.timezone and ZoneInfo:
+                try:
+                    session_tz = ZoneInfo(request.timezone)
+                except Exception:
+                    logger.warning(f"Invalid timezone received: {request.timezone}, falling back to UTC")
+            
             player.create_session(
                 session_token=access_token.access_token,
                 host=request.client_host,
-                agent=request.agent
+                agent=request.agent,
+                region=session_region,
+                tz=session_tz
             )
             self.player_repository.save(player)
             logger.info('Created new session for player %s', auth_result.player_id)
