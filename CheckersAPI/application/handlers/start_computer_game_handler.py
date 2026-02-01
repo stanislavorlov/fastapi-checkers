@@ -10,7 +10,7 @@ from domain.game.game_mode import GameMode
 from domain.side import Side
 from infrastructure.repositories.game_repository import GameRepository
 from infrastructure.repositories.player_repository import PlayerRepository
-from application.handlers.game_event_handler import GameEventHandler
+from application.handlers.websocket.move_handler import MoveHandler
 from infrastructure.documents import PyObjectId
 
 logger = logging.getLogger(__name__)
@@ -20,11 +20,11 @@ class StartComputerGameHandler:
         self,
         game_repository: GameRepository,
         player_repository: PlayerRepository,
-        game_event_handler: GameEventHandler
+        move_handler: MoveHandler
     ):
         self.game_repository = game_repository
         self.player_repository = player_repository
-        self.game_event_handler = game_event_handler
+        self.move_handler = move_handler
 
     async def handle(self, player_id: str, single_side: str) -> str:
         player = self.player_repository.get_by_id(player_id)
@@ -50,6 +50,8 @@ class StartComputerGameHandler:
             history=[],
             result={}
         )
+
+        new_game.start()
         
         game_id = self.game_repository.create(new_game)
         
@@ -57,6 +59,6 @@ class StartComputerGameHandler:
         new_game.id = PyObjectId(game_id)
         
         # Trigger AI move immediately on creation
-        await self.game_event_handler.trigger_ai_move(new_game)
+        await self.move_handler.trigger_ai_move(new_game)
         
         return str(game_id)
