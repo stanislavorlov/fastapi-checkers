@@ -117,11 +117,14 @@ async def get_current_user(
         if player.profile_id:
             profile = profile_repository.get(str(player.profile_id))
             if profile:
+                first_name = profile.full_name.first.value if profile.full_name else profile.contact.username
+                last_name = profile.full_name.last.value if profile.full_name else ''
+                
                 return PlayerUserDto(
                     player_id=str(player.id),
                     email=profile.contact.email,
-                    first_name=profile.full_name.first.value,
-                    last_name=profile.full_name.last.value,
+                    first_name=first_name,
+                    last_name=last_name,
                     country=profile.country or '',
                     anonymous=False
                 )

@@ -5,6 +5,7 @@ import { LocalStorageService } from './local-storage.service';
 import { Player } from '../models/player';
 import { AccessToken } from '../models/access_token';
 import { isPlatformBrowser } from '@angular/common';
+import { ProfileDto } from '../models/profile-dto';
 
 @Injectable({
   providedIn: 'root'
@@ -134,5 +135,13 @@ export class UserService {
     this.playerSubject.next(null);
     // Don't call init() here as it can cause infinite loops if authentication fails.
     // The next navigation or manual login will handle re-initialization.
+  }
+
+  getProfile(): Observable<ProfileDto> {
+    return this.httpClient.get<ProfileDto>('/api/profile');
+  }
+
+  updateProfile(profile: ProfileDto): Observable<any> {
+    return this.httpClient.put('/api/profile', profile);
   }
 }

@@ -1,9 +1,8 @@
-from dataclasses import dataclass
 from datetime import datetime
+from domain.kernel.value_object import ValueObject
 
 
-@dataclass
-class Rank:
+class Rank(ValueObject):
     rating: int
     deviation: int
     last_update: datetime

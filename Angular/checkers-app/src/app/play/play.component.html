@@ -7,6 +7,17 @@
       <h1 class="game-title">Checkers Royale</h1>
     </div>
     <div class="game-actions">
+      <button class="btn-secondary" (click)="goPlay()" title="New Game">
+        <span class="icon">🎮</span> Play
+      </button>
+      <ng-container *ngIf="player$ | async as player">
+        <button *ngIf="!player.is_guest" class="btn-secondary" (click)="goHistory()" title="Game History">
+          <span class="icon">📜</span> History
+        </button>
+        <button *ngIf="!player.is_guest" class="btn-secondary" (click)="goProfile()" title="Your Profile">
+          <span class="icon">👤</span> Profile
+        </button>
+      </ng-container>
       <button class="btn-danger-outline" (click)="backMenu()">
         <span class="icon">🏠</span> Start Menu
       </button>

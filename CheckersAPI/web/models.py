@@ -73,3 +73,13 @@ class PlayerUserDto(BaseModel):
 class RequestGameResponse(BaseModel):
     player_id: str
     status: str
+
+class ProfileDto(BaseModel):
+    email: str
+    username: str
+    first_name: str | None = None
+    last_name: str | None = None
+    language: str | None = None
+    bio: str | None = None
+    avatar_url: str | None = None
+    country: str | None = None

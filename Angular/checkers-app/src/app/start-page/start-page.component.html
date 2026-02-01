@@ -5,13 +5,22 @@
             <li>
                 <button class="button-9 blue" (click)="play()" role="button">Play</button>
             </li>
-            <li>
+            <li *ngIf="player$ | async as player">
+                <button *ngIf="!player.is_guest" class="button-9 orange" (click)="history()"
+                    role="button">History</button>
+            </li>
+            <li *ngIf="(player$ | async) && !(player$ | async)?.is_guest">
                 <hr>
             </li>
         </ul>
         <div *ngIf="player$ | async as player">
-            Welcome, <b>{{ player.displayName }}</b>
-            <button *ngIf="!player.is_guest" class="button-31" role="button" (click)="logOut()">Log Out</button>
+            Welcome,
+            <div><b>{{ player.displayName }}</b></div>
+            <div>
+                <button *ngIf="!player.is_guest" class="button-31" role="button"
+                    (click)="accountProfile()">Profile</button>
+                <button *ngIf="!player.is_guest" class="button-31" role="button" (click)="logOut()">Log Out</button>
+            </div>
         </div>
 
         <ul *ngIf="!(player$ | async) || (player$ | async)?.is_guest">

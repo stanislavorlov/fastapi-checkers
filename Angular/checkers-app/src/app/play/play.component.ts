@@ -4,7 +4,7 @@ import { Move } from '../models/move';
 import { Square } from '../models/square';
 import { Board } from '../models/board';
 import { Piece } from '../models/piece';
-import { NgFor, NgIf, TitleCasePipe, UpperCasePipe, SlicePipe } from '@angular/common';
+import { AsyncPipe, NgFor, NgIf, TitleCasePipe, UpperCasePipe, SlicePipe } from '@angular/common';
 import { CheckersService } from '../services/checkers.service';
 import { Game } from '../models/game';
 import { Subject } from 'rxjs';
@@ -14,7 +14,7 @@ import { AbandonMessage, MoveMessage } from '../models/ws-message';
 
 @Component({
   selector: 'app-play',
-  imports: [NgFor, NgIf, TitleCasePipe, UpperCasePipe, SlicePipe],
+  imports: [NgFor, NgIf, TitleCasePipe, UpperCasePipe, SlicePipe, AsyncPipe],
   templateUrl: './play.component.html',
   styleUrl: './play.component.css'
 })
@@ -23,6 +23,8 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   private lastMoveCount = 0;
   board: Board;
   pieces: Map<Square, Piece>;
+  private readonly userService = inject(UserService);
+  player$ = this.userService.player$;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private webSocket?: WebSocket;
@@ -43,7 +45,7 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   currentReplayIndex = -1;
   cachedGame: Game | null = null;
 
-  constructor(private checkersService: CheckersService, private userService: UserService) {
+  constructor(private checkersService: CheckersService) {
     this.gameMenu = true;
     this.event$ = new Subject<Move>();
     this.playerId = this.userService.currentPlayer?.player_id || '';
@@ -180,9 +182,21 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
       this.gameMode = null;
       this.singleSide = null;
 
-      this.router.navigate(['/game'], { queryParams: {} });
+      this.router.navigate(['/'], { queryParams: {} });
       this.closeWebSocket();
     }
+  }
+
+  goHistory(): void {
+    this.router.navigate(['/history']);
+  }
+
+  goProfile(): void {
+    this.router.navigate(['/account/profile']);
+  }
+
+  goPlay(): void {
+    this.router.navigate(['/game']);
   }
 
   goBack(): void {

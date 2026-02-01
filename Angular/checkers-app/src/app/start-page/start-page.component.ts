@@ -32,6 +32,10 @@ export class StartComponent implements OnInit {
     this.router.navigate(['/game'], { queryParams: {} });
   }
 
+  history(): void {
+    this.router.navigate(['/history'], { queryParams: {} });
+  }
+
   logIn(): void {
     this.router.navigate(['/account/login'], { queryParams: {} });
   }
@@ -43,6 +47,10 @@ export class StartComponent implements OnInit {
   async logOut(): Promise<void> {
     await this.userService.logout();
     this.router.navigate(['/'], { queryParams: {} });
+  }
+
+  accountProfile(): void {
+    this.router.navigate(['/account/profile'], { queryParams: {} });
   }
 
   /*backMenu(): void {

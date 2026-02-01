@@ -1,15 +1,16 @@
-from dataclasses import dataclass
 from domain.kernel.value_object import ValueObject
+from pydantic import model_validator
 
 
-@dataclass
 class Region(ValueObject):
     code: str
 
-    def __post_init__(self):
+    @model_validator(mode='after')
+    def validate_region(self) -> 'Region':
         allowed = {"EU", "NA", "AS", "AF", "OC"}
         if self.code not in allowed:
             raise ValueError(f"Invalid region: {self.code}")
+        return self
 
     @staticmethod
     def eu():

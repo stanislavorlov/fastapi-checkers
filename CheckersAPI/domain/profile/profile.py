@@ -45,7 +45,31 @@ class Profile(AggregateRoot):
         if self.locked:
             raise PermissionError("Cannot update profile when locked.")
 
-        editable = {"full_name", "language", "bio", "avatar_url", "country"}
+        # Fields that can be set directly via setattr
+        direct_editable = {"language", "bio", "avatar_url", "country"}
+        
+        # Handle FullName update
+        first = self.full_name.first.value if self.full_name else None
+        last = self.full_name.last.value if self.full_name else None
+        
+        name_updated = False
+        if "first_name" in kwargs:
+            first = kwargs["first_name"]
+            name_updated = True
+        if "last_name" in kwargs:
+            last = kwargs["last_name"]
+            name_updated = True
+            
+        if name_updated:
+            self.full_name = FullName.create(first, last)
+
+        # Handle Contact update
+        if "email" in kwargs or "username" in kwargs:
+            email = kwargs.get("email", self.contact.email)
+            username = kwargs.get("username", self.contact.username)
+            self.contact = Contact(contact=f"{username} <{email}>")
+
+        # Handle direct fields
         for field, value in kwargs.items():
-            if field in editable:
+            if field in direct_editable:
                 setattr(self, field, value)

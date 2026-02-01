@@ -37,31 +37,32 @@ class RetrieveTokenHandler(RequestHandler[RetrieveToken, AccessToken]):
         if auth_result is None:
             return None
 
-        # Check if we already have an active session for this player/client
-        existing_token = self.player_repository.find_session_by_player_and_client(
-            auth_result.player_id, 
-            request.client_host, 
-            request.agent
-        )
-        
-        if existing_token:
-            try:
-                # Validate the existing token before reusing it
-                decode_access_token(existing_token)
-                logger.info('Reusing valid existing session token for player %s', auth_result.player_id)
-                
-                return AccessToken(
-                    access_token=existing_token,
-                    token_type='bearer',
-                    player_id=auth_result.player_id,
-                    name=auth_result.display_name,
-                    email=auth_result.email,
-                    type=auth_result.type,
-                    refresh_token='' 
-                )
-            except InvalidTokenError:
-                logger.info('Existing session token for player %s is expired or invalid, creating new one', auth_result.player_id)
-                pass
+        # Check if we already have an active session for this player/client (Guest only)
+        if request.is_guest:
+            existing_token = self.player_repository.find_session_by_player_and_client(
+                auth_result.player_id, 
+                request.client_host, 
+                request.agent
+            )
+            
+            if existing_token:
+                try:
+                    # Validate the existing token before reusing it
+                    decode_access_token(existing_token)
+                    logger.info('Reusing valid existing session token for player %s', auth_result.player_id)
+                    
+                    return AccessToken(
+                        access_token=existing_token,
+                        token_type='bearer',
+                        player_id=auth_result.player_id,
+                        name=auth_result.display_name,
+                        email=auth_result.email,
+                        type=auth_result.type,
+                        refresh_token='' 
+                    )
+                except InvalidTokenError:
+                    logger.info('Existing session token for player %s is expired or invalid, creating new one', auth_result.player_id)
+                    pass
 
         access_token = create_access_token(
             auth_result.player_id,

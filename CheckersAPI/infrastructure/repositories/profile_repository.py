@@ -49,8 +49,27 @@ class ProfileRepository:
                 avatar_url=profile_document["avatar_url"],
                 country=profile_document["country"]
             )
-
         return None
+
+    def save(self, profile: Profile):
+        document = {
+            "email": profile.contact.email,
+            "password_hash": profile.password_hash,
+            "username": profile.contact.username,
+            "initial_level": profile.initial_level,
+            "first_name": profile.full_name.first.value if profile.full_name else None,
+            "last_name": profile.full_name.last.value if profile.full_name else None,
+            "language": profile.language,
+            "bio": profile.bio,
+            "avatar_url": profile.avatar_url,
+            "country": profile.country
+        }
+
+        self.db.profiles.update_one(
+            {"_id": profile.id},
+            {"$set": document}
+        )
+        logger.info(f"Profile {profile.id} updated")
 
     def find_by_email(self, email: str) -> Optional[Profile]:
         profile_document = self.db.profiles.find_one({"email": email})

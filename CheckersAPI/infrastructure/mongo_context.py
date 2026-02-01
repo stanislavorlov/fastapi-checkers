@@ -4,7 +4,7 @@ from infrastructure.settings import settings
 
 class MongoContext:
     def __init__(self, url: str = settings.DATABASE_URL, db_name: str = settings.DATABASE_NAME):
-        self.client = MongoClient(url, server_api=ServerApi("1"))
+        self.client = MongoClient(url, server_api=ServerApi("1"), tz_aware=True)
         self.db = self.client[db_name]
 
     def ensure_indexes(self):

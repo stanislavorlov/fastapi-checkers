@@ -5,7 +5,6 @@ from domain.sessions.region import Region
 from infrastructure.documents import PyObjectId
 
 
-@dataclass
 class PlayerSession(Entity):
     player_id: PyObjectId
     created_at: datetime
