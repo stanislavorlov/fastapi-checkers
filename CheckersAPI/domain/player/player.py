@@ -33,19 +33,19 @@ class Player(AggregateRoot):
         Unified factory method for all player types.
         """
         creation_map = {
-            PlayerType.AI: cls._create_ai,
-            PlayerType.GUEST: cls._create_human,
-            PlayerType.ACCOUNT: cls._create_human,
+            PlayerType.AI: lambda: cls._create_ai(),
+            PlayerType.GUEST: lambda: cls._create_human(identity, player_level, profile),
+            PlayerType.ACCOUNT: lambda: cls._create_human(identity, player_level, profile),
         }
 
         creator = creation_map.get(identity.type_)
         if not creator:
             raise ValueError(f"No creation logic defined for player type: {identity.type_}")
 
-        return creator(identity, player_level, profile)
+        return creator()
 
     @classmethod
-    def _create_ai(cls, identity: PlayerIdentity, *args, **kwargs) -> "Player":
+    def _create_ai(cls) -> "Player":
         return cls(
             display_name=DisplayName(display_name="AI Bot"),
             _type=PlayerType.AI,
