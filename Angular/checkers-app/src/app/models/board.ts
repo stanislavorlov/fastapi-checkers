@@ -20,17 +20,15 @@ export class Board {
     private _turn: PieceColor = PieceColor.BLACK; // Black moves first
     private _playerId: string;
     private _playerColor?: PieceColor;
-    private _gameId: string;
     private _started: boolean;
     private _finished: boolean = false;
     private _event$: Subject<Move>;
     private _forcedCapture: boolean = false;
     private _activeJumpingPiece: Square | null = null;
 
-    constructor(playerId: string, gameId: string, event$: Subject<Move>) {
+    constructor(playerId: string, event$: Subject<Move>) {
         this._actionHistory = new Stack<Action>();
         this._playerId = playerId;
-        this._gameId = gameId;
         this._event$ = event$;
         this._started = false;
 
@@ -154,7 +152,7 @@ export class Board {
 
 
     public isSquareClickable(square: Square): boolean {
-        if (this._finished) return false;
+        if (!this._started || this._finished) return false;
         if (this._playerColor !== this._turn) return false;
 
         const last_action = this._actionHistory.peek();
@@ -224,7 +222,7 @@ export class Board {
     }
 
     public click(square: Square) {
-        if (this._finished) return;
+        if (!this._started || this._finished) return;
 
         let last_action = this._actionHistory.peek();
         let current_action: Action | null = null;

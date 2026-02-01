@@ -47,7 +47,7 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.gameMenu = true;
     this.event$ = new Subject<Move>();
     this.playerId = this.userService.currentPlayer?.player_id || '';
-    this.board = new Board(this.playerId, this.gameId, this.event$);
+    this.board = new Board(this.playerId, this.event$);
     this.pieces = new Map<Square, Piece>();
   }
 
@@ -167,7 +167,7 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
       (this.playerSide === 'black' && this.board.turn === 'Black');
 
     if (isYourTurn && this.board.isSquareClickable(square)) {
-      this.board.click(square);
+      this.board.click(square); // The return value of Board.click is not used here, so no change needed at call site.
     }
   }
 
