@@ -10,13 +10,10 @@ from infrastructure.repositories.profile_repository import ProfileRepository
 from infrastructure.repositories.session_token_repository import SessionRepository
 from web.models import AccessToken
 from web.token_helper import create_access_token, verify_password, decode_access_token, InvalidTokenError
-
-logger = logging.getLogger(__name__)
-
-AuthResult = namedtuple('AuthResult', ['player_id', 'display_name', 'email', 'type'])
-
 from application.handlers.base_handler import RequestHandler
 
+logger = logging.getLogger(__name__)
+AuthResult = namedtuple('AuthResult', ['player_id', 'display_name', 'email', 'type'])
 
 class RetrieveTokenHandler(RequestHandler[RetrieveToken, AccessToken]):
 

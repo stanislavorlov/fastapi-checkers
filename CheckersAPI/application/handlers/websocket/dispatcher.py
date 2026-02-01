@@ -1,6 +1,4 @@
 import logging
-from typing import Dict
-from application.handlers.websocket.base_handler import WebSocketHandler
 from application.mediator import Mediator
 from application.requests.move import MoveRequest
 from application.requests.abandon_game import AbandonGameRequest

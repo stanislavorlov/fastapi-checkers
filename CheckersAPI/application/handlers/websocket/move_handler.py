@@ -9,6 +9,9 @@ from domain.game.game_mode import GameMode
 from application.alpha_zero_predictor import AlphaZeroPredictor
 from application.handlers.base_handler import RequestHandler
 from application.requests.move import MoveRequest
+from infrastructure.connnection_manager import ConnectionManager
+from infrastructure.event_parser import EventParser
+from infrastructure.repositories.game_repository import GameRepository
 
 logger = logging.getLogger(__name__)
 

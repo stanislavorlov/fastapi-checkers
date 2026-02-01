@@ -1,10 +1,9 @@
+import logging
 from application.monte_carlo_tree import MCTS
 from application.neural_network import NeuralNetwork
 from domain.board.board import Board
+from domain.legal_move import CapturedMove
 from domain.pdn_move import PdnMove
-from domain.legal_move import LegalMove, CapturedMove
-from domain.side import Side
-import logging
 
 logger = logging.getLogger(__name__)
 

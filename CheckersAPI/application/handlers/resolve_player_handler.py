@@ -1,5 +1,5 @@
 import logging
-from fastapi import Request, HTTPException
+from fastapi import HTTPException
 from application.handlers.create_player_handler import CreatePlayerHandler
 from application.handlers.resolve_guest_player_handler import ResolveGuestPlayerHandler
 from web.token_helper import decode_access_token

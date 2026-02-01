@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timezone
 from domain.player.player import Player
 from domain.player.player_type import PlayerType as DomainPlayerType
@@ -12,11 +11,8 @@ from infrastructure.repositories.game_repository import GameRepository
 from infrastructure.repositories.player_repository import PlayerRepository
 from application.handlers.websocket.move_handler import MoveHandler
 from infrastructure.documents import PyObjectId
-
 from application.handlers.base_handler import RequestHandler
 from application.requests.start_computer_game import StartComputerGameRequest
-
-logger = logging.getLogger(__name__)
 
 class StartComputerGameHandler(RequestHandler[StartComputerGameRequest, str]):
     def __init__(

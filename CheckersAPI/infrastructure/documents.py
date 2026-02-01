@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional, List, Annotated, Any
+from typing import Optional, List, Any
 from bson import ObjectId
-from pydantic import BaseModel, Field, ConfigDict, BeforeValidator, PlainSerializer
+from pydantic import BaseModel, Field, ConfigDict
 from pydantic_core import core_schema
+
 
 # ---------------------------
 # Custom ObjectId validator

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from domain.kernel.value_object import ValueObject
 
 
-@dataclass(frozen=True)
+@dataclass
 class Region(ValueObject):
     code: str
 

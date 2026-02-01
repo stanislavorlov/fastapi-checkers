@@ -1,5 +1,5 @@
 from itertools import pairwise
-from typing import List, Tuple
+from typing import List
 from domain.board.bitboard import BitboardCheckers
 from domain.board.board_history import BoardHistory
 from domain.history_entry import HistoryEntry

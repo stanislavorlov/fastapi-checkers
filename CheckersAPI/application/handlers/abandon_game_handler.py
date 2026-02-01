@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 from domain.game.game_mode import GameMode
 from domain.player.player_type import PlayerType
 from infrastructure.repositories.game_repository import GameRepository

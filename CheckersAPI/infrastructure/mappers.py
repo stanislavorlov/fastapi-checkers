@@ -1,12 +1,9 @@
-from typing import List, Mapping
-from pymongo.synchronous.cursor import Cursor
-from infrastructure.documents import GameSchema, HistorySchema
-from web.models import ReadGameDto, HistoryDto, PlayerUserDto
-
-
+from typing import List
 from domain.game.game import Game
 from domain.side import Side
-from datetime import datetime
+from infrastructure.documents import HistorySchema
+from web.models import ReadGameDto, HistoryDto, PlayerUserDto
+
 
 def individual_game(game: Game) -> ReadGameDto:
     # Use side assignment from domain dictionary
