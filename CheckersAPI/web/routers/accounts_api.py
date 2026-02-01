@@ -1,12 +1,12 @@
 import logging
 from typing import Annotated
 from fastapi import APIRouter, HTTPException, status, Request, Depends
-from application.handlers.create_player_handler import CreatePlayerHandler
-from application.handlers.register_profile_handler import RegisterProfileHandler
+from application.mediator import Mediator
+from application.requests.register_profile import RegisterProfileRequest
 from application.requests.create_player import CreatePlayerRequest
 from domain.player.player_type import PlayerType
 from web.client_helper import get_ip_info
-from web.dependencies import get_register_profile_handler, get_create_player_handler
+from web.dependencies import get_mediator
 from web.models import CreateAccountDto
 
 router = APIRouter(
@@ -18,8 +18,7 @@ router = APIRouter(
 async def register_account(
         request: Request,
         create_account: CreateAccountDto,
-        handler: Annotated[RegisterProfileHandler, Depends(get_register_profile_handler)],
-        player_handler: Annotated[CreatePlayerHandler, Depends(get_create_player_handler)]
+        mediator: Annotated[Mediator, Depends(get_mediator)]
 ):
     try:
         ip = request.headers.get("x-forwarded-for", request.client.host)
@@ -29,10 +28,20 @@ async def register_account(
 
         client_info_dict = get_ip_info(ip)
 
-        create_account.language = client_info_dict.get("languages", "en,").split(",")[0]
-        create_account.country = client_info_dict.get("country_code", "")
+        language = client_info_dict.get("languages", "en,").split(",")[0]
+        country = client_info_dict.get("country_code", "")
 
-        profile_id = handler.handle(create_account)
+        register_request = RegisterProfileRequest(
+            email=create_account.email,
+            password=create_account.password,
+            first_name=create_account.first_name,
+            last_name=create_account.last_name,
+            level=create_account.level,
+            language=language,
+            country=country
+        )
+        
+        profile_id = await mediator.send(register_request)
 
         create_player = CreatePlayerRequest(
             type=PlayerType.ACCOUNT,
@@ -40,7 +49,7 @@ async def register_account(
             player_level=create_account.level
         )
 
-        player_handler.handle(create_player)
+        await mediator.send(create_player)
 
         return {"status": "ok"}
     except Exception as e:

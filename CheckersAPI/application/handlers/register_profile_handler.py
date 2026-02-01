@@ -2,16 +2,17 @@ from domain.profile.contact import Contact
 from domain.profile.full_name import FullName
 from domain.profile.profile import Profile
 from infrastructure.repositories.profile_repository import ProfileRepository
-from web.models import CreateAccountDto
 from web.token_helper import hash_password
+from application.handlers.base_handler import RequestHandler
+from application.requests.register_profile import RegisterProfileRequest
 
 
-class RegisterProfileHandler:
+class RegisterProfileHandler(RequestHandler[RegisterProfileRequest, str]):
 
     def __init__(self, profile_repository: ProfileRepository):
         self.profile_repository = profile_repository
 
-    def handle(self, request: CreateAccountDto) -> str:
+    async def handle(self, request: RegisterProfileRequest) -> str:
 
         username = request.email.split('@')[0]
 

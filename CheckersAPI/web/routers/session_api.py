@@ -1,11 +1,11 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
-from application.handlers.retrieve_token_handler import RetrieveTokenHandler
+from application.mediator import Mediator
 from application.requests.retrieve_token import RetrieveGuestToken, RetrieveProfileToken
 from infrastructure.repositories.profile_repository import ProfileRepository
 from infrastructure.repositories.player_repository import PlayerRepository
-from web.dependencies import get_profile_repository, get_retrieve_token_handler, get_player_repository
+from web.dependencies import get_profile_repository, get_mediator, get_player_repository
 from web.models import RefreshTokenDto
 from web.token_helper import get_current_user, oauth2_scheme, decode_access_token, create_access_token, InvalidTokenError
 
@@ -18,7 +18,7 @@ router = APIRouter(
 async def login(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    token_handler: Annotated[RetrieveTokenHandler, Depends(get_retrieve_token_handler)]
+    mediator: Annotated[Mediator, Depends(get_mediator)]
 ):
     retrieve_token = RetrieveProfileToken(
         client_host=request.client.host,
@@ -29,7 +29,7 @@ async def login(
     )
 
     print(f"Headers: {request.headers}")
-    access_token = token_handler.handle(retrieve_token)
+    access_token = await mediator.send(retrieve_token)
 
     if not access_token:
         raise HTTPException(
@@ -42,7 +42,7 @@ async def login(
 @router.post("/guest-token")
 async def guest_token(
     request: Request,
-    token_handler: Annotated[RetrieveTokenHandler, Depends(get_retrieve_token_handler)],
+    mediator: Annotated[Mediator, Depends(get_mediator)],
 ):
     retrieve_token = RetrieveGuestToken(
         client_host=request.client.host,
@@ -53,7 +53,7 @@ async def guest_token(
     print(f"Headers: {request.headers}")
     print(f"user agent: {retrieve_token.agent}")
 
-    access_token = token_handler.handle(retrieve_token)
+    access_token = await mediator.send(retrieve_token)
 
     return access_token
 
@@ -93,14 +93,3 @@ async def read_users_me(
     player_repo: PlayerRepository = Depends(get_player_repository)
 ):
     return await get_current_user(token=token, profile_repository=profile_repo, player_repository=player_repo)
-
-# @router.get("/users/ip")
-# def get_current_user_ip(request: Request):
-#     # ToDo: better to generate some deviceId on the client side
-#     ip = request.headers.get("x-forwarded-for") or request.client.host
-#     agent = request.headers.get("user-agent", "unknown")
-#
-#     unique_string = f"{ip}:{agent}"
-#     fingerprint = hashlib.sha256(unique_string.encode()).hexdigest()
-#
-#     return {"ip": ip, "agent": agent, "fingerprint": fingerprint}

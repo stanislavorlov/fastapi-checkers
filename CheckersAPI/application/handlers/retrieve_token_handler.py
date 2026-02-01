@@ -15,7 +15,10 @@ logger = logging.getLogger(__name__)
 
 AuthResult = namedtuple('AuthResult', ['player_id', 'display_name', 'email', 'type'])
 
-class RetrieveTokenHandler:
+from application.handlers.base_handler import RequestHandler
+
+
+class RetrieveTokenHandler(RequestHandler[RetrieveToken, AccessToken]):
 
     def __init__(self,
                  profile_repository: ProfileRepository,
@@ -30,11 +33,11 @@ class RetrieveTokenHandler:
         self.create_player_handler = create_player_handler
         self.resolve_guest_player_handler = resolve_guest_player_handler
 
-    def handle(self, request: RetrieveToken) -> AccessToken:
+    async def handle(self, request: RetrieveToken) -> AccessToken:
         if request.is_guest:
-            auth_result = self._handle_guest_auth(request)
+            auth_result = await self._handle_guest_auth(request)
         else:
-            auth_result = self._handle_account_auth(request)
+            auth_result = await self._handle_account_auth(request)
 
         if auth_result is None:
             return None
@@ -84,12 +87,12 @@ class RetrieveTokenHandler:
 
         return access_token
 
-    def _handle_guest_auth(self, request: RetrieveToken) -> AuthResult:
+    async def _handle_guest_auth(self, request: RetrieveToken) -> AuthResult:
         logger.info('Processing Guest Token request')
         
-        player_id = self.resolve_guest_player_handler.handle(
-            request.client_host, 
-            request.agent
+        from application.requests.resolve_guest_player import ResolveGuestPlayerRequest
+        player_id = await self.resolve_guest_player_handler.handle(
+            ResolveGuestPlayerRequest(host=request.client_host, agent=request.agent)
         )
         
         return AuthResult(
@@ -99,7 +102,7 @@ class RetrieveTokenHandler:
             type='guest'
         )
 
-    def _handle_account_auth(self, request: RetrieveProfileToken) -> AuthResult | None:
+    async def _handle_account_auth(self, request: RetrieveProfileToken) -> AuthResult | None:
         logger.info(f'Processing Account Token request for: {request.username}')
         profile = self.profile_repository.find_by_email(request.username)
 
@@ -120,7 +123,7 @@ class RetrieveTokenHandler:
                 profile_id=profile.id,
                 player_level=profile.initial_level
             )
-            player_id = self.create_player_handler.handle(create_player_request)
+            player_id = await self.create_player_handler.handle(create_player_request)
         else:
             player_id = str(player.id)
 

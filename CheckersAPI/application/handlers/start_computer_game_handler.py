@@ -13,9 +13,12 @@ from infrastructure.repositories.player_repository import PlayerRepository
 from application.handlers.websocket.move_handler import MoveHandler
 from infrastructure.documents import PyObjectId
 
+from application.handlers.base_handler import RequestHandler
+from application.requests.start_computer_game import StartComputerGameRequest
+
 logger = logging.getLogger(__name__)
 
-class StartComputerGameHandler:
+class StartComputerGameHandler(RequestHandler[StartComputerGameRequest, str]):
     def __init__(
         self,
         game_repository: GameRepository,
@@ -26,7 +29,9 @@ class StartComputerGameHandler:
         self.player_repository = player_repository
         self.move_handler = move_handler
 
-    async def handle(self, player_id: str, single_side: str) -> str:
+    async def handle(self, request: StartComputerGameRequest) -> str:
+        player_id = request.player_id
+        single_side = request.single_side
         player = self.player_repository.get_by_id(player_id)
         
         # Create AI bot player object

@@ -17,6 +17,16 @@ from application.handlers.join_queue_handler import JoinQueueHandler
 from application.handlers.abandon_game_handler import AbandonGameHandler
 from application.handlers.websocket.dispatcher import WebSocketDispatcher
 from application.handlers.websocket.move_handler import MoveHandler
+from application.mediator import Mediator
+from application.requests.create_player import CreatePlayerRequest
+from application.requests.retrieve_token import RetrieveToken
+from application.requests.register_profile import RegisterProfileRequest
+from application.requests.resolve_guest_player import ResolveGuestPlayerRequest
+from application.requests.resolve_player import ResolvePlayerRequest
+from application.requests.start_computer_game import StartComputerGameRequest
+from application.requests.join_queue import JoinQueueRequest
+from application.requests.abandon_game import AbandonGameRequest
+from application.requests.move import MoveRequest
 
 # created once at startup
 mongo_context = MongoContext()
@@ -132,11 +142,31 @@ def get_abandon_game_handler(
 ) -> AbandonGameHandler:
     return AbandonGameHandler(game_repository)
 
+def get_mediator(
+    create_player_handler = Depends(get_create_player_handler),
+    register_profile_handler = Depends(get_register_profile_handler),
+    retrieve_token_handler = Depends(get_retrieve_token_handler),
+    resolve_guest_player_handler = Depends(get_resolve_guest_player_handler),
+    resolve_player_handler = Depends(get_resolve_player_handler),
+    start_computer_game_handler = Depends(get_start_computer_game_handler),
+    join_queue_handler = Depends(get_join_queue_handler),
+    abandon_game_handler = Depends(get_abandon_game_handler),
+    move_handler = Depends(get_move_handler)
+) -> Mediator:
+    mediator = Mediator()
+    mediator.register(CreatePlayerRequest, create_player_handler)
+    mediator.register(RegisterProfileRequest, register_profile_handler)
+    mediator.register(RetrieveToken, retrieve_token_handler)
+    mediator.register(ResolveGuestPlayerRequest, resolve_guest_player_handler)
+    mediator.register(ResolvePlayerRequest, resolve_player_handler)
+    mediator.register(StartComputerGameRequest, start_computer_game_handler)
+    mediator.register(JoinQueueRequest, join_queue_handler)
+    mediator.register(AbandonGameRequest, abandon_game_handler)
+    mediator.register(MoveRequest, move_handler)
+    return mediator
+
 def get_websocket_dispatcher(
-        move_handler = Depends(get_move_handler),
-        abandon_handler = Depends(get_abandon_game_handler)
+        mediator = Depends(get_mediator)
 ) -> WebSocketDispatcher:
-    dispatcher = WebSocketDispatcher()
-    dispatcher.register_handler('move', move_handler)
-    dispatcher.register_handler('abandon', abandon_handler)
+    dispatcher = WebSocketDispatcher(mediator)
     return dispatcher

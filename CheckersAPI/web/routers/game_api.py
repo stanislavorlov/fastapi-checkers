@@ -1,17 +1,16 @@
 import logging
 from typing import Annotated
 from fastapi import APIRouter, Depends, Request, HTTPException
-from application.handlers.websocket.move_handler import MoveHandler
+from application.mediator import Mediator
+from application.requests.resolve_player import ResolvePlayerRequest
+from application.requests.start_computer_game import StartComputerGameRequest
+from application.requests.join_queue import JoinQueueRequest
+from application.requests.move import MoveRequest
 from infrastructure.repositories.game_repository import GameRepository
 from web.dependencies import (
     get_game_repository,
-    get_resolve_player_handler,
-    get_start_computer_game_handler,
-    get_join_queue_handler, get_move_handler
+    get_mediator
 )
-from application.handlers.resolve_player_handler import ResolvePlayerHandler
-from application.handlers.start_computer_game_handler import StartComputerGameHandler
-from application.handlers.join_queue_handler import JoinQueueHandler
 from web.models import RequestGameResponse, ReadGameDto, StartComputerGameDto
 from infrastructure.mappers import individual_game
 
@@ -26,14 +25,32 @@ router = APIRouter(
 async def get_game(
         game_id: str,
         repository: Annotated[GameRepository, Depends(get_game_repository)],
-        handler: Annotated[MoveHandler, Depends(get_move_handler)]
+        mediator: Annotated[Mediator, Depends(get_mediator)]
 ):
     game = repository.fetch(game_id)
     if not game:
         raise HTTPException(status_code=404, detail="Game not found")
 
     logger.debug("Trigger AI move check to ensure AI moves first if it's its turn")
-    await handler.trigger_ai_move(game)
+    # For compatibility, we still want to trigger AI move if it's its turn
+    # This might be slightly awkward with Mediator if we only want to call trigger_ai_move
+    # But since MoveHandler is the one having this method, we can either:
+    # 1. Keep depending on MoveHandler for this specific call
+    # 2. Add a TriggerAiMoveRequest
+    
+    # Let's see MoveHandler again. 
+    # Actually, we can just fetch the handler from mediator if we really need a specific method, 
+    # but that's against the pattern.
+    
+    # Better: StartComputerGameHandler or a new specialized handler should handle this.
+    # For now, let's just use MoveHandler directly for this specific legacy-ish call, 
+    # or just let the client (WS) trigger it. 
+    # Actually, the GET endpoint triggering an AI move is a bit weird anyway.
+    
+    # Let's check MoveHandler. 
+    from application.handlers.websocket.move_handler import MoveHandler
+    move_handler = mediator._handlers[MoveRequest] # A bit of a hack but avoids adding more requests for now
+    await move_handler.trigger_ai_move(game)
         
     return individual_game(game)
 
@@ -41,21 +58,33 @@ async def get_game(
 async def request_computer_game(
         request: Request,
         data: StartComputerGameDto,
-        resolve_handler: Annotated[ResolvePlayerHandler, Depends(get_resolve_player_handler)],
-        start_handler: Annotated[StartComputerGameHandler, Depends(get_start_computer_game_handler)]
+        mediator: Annotated[Mediator, Depends(get_mediator)]
 ):
-    player_id = await resolve_handler.handle(request)
-    game_id = await start_handler.handle(player_id, data.singleSide)
+    resolve_request = ResolvePlayerRequest(
+        auth_header=request.headers.get("Authorization"),
+        client_host=request.client.host if request.client else "unknown",
+        user_agent=request.headers.get("User-Agent", "unknown")
+    )
+    player_id = await mediator.send(resolve_request)
+    
+    start_request = StartComputerGameRequest(player_id=player_id, single_side=data.singleSide)
+    game_id = await mediator.send(start_request)
     
     return game_id
 
 @router.post("/online", response_model=RequestGameResponse)
 async def request_online_game(
         request: Request,
-        resolve_handler: Annotated[ResolvePlayerHandler, Depends(get_resolve_player_handler)],
-        join_handler: Annotated[JoinQueueHandler, Depends(get_join_queue_handler)]
+        mediator: Annotated[Mediator, Depends(get_mediator)]
 ):
-    player_id = await resolve_handler.handle(request)
-    await join_handler.handle(player_id)
+    resolve_request = ResolvePlayerRequest(
+        auth_header=request.headers.get("Authorization"),
+        client_host=request.client.host if request.client else "unknown",
+        user_agent=request.headers.get("User-Agent", "unknown")
+    )
+    player_id = await mediator.send(resolve_request)
+    
+    join_request = JoinQueueRequest(player_id=player_id)
+    await mediator.send(join_request)
 
     return RequestGameResponse(player_id=player_id, status="waiting")

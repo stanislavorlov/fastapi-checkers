@@ -26,7 +26,7 @@ class Player(AggregateRoot):
         self.display_name = display_name
         self.type_ = type_
 
-    @staticmethod
+    @classmethod
     def create(cls, type_: PlayerType, player_level: str, profile: Optional[Profile]) -> "Player":
         return cls(
             type_=type_,

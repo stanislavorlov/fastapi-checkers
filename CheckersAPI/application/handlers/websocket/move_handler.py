@@ -7,14 +7,12 @@ from domain.player.player_type import PlayerType
 from domain.side import Side
 from domain.game.game_mode import GameMode
 from application.alpha_zero_predictor import AlphaZeroPredictor
-from application.handlers.websocket.base_handler import WebSocketHandler
-from infrastructure.connnection_manager import ConnectionManager
-from infrastructure.repositories.game_repository import GameRepository
-from infrastructure.event_parser import EventParser
+from application.handlers.base_handler import RequestHandler
+from application.requests.move import MoveRequest
 
 logger = logging.getLogger(__name__)
 
-class MoveHandler(WebSocketHandler):
+class MoveHandler(RequestHandler[MoveRequest, None]):
     def __init__(
         self, 
         game_repository: GameRepository, 
@@ -25,7 +23,11 @@ class MoveHandler(WebSocketHandler):
         self.manager = manager
         self.parser = parser
 
-    async def handle(self, game_id: str, player_id: str, data: any):
+    async def handle(self, request: MoveRequest):
+        game_id = request.game_id
+        player_id = request.player_id
+        data = request.data
+        
         logger.info(f'Move handler called for game {game_id} by player {player_id}')
 
         player, pdn_move = self.parser.parse(data)
