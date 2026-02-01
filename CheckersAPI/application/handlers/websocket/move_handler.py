@@ -3,31 +3,37 @@ import logging
 from domain.board.board import Board
 from domain.game.game import Game
 from domain.history_entry import HistoryEntry
-from domain.pdn_move import PdnMove
 from domain.player.player_type import PlayerType
 from domain.side import Side
-from infrastructure.connnection_manager import ConnectionManager
-from infrastructure.repositories.game_repository import GameRepository
 from domain.game.game_mode import GameMode
 from application.alpha_zero_predictor import AlphaZeroPredictor
+from application.handlers.websocket.base_handler import WebSocketHandler
+from infrastructure.connnection_manager import ConnectionManager
+from infrastructure.repositories.game_repository import GameRepository
+from infrastructure.event_parser import EventParser
 
 logger = logging.getLogger(__name__)
 
-class GameEventHandler:
-
-    def __init__(self, game_repository: GameRepository, manager: ConnectionManager):
-        self.manager = manager
+class MoveHandler(WebSocketHandler):
+    def __init__(
+        self, 
+        game_repository: GameRepository, 
+        manager: ConnectionManager, 
+        parser: EventParser
+    ):
         self.game_repository = game_repository
+        self.manager = manager
+        self.parser = parser
 
-    async def handle(self, game_id: str, player_id: str, pdn_move: PdnMove):
-        logger.info(f'Event handler called -> handle for game {game_id}')
+    async def handle(self, game_id: str, player_id: str, data: any):
+        logger.info(f'Move handler called for game {game_id} by player {player_id}')
 
+        player, pdn_move = self.parser.parse(data)
+        
         game = self.game_repository.fetch(game_id)
         if not game:
             logger.error(f"Game {game_id} not found")
             return
-
-        logger.debug(f'Found history {game.history}')
 
         board = Board.from_history(game.history)
 
@@ -35,7 +41,7 @@ class GameEventHandler:
 
         if board.apply_move(pdn_move):
             history = HistoryEntry(
-                player_id=player_id,
+                player_id=player, # Using player from parsed data (JSON)
                 pdn_string=pdn_move.as_string,
                 captures=pdn_move.captured_squares,
                 sequence=len(game.history),
@@ -45,8 +51,8 @@ class GameEventHandler:
             game.history.append(history)
 
             response = pdn_move.to_dict()
-            response['player_id'] = player_id
-            response['player_color'] = Side.Dark.value if str(game.players[Side.Dark].id) == player_id else Side.Light.value
+            response['player_id'] = player
+            response['player_color'] = Side.Dark.value if str(game.players[Side.Dark].id) == player else Side.Light.value
 
             await self.manager.broadcast(game_id, json.dumps(response))
 
@@ -78,6 +84,7 @@ class GameEventHandler:
         if game.mode != GameMode.PVE:
             logger.error(f"Game does not have PVE mode")
             return
+            
         board = Board.from_history(game.history)
         if board.is_game_over():
             logger.error(f"Game has ended")
@@ -102,7 +109,7 @@ class GameEventHandler:
                         player_id=str(ai_player.id),
                         pdn_string=ai_pdn.as_string,
                         captures=ai_pdn.captured_squares,
-                        sequence=len(game.history), # sequence is 0-based index in domain HistoryEntry
+                        sequence=len(game.history),
                     )
                     self.game_repository.append_history(game.id, ai_history)
                     game.history.append(ai_history)

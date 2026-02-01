@@ -1,6 +1,5 @@
 from fastapi import Depends
 from application.handlers.create_player_handler import CreatePlayerHandler
-from application.handlers.game_event_handler import GameEventHandler
 from application.handlers.register_profile_handler import RegisterProfileHandler
 from application.handlers.retrieve_token_handler import RetrieveTokenHandler
 from application.handlers.resolve_guest_player_handler import ResolveGuestPlayerHandler
@@ -16,6 +15,8 @@ from application.handlers.resolve_player_handler import ResolvePlayerHandler
 from application.handlers.start_computer_game_handler import StartComputerGameHandler
 from application.handlers.join_queue_handler import JoinQueueHandler
 from application.handlers.abandon_game_handler import AbandonGameHandler
+from application.handlers.websocket.dispatcher import WebSocketDispatcher
+from application.handlers.websocket.move_handler import MoveHandler
 
 # created once at startup
 mongo_context = MongoContext()
@@ -94,10 +95,11 @@ def get_retrieve_token_handler(
         resolve_guest_player_handler
     )
 
-def get_game_event_handler(
+def get_move_handler(
         game_repository = Depends(get_game_repository),
-):
-    return GameEventHandler(game_repository, manager)
+        event_parser = Depends(get_event_parser)
+) -> MoveHandler:
+    return MoveHandler(game_repository, manager, event_parser)
 
 def get_create_player_handler(
         db = Depends(get_mongo_context),
@@ -116,9 +118,9 @@ def get_resolve_player_handler(
 def get_start_computer_game_handler(
         game_repository = Depends(get_game_repository),
         player_repository = Depends(get_player_repository),
-        game_event_handler = Depends(get_game_event_handler)
+        move_handler = Depends(get_move_handler)
 ) -> StartComputerGameHandler:
-    return StartComputerGameHandler(game_repository, player_repository, game_event_handler)
+    return StartComputerGameHandler(game_repository, player_repository, move_handler)
 
 def get_join_queue_handler(
         matching_repository = Depends(get_matching_repository)
@@ -129,3 +131,12 @@ def get_abandon_game_handler(
         game_repository = Depends(get_game_repository)
 ) -> AbandonGameHandler:
     return AbandonGameHandler(game_repository)
+
+def get_websocket_dispatcher(
+        move_handler = Depends(get_move_handler),
+        abandon_handler = Depends(get_abandon_game_handler)
+) -> WebSocketDispatcher:
+    dispatcher = WebSocketDispatcher()
+    dispatcher.register_handler('move', move_handler)
+    dispatcher.register_handler('abandon', abandon_handler)
+    return dispatcher

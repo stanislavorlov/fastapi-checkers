@@ -10,6 +10,7 @@ import { Game } from '../models/game';
 import { Subject } from 'rxjs';
 import { UserService } from '../services/user.service';
 import { PieceColor } from '../models/piece-color';
+import { AbandonMessage, MoveMessage } from '../models/ws-message';
 
 @Component({
   selector: 'app-play',
@@ -96,10 +97,10 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
           this.connectWebSocket(gameId);
 
           this.event$.asObservable().subscribe((move: Move) => {
-            console.log('Move event:', move.toJSONstring());
+            console.log('Move event:', move.toJSON());
 
             if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-              this.webSocket.send(move.toJSONstring());
+              this.webSocket.send(new MoveMessage(move).toJSON());
             }
           });
         });
@@ -109,7 +110,7 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
 
   ngOnDestroy(): void {
     if (!this.isGameOver && this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-      this.webSocket.send(JSON.stringify({ type: 'abandon' }));
+      this.webSocket.send(new AbandonMessage().toJSON());
     }
     this.closeWebSocket();
   }
@@ -173,7 +174,7 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   backMenu(): void {
     if (window.confirm("Are you sure to cancel this game?")) {
       if (!this.isGameOver && this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-        this.webSocket.send(JSON.stringify({ type: 'abandon' }));
+        this.webSocket.send(new AbandonMessage().toJSON());
       }
       this.gameMenu = true;
       this.gameMode = null;

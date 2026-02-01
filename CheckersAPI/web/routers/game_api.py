@@ -1,16 +1,14 @@
 import logging
 from typing import Annotated
 from fastapi import APIRouter, Depends, Request, HTTPException
-
+from application.handlers.websocket.move_handler import MoveHandler
 from infrastructure.repositories.game_repository import GameRepository
 from web.dependencies import (
     get_game_repository,
-    get_game_event_handler,
     get_resolve_player_handler,
     get_start_computer_game_handler,
-    get_join_queue_handler
+    get_join_queue_handler, get_move_handler
 )
-from application.handlers.game_event_handler import GameEventHandler
 from application.handlers.resolve_player_handler import ResolvePlayerHandler
 from application.handlers.start_computer_game_handler import StartComputerGameHandler
 from application.handlers.join_queue_handler import JoinQueueHandler
@@ -28,7 +26,7 @@ router = APIRouter(
 async def get_game(
         game_id: str,
         repository: Annotated[GameRepository, Depends(get_game_repository)],
-        handler: Annotated[GameEventHandler, Depends(get_game_event_handler)]
+        handler: Annotated[MoveHandler, Depends(get_move_handler)]
 ):
     game = repository.fetch(game_id)
     if not game:

@@ -3,14 +3,15 @@ from typing import Optional
 from domain.game.game_mode import GameMode
 from domain.player.player_type import PlayerType
 from infrastructure.repositories.game_repository import GameRepository
+from application.handlers.websocket.base_handler import WebSocketHandler
 
 logger = logging.getLogger(__name__)
 
-class AbandonGameHandler:
+class AbandonGameHandler(WebSocketHandler):
     def __init__(self, game_repository: GameRepository):
         self.game_repository = game_repository
 
-    async def handle(self, game_id: str, player_id: str) -> bool:
+    async def handle(self, game_id: str, player_id: str, data: any = None) -> bool:
         game = self.game_repository.fetch(game_id)
         if not game:
             logger.warning(f"Attempted to abandon non-existent game {game_id}")

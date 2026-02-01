@@ -48,11 +48,11 @@ export class Move {
         }
     }
 
-    public toJSONstring(): string {
-        return JSON.stringify({
+    public toJSON(): any {
+        return {
             playerId: this.playerId,
             move: this.move,
             captured: this.captured
-        });
+        };
     }
 }
