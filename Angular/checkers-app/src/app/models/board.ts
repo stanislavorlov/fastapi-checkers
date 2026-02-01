@@ -1,5 +1,4 @@
 import { Subject } from "rxjs";
-import { Action, ActionType } from "./action";
 import { AvailableJump, AvailableMove, CapturedPiece } from "./available-move";
 import { Direction } from "./direction";
 import { Game, HistoryEntry } from "./game";
@@ -7,30 +6,23 @@ import { Move } from "./move";
 import { Piece, Queen } from "./piece";
 import { PieceColor } from "./piece-color";
 import { BlackSquare, Square, WhiteSquare } from "./square";
-import { Stack } from "./stack";
 import { Utils } from "./utils";
+import { BoardState } from "./board-state";
 
 export class Board {
     private _boardMatrix: Square[][] = [[]];  // 2D array of squares, where each square is represented by a Square object
     private _boardMap: Map<string, Square> = new Map<string, Square>(); // Map of square ID to Square object
     private _pieces: Map<Square, Piece> = new Map<Square, Piece>(); // Map of Square to Piece object
-    private _actionHistory: Stack<Action>;
     private _moveHistory: Move[] = [];
     private _move: Move | null = null;
-    private _turn: PieceColor = PieceColor.BLACK; // Black moves first
     private _playerId: string;
-    private _playerColor?: PieceColor;
-    private _started: boolean;
-    private _finished: boolean = false;
     private _event$: Subject<Move>;
-    private _forcedCapture: boolean = false;
-    private _activeJumpingPiece: Square | null = null;
+    private _state: BoardState;
 
     constructor(playerId: string, event$: Subject<Move>) {
-        this._actionHistory = new Stack<Action>();
         this._playerId = playerId;
         this._event$ = event$;
-        this._started = false;
+        this._state = new BoardState();
 
         this.initialize();
     }
@@ -44,19 +36,19 @@ export class Board {
     }
 
     public get turn(): string {
-        return this._turn === PieceColor.BLACK ? 'Black' : 'Red';
+        return this._state.turn === PieceColor.BLACK ? 'Black' : 'Red';
     }
 
     public get finished(): boolean {
-        return this._finished;
+        return this._state.finished;
     }
 
     public set finished(value: boolean) {
-        this._finished = value;
+        this._state.finished = value;
     }
 
     *[Symbol.iterator]() {
-        if (this._playerColor == PieceColor.RED || !this._playerColor) {
+        if (this._state.playerColor == PieceColor.RED || !this._state.playerColor) {
             for (let row = 0; row < 8; row++) {
                 yield { row, squares: this._boardMatrix[row] };
             }
@@ -76,12 +68,12 @@ export class Board {
     }
 
     public load(game: Game) {
-        this._started = true;
+        this._state.started = true;
 
         if (this._playerId === game.dark_player) {
-            this._playerColor = PieceColor.BLACK;
+            this._state.playerColor = PieceColor.BLACK;
         } else {
-            this._playerColor = PieceColor.RED;
+            this._state.playerColor = PieceColor.RED;
         }
 
         if (!!game.history) {
@@ -91,31 +83,40 @@ export class Board {
         }
 
         if (game.finished_at) {
-            this._finished = true;
+            this._state.finished = true;
         }
 
         this.updateForcedCapture();
     }
 
     private applyHistoryEntry(entry: HistoryEntry, darkPlayerId: string) {
-        const isCapture = entry.move.includes('x');
-        const squares = Utils.parsePDN(entry.move);
+        this.applyPDNMove(
+            entry.move,
+            entry.captures || [],
+            entry.player_id,
+            entry.player_id === darkPlayerId ? PieceColor.BLACK : PieceColor.RED
+        );
+    }
+
+    private applyPDNMove(pdn: string, captures: string[], playerId: string, playerColor: PieceColor) {
+        const isCapture = pdn.includes('x');
+        const squares = Utils.parsePDN(pdn);
         const pairs = Utils.pairwise(squares);
 
-        const move = new Move(entry.player_id, entry.player_id == darkPlayerId ? PieceColor.BLACK : PieceColor.RED);
+        const move = new Move(playerId, playerColor);
         move.addSquare(squares[0]);
 
         let captureIdx = 0;
         pairs.forEach(([from, to]) => {
-            const [from_square, to_square] = this.getMoveSquaresById(from, to);
+            const [fromSquare, toSquare] = this.getMoveSquaresById(from, to);
 
-            if (from_square && to_square) {
-                this.move_piece(from_square, to_square, entry.player_id);
+            if (fromSquare && toSquare) {
+                this.movePiece(fromSquare, toSquare, playerId);
 
-                if (isCapture && entry.captures && entry.captures[captureIdx]) {
-                    const capSquare = this.getSquareById(entry.captures[captureIdx]);
+                if (isCapture && captures && captures[captureIdx]) {
+                    const capSquare = this.getSquareById(captures[captureIdx]);
                     if (capSquare) {
-                        this.capture_piece(capSquare, entry.player_id);
+                        this.capturePiece(capSquare, playerId);
                         move.addCapture(to, capSquare.id);
                     }
                     captureIdx++;
@@ -123,22 +124,21 @@ export class Board {
                     move.addSquare(to);
                 }
 
-                if (this.checkPromotionAvailability(from_square, to_square)) {
-                    this.promote_piece(to_square, entry.player_id);
+                if (this.checkPromotionAvailability(toSquare)) {
+                    this.promotePiece(toSquare, playerId);
                 }
             }
         });
 
         this._moveHistory.push(move);
-        this.switch_turn();
-        this.recordAction(new Action(isCapture ? ActionType.CAPTURE : ActionType.MOVE, squares[squares.length - 1], entry.player_id));
+        this._state.switchTurn();
+        this.updateForcedCapture();
     }
 
     public reset() {
         this._pieces.clear();
         this._moveHistory = [];
-        this._actionHistory = new Stack<Action>();
-        this._turn = PieceColor.BLACK;
+        this._state.reset();
         this.initialize();
     }
 
@@ -152,31 +152,26 @@ export class Board {
 
 
     public isSquareClickable(square: Square): boolean {
-        if (!this._started || this._finished) return false;
-        if (this._playerColor !== this._turn) return false;
+        if (!this._state.canInteract()) return false;
 
-        const last_action = this._actionHistory.peek();
+        // If in a multi-jump sequence
+        if (this._state.activeJumpingPiece) {
+            return this._state.activeJumpingPiece === square ||
+                this.getAvailableMoves(this._state.activeJumpingPiece).has(square);
+        }
+
         const piece = this._pieces.get(square);
+        const selectedSquare = this._state.selectedSquare;
 
-        // 1. If in a multi-jump sequence, ONLY the active piece and its targets are clickable
-        if (this._activeJumpingPiece) {
-            if (this._activeJumpingPiece === square) return true;
-            return this.getAvailableMoves(this._activeJumpingPiece).has(square);
+        // Target squares for current selection
+        if (selectedSquare) {
+            if (selectedSquare === square) return true; // For unselecting
+            if (this.getAvailableMoves(selectedSquare).has(square)) return true;
         }
 
-        // 2. Normal piece selection
-        if (piece?.color === this._turn && this.getAvailableMoves(square).size > 0) {
+        // Potential new piece selection
+        if (piece?.color === this._state.turn && this.getAvailableMoves(square).size > 0) {
             return true;
-        }
-
-        // 3. Target squares for selected piece
-        if (last_action?.type === ActionType.SELECT) {
-            if (last_action.square === square.id) return true; // Unselect
-
-            const selectedSquare = this.getSquareById(last_action.square);
-            if (selectedSquare && this.getAvailableMoves(selectedSquare).has(square)) {
-                return true;
-            }
         }
 
         return false;
@@ -184,139 +179,110 @@ export class Board {
 
     public replay(pdn: string, captured: string[], player_id: string, player_color: PieceColor) {
         if (this._playerId !== player_id) {
-            const isCapture = pdn.includes('x');
-            const squares = Utils.parsePDN(pdn);
-            const pairs = Utils.pairwise(squares);
-
-            const move = new Move(player_id, player_color);
-            move.addSquare(squares[0]);
-
-            let captureIdx = 0;
-            pairs.forEach(([from, to]) => {
-                const [from_square, to_square] = this.getMoveSquaresById(from, to);
-
-                if (from_square && to_square) {
-                    this.move_piece(from_square, to_square, player_id);
-
-                    if (isCapture && captured && captured[captureIdx]) {
-                        const capSquare = this.getSquareById(captured[captureIdx]);
-                        if (capSquare) {
-                            this.capture_piece(capSquare, player_id);
-                            move.addCapture(to, capSquare.id);
-                        }
-                        captureIdx++;
-                    } else {
-                        move.addSquare(to);
-                    }
-
-                    if (this.checkPromotionAvailability(from_square, to_square)) {
-                        this.promote_piece(to_square, player_id);
-                    }
-                }
-            });
-
-            this._moveHistory.push(move);
-            this.switch_turn();
-            this.recordAction(new Action(isCapture ? ActionType.CAPTURE : ActionType.MOVE, squares[squares.length - 1], player_id));
+            this.applyPDNMove(pdn, captured, player_id, player_color);
         }
     }
 
     public click(square: Square) {
-        if (!this._started || this._finished) return;
-
-        let last_action = this._actionHistory.peek();
-        let current_action: Action | null = null;
+        if (!this._state.canInteract()) return;
 
         const piece = this._pieces.get(square);
-        const isPlayersPiece = piece?.color === this._turn;
+        const isPlayersPiece = piece?.color === this._state.turn;
+        const selectedSquare = this._state.selectedSquare;
+        const activeJumpingPiece = this._state.activeJumpingPiece;
 
-        switch (last_action?.type) {
-            case ActionType.SELECT:
-            case ActionType.CAPTURE: {
-                if (last_action.square === square.id) {
-                    if (last_action.type === ActionType.SELECT) {
-                        square.unselect();
-                        current_action = new Action(ActionType.UNSELECT, square.id, this._playerId);
-                        this._move = null;
-                        this._activeJumpingPiece = null;
-                        const moves = this.getAvailableMoves(square);
-                        for (let [moveSquare, m] of moves) moveSquare.unselect();
-                    }
-                    break;
-                }
-
-                const from_square = this.getSquareById(last_action.square);
-                if (!from_square) break;
-
-                const moves = this.getAvailableMoves(from_square);
-                const move = moves.get(square);
-
-                if (move) {
-                    if (move instanceof AvailableJump) {
-                        this.capture_piece(move.captured?.square!, this._playerId);
-                        current_action = new Action(ActionType.CAPTURE, square.id, this._playerId);
-                        this._move?.addCapture(square.id, move.captured?.square.id!);
-                    } else {
-                        current_action = new Action(ActionType.MOVE, square.id, this._playerId);
-                    }
-
-                    this._move?.addSquare(square.id);
-
-                    from_square.unselect();
-                    for (let [ms, m] of moves) ms.unselect();
-
-                    this.move_piece(from_square, square, this._playerId);
-
-                    if (this.checkPromotionAvailability(from_square, square)) {
-                        this.promote_piece(square, this._playerId);
-                    }
-
-                    if (move instanceof AvailableJump) {
-                        const nextMoves = this.getAvailableMoves(square);
-                        const hasJump = Array.from(nextMoves.values()).some(m => m instanceof AvailableJump);
-
-                        if (hasJump) {
-                            this._activeJumpingPiece = square;
-                            square.select();
-                            for (let [ns, m] of nextMoves) ns.select();
-                        } else {
-                            this.completeMove();
-                        }
-                    } else {
-                        this.completeMove();
-                    }
-                } else if (!this._activeJumpingPiece && isPlayersPiece) {
-                    // Switch selection
-                    from_square.unselect();
-                    for (let [ms, m] of moves) ms.unselect();
-
-                    const newMoves = this.getAvailableMoves(square);
-                    if (newMoves.size > 0) {
-                        square.select();
-                        current_action = new Action(ActionType.SELECT, square.id, this._playerId);
-                        this._move = new Move(this._playerId, this._playerColor!);
-                        this._move.addSquare(square.id);
-                        for (let [ms, m] of newMoves) ms.select();
-                    }
-                }
-                break;
+        // 1. Handle Active Jumping Piece (Multi-jump)
+        if (activeJumpingPiece) {
+            if (activeJumpingPiece === square) {
+                this.handleUnselect(square);
+            } else {
+                this.handleMoveAttempt(activeJumpingPiece, square);
             }
-            default:
-                if (isPlayersPiece) {
-                    const moves = this.getAvailableMoves(square);
-                    if (moves.size > 0) {
-                        square.select();
-                        current_action = new Action(ActionType.SELECT, square.id, this._playerId);
-                        this._move = new Move(this._playerId, this._playerColor!);
-                        this._move.addSquare(square.id);
-                        for (let [ms, m] of moves) ms.select();
-                    }
-                }
-                break;
+            return;
         }
 
-        if (current_action) {
-            this.recordAction(current_action);
+        // 2. Handle Selected Piece
+        if (selectedSquare) {
+            if (selectedSquare === square) {
+                this.handleUnselect(square);
+            } else {
+                const moves = this.getAvailableMoves(selectedSquare);
+                if (moves.has(square)) {
+                    this.handleMoveAttempt(selectedSquare, square);
+                } else if (isPlayersPiece) {
+                    this.handleSwitchSelection(selectedSquare, square);
+                }
+            }
+            return;
+        }
+
+        // 3. Handle Initial Selection
+        if (isPlayersPiece) {
+            this.handleSelect(square);
+        }
+    }
+
+    private handleSelect(square: Square) {
+        const moves = this.getAvailableMoves(square);
+        if (moves.size > 0) {
+            this._state.select(square);
+            this._move = new Move(this._playerId, this._state.playerColor!);
+            this._move.addSquare(square.id);
+            for (let [ms, m] of moves) ms.select();
+        }
+    }
+
+    private handleUnselect(square: Square) {
+        const moves = this.getAvailableMoves(square);
+        for (let [ms, m] of moves) ms.unselect();
+        this._state.unselect();
+        this._move = null;
+    }
+
+    private handleSwitchSelection(from: Square, to: Square) {
+        // Deselect old
+        from.unselect();
+        const oldMoves = this.getAvailableMoves(from);
+        for (let [ms, m] of oldMoves) ms.unselect();
+
+        // Select new
+        this.handleSelect(to);
+    }
+
+    private handleMoveAttempt(from: Square, to: Square) {
+        const moves = this.getAvailableMoves(from);
+        const move = moves.get(to);
+
+        if (!move) return;
+
+        if (move instanceof AvailableJump) {
+            this.capturePiece(move.captured?.square!, this._playerId);
+            this._move?.addCapture(to.id, move.captured?.square.id!);
+        }
+
+        this._move?.addSquare(to.id);
+
+        from.unselect();
+        for (let [ms, m] of moves) ms.unselect();
+
+        this.movePiece(from, to, this._playerId);
+
+        if (this.checkPromotionAvailability(to)) {
+            this.promotePiece(to, this._playerId);
+        }
+
+        if (move instanceof AvailableJump) {
+            const nextMoves = this.getAvailableMoves(to);
+            const hasMoreJumps = Array.from(nextMoves.values()).some(m => m instanceof AvailableJump);
+
+            if (hasMoreJumps) {
+                this._state.setActiveJumpingPiece(to);
+                for (let [ns, m] of nextMoves) ns.select();
+            } else {
+                this.completeMove();
+            }
+        } else {
+            this.completeMove();
         }
     }
 
@@ -326,17 +292,17 @@ export class Board {
             this._moveHistory.push(this._move);
             this._move = null;
         }
-        this._activeJumpingPiece = null;
-        this.switch_turn();
+        this._state.switchTurn();
+        this.updateForcedCapture();
     }
 
     private getAvailableMoves(square: Square): Map<Square, AvailableMove> {
         let piece = this._pieces.get(square);
-        if (!piece || piece.color !== this._turn) return new Map();
+        if (!piece || piece.color !== this._state.turn) return new Map();
 
         const rawMoves = this.getRawAvailableMoves(square);
 
-        if (this._forcedCapture) {
+        if (this._state.forcedCapture) {
             const jumpsOnly = new Map<Square, AvailableMove>();
             for (let [target, move] of rawMoves) {
                 if (move instanceof AvailableJump) {
@@ -371,12 +337,12 @@ export class Board {
     }
 
     private updateForcedCapture() {
-        this._forcedCapture = false;
+        this._state.forcedCapture = false;
         for (let [square, piece] of this._pieces) {
-            if (piece.color === this._turn) {
+            if (piece.color === this._state.turn) {
                 const rawMoves = this.getRawAvailableMoves(square);
                 if (Array.from(rawMoves.values()).some(m => m instanceof AvailableJump)) {
-                    this._forcedCapture = true;
+                    this._state.forcedCapture = true;
                     return;
                 }
             }
@@ -395,15 +361,20 @@ export class Board {
         return null as any;
     }
 
-    private checkPromotionAvailability(from: Square, to: Square): boolean {
-        let piece = this._pieces.get(to);
+    private checkPromotionAvailability(to: Square): boolean {
+        const piece = this._pieces.get(to);
+        if (!piece || piece instanceof Queen) return false;
 
-        if (!piece) {
-            return false;
+        let row = -1;
+        for (let r = 0; r < 8; r++) {
+            if (this._boardMatrix[r].includes(to)) {
+                row = r;
+                break;
+            }
         }
 
-        return piece.color === PieceColor.BLACK && ['29', '30', '31', '32'].includes(to.id) ||
-            piece.color === PieceColor.RED && ['1', '2', '3', '4'].includes(to.id);
+        return (piece.color === PieceColor.BLACK && row === 7) ||
+            (piece.color === PieceColor.RED && row === 0);
     }
 
     private getSquareById(id: string): Square | undefined {
@@ -414,72 +385,70 @@ export class Board {
         return [this.getSquareById(fromId), this.getSquareById(toId)];
     }
 
-    private move_piece(from: Square, to: Square, player_id: string): void {
+    private movePiece(from: Square, to: Square, player_id: string): void {
         this._pieces.set(to, this._pieces.get(from)!);
         this._pieces.delete(from);
     }
 
-    private capture_piece(square: Square, player_id: string): void {
+    private capturePiece(square: Square, player_id: string): void {
         this._pieces.delete(square);
     }
 
-    private promote_piece(square: Square, player_id: string): void {
-        if (this._pieces.has(square)) {
-            let piece = this._pieces.get(square);
-            this._pieces.set(square, new Queen(piece!.color));
+    private promotePiece(square: Square, player_id: string): void {
+        const piece = this._pieces.get(square);
+        if (piece) {
+            this._pieces.set(square, new Queen(piece.color));
         }
     }
 
-    private recordAction(action: Action): void {
-        this._actionHistory.push(action);
-    }
-
-    private switch_turn(): void {
-        this._turn = this._turn === PieceColor.BLACK ? PieceColor.RED : PieceColor.BLACK;
+    private initialize() {
+        this.initializeMatrix();
+        this.initializeSiblings();
         this.updateForcedCapture();
     }
 
-    private initialize() {
+    private initializeMatrix() {
         let blackId = 1;
         let whiteId = -1;
 
         for (let row = 0; row <= 7; row++) {
-            this._boardMatrix[row] = new Array(8).fill(0); // Initialize each row with 8 squares
+            this._boardMatrix[row] = new Array(8);
             for (let col = 0; col < 8; col++) {
                 const isDark = (row + col) % 2 === 1;
-
-                let piece: Piece | null = null;
-                let square: Square | null = null;
+                let square: Square;
 
                 if (isDark) {
-                    if (row <= 2) {
-                        piece = new Piece(PieceColor.BLACK);
-                    } else if (row >= 5) {
-                        piece = new Piece(PieceColor.RED);
-                    }
-
                     square = new BlackSquare(blackId.toString());
-                    if (piece) {
-                        this._pieces.set(square, piece);
-                    }
-                    blackId++;
-
+                    this.placeInitialPiece(square, row);
                     this._boardMap.set(square.id, square);
+                    blackId++;
                 } else {
                     square = new WhiteSquare(whiteId.toString());
                     whiteId--;
                 }
-
                 this._boardMatrix[row][col] = square;
             }
         }
+    }
 
-        // Set siblings for each square
+    private placeInitialPiece(square: Square, row: number) {
+        let piece: Piece | null = null;
+        if (row <= 2) {
+            piece = new Piece(PieceColor.BLACK);
+        } else if (row >= 5) {
+            piece = new Piece(PieceColor.RED);
+        }
+
+        if (piece) {
+            this._pieces.set(square, piece);
+        }
+    }
+
+    private initializeSiblings() {
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const square = this._boardMatrix[row][col];
                 if (square instanceof BlackSquare) {
-                    // Add siblings for dark squares
                     if (row > 0 && col > 0) square.addSibling(Direction.UP_LEFT, this._boardMatrix[row - 1][col - 1]);
                     if (row > 0 && col < 7) square.addSibling(Direction.UP_RIGHT, this._boardMatrix[row - 1][col + 1]);
                     if (row < 7 && col > 0) square.addSibling(Direction.DOWN_LEFT, this._boardMatrix[row + 1][col - 1]);
@@ -487,7 +456,5 @@ export class Board {
                 }
             }
         }
-
-        this.updateForcedCapture();
     }
 }
