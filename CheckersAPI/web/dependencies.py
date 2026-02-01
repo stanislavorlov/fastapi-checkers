@@ -8,7 +8,6 @@ from infrastructure.mongo_context import MongoContext
 from infrastructure.repositories.game_repository import GameRepository
 from infrastructure.repositories.player_repository import PlayerRepository
 from infrastructure.repositories.profile_repository import ProfileRepository
-from infrastructure.repositories.session_token_repository import SessionRepository
 from infrastructure.repositories.matching_repository import MatchingRepository
 from infrastructure.runtime import connection_manager as manager
 from application.handlers.resolve_player_handler import ResolvePlayerHandler
@@ -59,13 +58,6 @@ def get_game_repository(
 
     return game_repository
 
-def get_session_repository(
-        db = Depends(get_mongo_context),
-):
-    session_repository = SessionRepository(db)
-
-    return session_repository
-
 def get_matching_repository(
         db = Depends(get_mongo_context),
 ):
@@ -81,25 +73,22 @@ def get_register_profile_handler(
 def get_resolve_guest_player_handler(
         db = Depends(get_mongo_context),
 ):
-    session_repository = SessionRepository(db)
     profile_repository = ProfileRepository(db)
     player_repository = PlayerRepository(db)
     create_player_handler = CreatePlayerHandler(profile_repository, player_repository)
 
-    return ResolveGuestPlayerHandler(session_repository, create_player_handler)
+    return ResolveGuestPlayerHandler(player_repository, create_player_handler)
 
 def get_retrieve_token_handler(
         db = Depends(get_mongo_context),
 ):
     profile_repository = ProfileRepository(db)
-    session_repository = SessionRepository(db)
     player_repository = PlayerRepository(db)
     create_player_handler = CreatePlayerHandler(profile_repository, player_repository)
-    resolve_guest_player_handler = ResolveGuestPlayerHandler(session_repository, create_player_handler)
+    resolve_guest_player_handler = ResolveGuestPlayerHandler(player_repository, create_player_handler)
 
     return RetrieveTokenHandler(
         profile_repository,
-        session_repository,
         player_repository,
         create_player_handler,
         resolve_guest_player_handler

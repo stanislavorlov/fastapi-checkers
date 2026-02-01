@@ -3,7 +3,7 @@ import threading
 from application.handlers.create_player_handler import CreatePlayerHandler
 from application.requests.create_player import CreatePlayerRequest
 from domain.player.player_type import PlayerType
-from infrastructure.repositories.session_token_repository import SessionRepository
+from infrastructure.repositories.player_repository import PlayerRepository
 from application.handlers.base_handler import RequestHandler
 from application.requests.resolve_guest_player import ResolveGuestPlayerRequest
 
@@ -13,9 +13,9 @@ class ResolveGuestPlayerHandler(RequestHandler[ResolveGuestPlayerRequest, str]):
     _lock = threading.Lock()
 
     def __init__(self, 
-                 session_repository: SessionRepository,
+                 player_repository: PlayerRepository,
                  create_player_handler: CreatePlayerHandler):
-        self.session_repository = session_repository
+        self.player_repository = player_repository
         self.create_player_handler = create_player_handler
 
     async def handle(self, request: ResolveGuestPlayerRequest) -> str:
@@ -29,7 +29,7 @@ class ResolveGuestPlayerHandler(RequestHandler[ResolveGuestPlayerRequest, str]):
         logger.info('Resolving guest player for host=%s, agent=%s', host, agent)
         
         with self._lock:
-            player_id = self.session_repository.find_recent_guest_session(host, agent)
+            player_id = self.player_repository.find_recent_guest_session(host, agent)
             
             if player_id:
                 logger.info('Found recent guest session for player %s, reusing', player_id)

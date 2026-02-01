@@ -82,6 +82,23 @@ class ProfileSchema(BaseModel):
         arbitrary_types_allowed=True,
     )
 
+class SessionSchema(BaseModel):
+    """
+    Session is nested within PlayerSchema
+    """
+    token: str
+    host: str
+    agent: str
+    region: str
+    timezone: str
+    expires_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+    )
+
 class PlayerSchema(BaseModel):
     """
     Player is created during starting the game. Since anonymous can be created only at that stage.
@@ -90,24 +107,7 @@ class PlayerSchema(BaseModel):
     type: PlayerType
     display_name: str
     profile_id: Optional[PyObjectId] = None  # present for registered accounts
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-    model_config = ConfigDict(
-        populate_by_name=True,
-        arbitrary_types_allowed=True,
-    )
-
-class SessionSchema(BaseModel):
-    """
-    Session is going to be added while authenticating a user or starting a game
-    """
-    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
-    player_id: PyObjectId  # always a PlayerSchema ID
-    token: str
-    host: str
-    agent: str
-    region: str
-    timezone: str
+    sessions: List[SessionSchema] = []
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     model_config = ConfigDict(

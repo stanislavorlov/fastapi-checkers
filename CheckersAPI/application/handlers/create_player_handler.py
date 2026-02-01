@@ -5,6 +5,7 @@ from domain.profile.profile import Profile
 from infrastructure.repositories.player_repository import PlayerRepository
 from infrastructure.repositories.profile_repository import ProfileRepository
 from application.handlers.base_handler import RequestHandler
+from domain.player.player_identity import PlayerIdentity
 
 
 class CreatePlayerHandler(RequestHandler[CreatePlayerRequest, str]):
@@ -25,8 +26,10 @@ class CreatePlayerHandler(RequestHandler[CreatePlayerRequest, str]):
         if request.profile_id:
             profile = self.profile_repository.get(request.profile_id)
 
+        identity = PlayerIdentity(type_=request.type, profile_id=request.profile_id)
+
         player = Player.create(
-            request.type,
+            identity,
             request.player_level,
             profile)
 

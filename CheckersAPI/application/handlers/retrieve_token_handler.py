@@ -1,5 +1,6 @@
 import logging
 from collections import namedtuple
+from typing import Optional
 from application.handlers.create_player_handler import CreatePlayerHandler
 from application.handlers.resolve_guest_player_handler import ResolveGuestPlayerHandler
 from application.requests.create_player import CreatePlayerRequest
@@ -7,7 +8,6 @@ from application.requests.retrieve_token import RetrieveToken, RetrieveProfileTo
 from domain.player.player_type import PlayerType
 from infrastructure.repositories.player_repository import PlayerRepository
 from infrastructure.repositories.profile_repository import ProfileRepository
-from infrastructure.repositories.session_token_repository import SessionRepository
 from web.models import AccessToken
 from web.token_helper import create_access_token, verify_password, decode_access_token, InvalidTokenError
 from application.handlers.base_handler import RequestHandler
@@ -19,18 +19,16 @@ class RetrieveTokenHandler(RequestHandler[RetrieveToken, AccessToken]):
 
     def __init__(self,
                  profile_repository: ProfileRepository,
-                 session_repository: SessionRepository,
                  player_repository: PlayerRepository,
                  create_player_handler: CreatePlayerHandler,
                  resolve_guest_player_handler: ResolveGuestPlayerHandler):
 
         self.profile_repository = profile_repository
-        self.session_repository = session_repository
         self.player_repository = player_repository
         self.create_player_handler = create_player_handler
         self.resolve_guest_player_handler = resolve_guest_player_handler
 
-    async def handle(self, request: RetrieveToken) -> AccessToken:
+    async def handle(self, request: RetrieveToken) -> Optional[AccessToken]:
         if request.is_guest:
             auth_result = await self._handle_guest_auth(request)
         else:
@@ -40,7 +38,7 @@ class RetrieveTokenHandler(RequestHandler[RetrieveToken, AccessToken]):
             return None
 
         # Check if we already have an active session for this player/client
-        existing_token = self.session_repository.find_session_by_player_and_client(
+        existing_token = self.player_repository.find_session_by_player_and_client(
             auth_result.player_id, 
             request.client_host, 
             request.agent
@@ -59,11 +57,10 @@ class RetrieveTokenHandler(RequestHandler[RetrieveToken, AccessToken]):
                     name=auth_result.display_name,
                     email=auth_result.email,
                     type=auth_result.type,
-                    refresh_token='' # Client should still have its refresh token, or we could fetch it too
+                    refresh_token='' 
                 )
             except InvalidTokenError:
                 logger.info('Existing session token for player %s is expired or invalid, creating new one', auth_result.player_id)
-                # Proceed to create a new session
                 pass
 
         access_token = create_access_token(
@@ -73,14 +70,16 @@ class RetrieveTokenHandler(RequestHandler[RetrieveToken, AccessToken]):
             auth_result.type
         )
 
-        self.session_repository.create_session(
-            str(access_token.player_id),
-            access_token.access_token,
-            request.client_host,
-            agent=request.agent,
-            region='',
-            timezone_name=''
-        )
+        # Add session to player aggregate
+        player = self.player_repository.get_by_id(auth_result.player_id)
+        if player:
+            player.create_session(
+                session_token=access_token.access_token,
+                host=request.client_host,
+                agent=request.agent
+            )
+            self.player_repository.save(player)
+            logger.info('Created new session for player %s', auth_result.player_id)
 
         return access_token
 
@@ -99,7 +98,7 @@ class RetrieveTokenHandler(RequestHandler[RetrieveToken, AccessToken]):
             type='guest'
         )
 
-    async def _handle_account_auth(self, request: RetrieveProfileToken) -> AuthResult | None:
+    async def _handle_account_auth(self, request: RetrieveProfileToken) -> Optional[AuthResult]:
         logger.info(f'Processing Account Token request for: {request.username}')
         profile = self.profile_repository.find_by_email(request.username)
 

@@ -16,15 +16,16 @@ class PlayerSession(Entity):
     region: Region
     tz_offset: timedelta      # in minutes, e.g. +120 for UTC+2
 
-    @staticmethod
-    def create(player_id: PyObjectId, session_token: str, host: str, agent: str, region: Region, tz: timezone) -> 'PlayerSession':
-        return PlayerSession(
+    @classmethod
+    def create(cls, player_id: PyObjectId, session_token: str, host: str, agent: str, region: Region, tz: timezone = timezone.utc) -> 'PlayerSession':
+        now = datetime.now(timezone.utc)
+        return cls(
             player_id=player_id,
-            created_at=datetime.now(),
-            expires_at=datetime.now() + timedelta(minutes=20),
+            created_at=now,
+            expires_at=now + timedelta(days=7), # Extended session expiry
             token=session_token,
             host=host,
             agent=agent,
             region=region,
-            tz_offset=tz.utc.utcoffset(datetime.now())
+            tz_offset=tz.utcoffset(now) or timedelta(0)
         )

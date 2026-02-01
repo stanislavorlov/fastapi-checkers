@@ -9,6 +9,7 @@ from domain.kernel.aggregate_root import AggregateRoot
 from domain.player.player import Player
 from domain.side import Side
 from domain.game.game_result import GameResult
+from domain.player.player_identity import PlayerIdentity
 
 
 class Game(AggregateRoot):
@@ -19,6 +20,24 @@ class Game(AggregateRoot):
     mode: GameMode
     history: list[HistoryEntry] = Field(..., alias="history")
     players: dict[Side, Player]  # {"dark": Player(...), "light": Player(...) }
+
+    @classmethod
+    def create_pve(cls, player: Player, player_side: Side) -> "Game":
+        ai_bot = Player.create(PlayerIdentity.ai())
+        ai_side = Side.Dark if player_side == Side.Light else Side.Light
+
+        game = cls(
+            created_at=datetime.now(),
+            mode=GameMode.PVE,
+            players={
+                player_side: player,
+                ai_side: ai_bot
+            },
+            history=[],
+            result={}
+        )
+        game.start()
+        return game
 
     def assign_player(self, side: Side, player: Player):
         if not side in self.players:
