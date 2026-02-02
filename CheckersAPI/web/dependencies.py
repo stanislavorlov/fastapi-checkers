@@ -1,5 +1,8 @@
 from fastapi import Depends
-
+from application.handlers.retrieve_game_history_handler import RetrieveGameHistoryHandler
+from application.handlers.retrieve_player_history_handler import RetrievePlayerHistoryHandler
+from application.requests.retrieve_game_history import RetrieveGameHistoryRequest
+from application.requests.retrieve_player_history import RetrievePlayerHistoryRequest
 from application.requests.update_profile import UpdateProfileRequest
 from application.handlers.update_profile_handler import UpdateProfileHandler
 from application.handlers.create_player_handler import CreatePlayerHandler
@@ -9,6 +12,7 @@ from application.handlers.resolve_guest_player_handler import ResolveGuestPlayer
 from infrastructure.event_parser import EventParser
 from infrastructure.mongo_context import MongoContext
 from infrastructure.repositories.game_repository import GameRepository
+from infrastructure.repositories.history_repository import HistoryRepository
 from infrastructure.repositories.player_repository import PlayerRepository
 from infrastructure.repositories.profile_repository import ProfileRepository
 from infrastructure.repositories.matching_repository import MatchingRepository
@@ -66,27 +70,29 @@ def get_matching_repository(
 ):
     return MatchingRepository(db)
 
-def get_register_profile_handler(
+def get_history_repository(
         db = Depends(get_mongo_context),
+        game_repository = Depends(get_game_repository),
 ):
-    profile_repository = ProfileRepository(db)
+    return HistoryRepository(db, game_repository)
 
+def get_register_profile_handler(
+        profile_repository: ProfileRepository = Depends(get_profile_repository),
+):
     return RegisterProfileHandler(profile_repository)
 
 def get_resolve_guest_player_handler(
-        db = Depends(get_mongo_context),
+        profile_repository: ProfileRepository = Depends(get_profile_repository),
+        player_repository: PlayerRepository = Depends(get_player_repository)
 ):
-    profile_repository = ProfileRepository(db)
-    player_repository = PlayerRepository(db)
     create_player_handler = CreatePlayerHandler(profile_repository, player_repository)
 
     return ResolveGuestPlayerHandler(player_repository, create_player_handler)
 
 def get_retrieve_token_handler(
-        db = Depends(get_mongo_context),
+        profile_repository: ProfileRepository = Depends(get_profile_repository),
+        player_repository: PlayerRepository = Depends(get_player_repository)
 ):
-    profile_repository = ProfileRepository(db)
-    player_repository = PlayerRepository(db)
     create_player_handler = CreatePlayerHandler(profile_repository, player_repository)
     resolve_guest_player_handler = ResolveGuestPlayerHandler(player_repository, create_player_handler)
 
@@ -104,11 +110,9 @@ def get_move_handler(
     return MoveHandler(game_repository, manager, event_parser)
 
 def get_create_player_handler(
-        db = Depends(get_mongo_context),
+        profile_repository: ProfileRepository = Depends(get_profile_repository),
+        player_repository: PlayerRepository = Depends(get_player_repository)
 ):
-    profile_repository = ProfileRepository(db)
-    player_repository = PlayerRepository(db)
-
     return CreatePlayerHandler(profile_repository, player_repository)
 
 def get_resolve_player_handler(
@@ -135,11 +139,21 @@ def get_abandon_game_handler(
     return AbandonGameHandler(game_repository)
 
 def get_update_profile_handler(
-        db = Depends(get_mongo_context),
+        profile_repository : ProfileRepository = Depends(get_profile_repository),
         player_repository: PlayerRepository = Depends(get_player_repository)
 ) -> UpdateProfileHandler:
-    profile_repository = ProfileRepository(db)
+
     return UpdateProfileHandler(profile_repository, player_repository)
+
+def get_retrieve_player_history_handler(
+        history_repository: HistoryRepository = Depends(get_history_repository),
+) -> RetrievePlayerHistoryHandler:
+    return RetrievePlayerHistoryHandler(history_repository)
+
+def get_retrieve_game_history_handler(
+        history_repository: HistoryRepository = Depends(get_history_repository),
+) -> RetrieveGameHistoryHandler:
+    return RetrieveGameHistoryHandler(history_repository)
 
 def get_mediator(
     create_player_handler = Depends(get_create_player_handler),
@@ -151,7 +165,9 @@ def get_mediator(
     join_queue_handler = Depends(get_join_queue_handler),
     abandon_game_handler = Depends(get_abandon_game_handler),
     move_handler = Depends(get_move_handler),
-    update_profile_handler = Depends(get_update_profile_handler)
+    update_profile_handler = Depends(get_update_profile_handler),
+    retrieve_player_history_handler = Depends(get_retrieve_player_history_handler),
+    retrieve_game_history_handler = Depends(get_retrieve_game_history_handler)
 ) -> Mediator:
     mediator = Mediator()
     mediator.register(CreatePlayerRequest, create_player_handler)
@@ -166,6 +182,9 @@ def get_mediator(
     mediator.register(AbandonGameRequest, abandon_game_handler)
     mediator.register(MoveRequest, move_handler)
     mediator.register(UpdateProfileRequest, update_profile_handler)
+    mediator.register(RetrievePlayerHistoryRequest, retrieve_player_history_handler)
+    mediator.register(RetrieveGameHistoryRequest, retrieve_game_history_handler)
+
     return mediator
 
 def get_websocket_dispatcher(

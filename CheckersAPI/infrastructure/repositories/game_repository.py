@@ -77,10 +77,13 @@ class GameRepository:
 
     def fetch(self, game_id: str) -> Optional[Game]:
         game_document = self.db.games.find_one({"_id": ObjectId(game_id)})
-        
+        return self.map_to_domain(game_document)
+
+    def map_to_domain(self, game_document: dict) -> Optional[Game]:
         if not game_document:
             return None
             
+        game_id = str(game_document["_id"])
         cursor = self.db.history.find({"game_id": ObjectId(game_id)}).sort("sequence", 1)
 
         result_doc = game_document.get("result") or {}
@@ -94,17 +97,12 @@ class GameRepository:
             side = Side.Dark if p["color"] == "black" else Side.Light
             player_id = str(p["player_id"])
             
-            # If we have a repository, fetch the full player. 
-            # Otherwise, use snapshot to recreate a basic player if needed (but prefer full lookup)
             if self.player_repository:
                 player = self.player_repository.get_by_id(player_id)
                 if player:
                     game_players[side] = player
                     continue
             
-            # Fallback: create a basic player from snapshot if repository is missing or player not found
-            # This ensures the game object is still functional even without repository ref
-
             snapshot = p.get("snapshot", {})
             game_players[side] = Player(
                 _id=ObjectId(player_id),
@@ -122,11 +120,7 @@ class GameRepository:
             game_history = [HistoryEntry(**h) for h in history_data]
         else:
             for document in cursor:
-                # Map 'pdn_string' from document or fallback to 'move'
                 pdn = document.get('pdn_string') or document.get('move', '')
-                
-                # Explicitly create domain HistoryEntry with string player_id 
-                # and only the fields the domain model expects.
                 entry = HistoryEntry(
                     player_id=str(document["player_id"]),
                     pdn_string=pdn,

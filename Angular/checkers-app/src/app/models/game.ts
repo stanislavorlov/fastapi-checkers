@@ -7,11 +7,15 @@ export interface Game {
     dark_player: string;
     history: HistoryEntry[];
     finished_at?: Date;
-    result?: any;
+    result?: Result;
 }
 export interface HistoryEntry {
     player_id: string;
     move: string;
     captures: string[];
     sequence: number;
+}
+export interface Result {
+    winner: string;
+    result: string;
 }

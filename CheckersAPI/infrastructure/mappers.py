@@ -22,6 +22,13 @@ def individual_game(game: Game) -> ReadGameDto:
         result=game.result
     )
 
+def list_games(games: List[Game]) -> List[ReadGameDto]:
+    game_dtos : list[ReadGameDto] = []
+    for game in games:
+        game_dtos.append(individual_game(game))
+
+    return game_dtos
+
 def individual_user(user_dict):
     return {
         'user_id': user_dict['user_id'],

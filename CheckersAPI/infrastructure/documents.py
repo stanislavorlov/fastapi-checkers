@@ -84,8 +84,10 @@ class ProfileSchema(BaseModel):
 
 class SessionSchema(BaseModel):
     """
-    Session is nested within PlayerSchema
+    Session is stored in standalone sessions collection
     """
+    id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
+    player_id: PyObjectId
     token: str
     host: str
     agent: str
@@ -107,7 +109,6 @@ class PlayerSchema(BaseModel):
     type: PlayerType
     display_name: str
     profile_id: Optional[PyObjectId] = None  # present for registered accounts
-    sessions: List[SessionSchema] = []
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     model_config = ConfigDict(

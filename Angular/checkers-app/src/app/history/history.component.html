@@ -1,5 +1,44 @@
-<div style="padding: 2rem; color: white;">
-    <h1>Game History</h1>
-    <p>This is where your past games will be displayed.</p>
-    <button (click)="goBack()" class="button-9 blue">Back</button>
+<div class="history-container">
+    <div class="glass-panel">
+        <div class="history-header">
+            <h2>Game History</h2>
+            <button class="back-link" (click)="goBack()">
+                <i class="fas fa-chevron-left"></i> Back to Start
+            </button>
+        </div>
+
+        <div *ngIf="loading" class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading your past victories...</p>
+        </div>
+
+        <div *ngIf="!loading && history.length === 0" class="empty-state">
+            <i class="fas fa-history"></i>
+            <h3>No games found</h3>
+            <p>Your history will appear here once you finish your first game.</p>
+        </div>
+
+        <div *ngIf="!loading && history.length > 0" class="game-list">
+            <div *ngFor="let game of history" class="game-card" (click)="viewGame(game.game_id)">
+                <div class="game-info">
+                    <span class="game-date">{{ game.started | date:'mediumDate' }}</span>
+                    <div class="game-meta">
+                        <span class="mode">{{ game.mode }}</span>
+                        <span class="opponent">vs {{ getOpponent(game) }}</span>
+                    </div>
+                </div>
+
+                <div class="game-result" [ngClass]="{
+                    'victory': getResult(game) === 'Victory',
+                    'defeat': getResult(game) === 'Defeat'
+                }">
+                    {{ getResult(game) }}
+                </div>
+
+                <div class="view-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
