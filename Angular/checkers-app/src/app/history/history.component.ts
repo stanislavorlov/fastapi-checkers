@@ -11,7 +11,7 @@ export class HistoryComponent implements OnInit {
   constructor(private checkersService: CheckersService) { }
 
   ngOnInit(): void {
-    this.checkersService.getHistoryOfPlayedGames().subscribe((history) => {
+    this.checkersService.getPlayerGames().subscribe((history) => {
       console.log(history);
     });
   }

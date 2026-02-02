@@ -23,11 +23,11 @@ export class CheckersService {
     return this.httpClient.get<Game>(`/api/games/${gameId}`);
   }
 
-  getHistoryOfPlayedGames() {
+  getPlayerGames() {
     return this.httpClient.get<Game[]>(`/api/history`);
   }
 
-  getHistoryOfGame(gameId: string) {
+  getGameHistory(gameId: string) {
     return this.httpClient.get<Game>(`/api/history/${gameId}`);
   }
 }

@@ -9,13 +9,13 @@ router = APIRouter(
 )
 
 @router.get("/")
-async def get_history(
+async def player_history(
     request: Request
 ):
     return "history of played games"
 
 @router.get("/{game_id}")
-async def get_game_history(
+async def game_history(
     request: Request,
     game_id: str
 ):
