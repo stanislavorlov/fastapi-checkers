@@ -6,7 +6,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.websockets import WebSocket, WebSocketDisconnect
 from web.dependencies import get_websocket_dispatcher
 from application.handlers.websocket.dispatcher import WebSocketDispatcher
-from web.routers import game_api, accounts_api, session_api
+from web.routers import game_api, accounts_api, session_api, history_api
 from infrastructure.runtime import connection_manager as manager
 from web.exception_handlers import global_exception_handler
 from infrastructure.mongo_context import MongoContext
@@ -54,6 +54,7 @@ app.add_exception_handler(Exception, global_exception_handler)
 app.include_router(game_api.router)
 app.include_router(accounts_api.router)
 app.include_router(session_api.router)
+app.include_router(history_api.router)
 
 async def message_loop(
     game_id: str, 
