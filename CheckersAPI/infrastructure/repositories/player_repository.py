@@ -82,9 +82,12 @@ class PlayerRepository:
                 created_at=s.created_at
             )
             # Use token as unique identifier for upserting
+            update_doc = session_doc.model_dump(mode='python', by_alias=True)
+            update_doc.pop('_id', None)  # Ensure _id is not in the replacement doc
+
             self.db.sessions.replace_one(
                 {"token": s.token},
-                session_doc.model_dump(mode='python', by_alias=True),
+                update_doc,
                 upsert=True
             )
 
@@ -97,9 +100,12 @@ class PlayerRepository:
             created_at=player.created_at
         )
 
+        update_doc = player_document.model_dump(mode='python', by_alias=True)
+        update_doc.pop('_id', None)  # Ensure _id is not in the replacement doc
+
         self.db.players.replace_one(
             {"_id": player.id},
-            player_document.model_dump(mode='python', by_alias=True)
+            update_doc
         )
 
     def _map_to_domain(self, doc: dict) -> Player:
