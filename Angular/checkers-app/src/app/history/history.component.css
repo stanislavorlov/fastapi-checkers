@@ -116,11 +116,16 @@
 .opponent {
     color: #fff;
     font-weight: 500;
+    padding: 2px 8px;
 }
 
 .game-result {
     font-weight: 600;
     font-size: 0.95rem;
+    align-self: flex-end;
+    padding: 2px 8px;
+    margin-bottom: 2px;
+    /* Subtle adjustment to align with text baseline */
 }
 
 .victory {
