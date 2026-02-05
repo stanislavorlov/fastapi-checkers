@@ -26,7 +26,7 @@
 
   <main class="game-layout">
     <section class="player-section opponent">
-      <div class="player-card" [class.active]="board.turn === opponentSide">
+      <div class="player-card" [class.active]="board.turn.toLowerCase() === opponentSide?.toLowerCase()">
         <div class="avatar-wrapper">
           <div class="avatar" [style.background-color]="opponentSide === 'red' ? '#ff4d4d' : '#333'">
             {{ (opponentId || 'A')[0] | uppercase }}
@@ -76,7 +76,7 @@
     </section>
 
     <section class="player-section me">
-      <div class="player-card" [class.active]="board.turn === playerSide">
+      <div class="player-card" [class.active]="board.turn.toLowerCase() === playerSide?.toLowerCase()">
         <div class="avatar-wrapper">
           <div class="avatar" [style.background-color]="playerSide === 'red' ? '#ff4d4d' : '#333'">
             {{ (board.playerId || 'P')[0] | uppercase }}

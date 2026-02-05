@@ -3,7 +3,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Move } from '../models/move';
 import { Square } from '../models/square';
 import { Board } from '../models/board';
-import { Piece } from '../models/piece';
 import { AsyncPipe, NgFor, NgIf, TitleCasePipe, UpperCasePipe, SlicePipe } from '@angular/common';
 import { CheckersService } from '../services/checkers.service';
 import { Game } from '../models/game';
@@ -22,7 +21,6 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('historyList') private historyList!: ElementRef;
   private lastMoveCount = 0;
   board: Board;
-  pieces: Map<Square, Piece>;
   private readonly userService = inject(UserService);
   player$ = this.userService.player$;
   private readonly route = inject(ActivatedRoute);
@@ -31,9 +29,6 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   private event$: Subject<Move>;
 
   gameId = this.route.snapshot.paramMap.get('id')!;
-  gameMenu: boolean;
-  gameMode?: 'single' | 'multi' | 'online' | null;
-  singleSide?: 'red' | 'black' | null;
   playerId: string = '';
   playerSide?: 'red' | 'black';
   opponentId?: string;
@@ -46,11 +41,9 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   cachedGame: Game | null = null;
 
   constructor(private checkersService: CheckersService) {
-    this.gameMenu = true;
     this.event$ = new Subject<Move>();
     this.playerId = this.userService.currentPlayer?.player_id || '';
     this.board = new Board(this.playerId, this.event$);
-    this.pieces = new Map<Square, Piece>();
   }
 
   ngOnInit(): void {
@@ -83,7 +76,6 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
           }
 
           this.board.load(result);
-          this.pieces = this.board.pieces;
           this.cachedGame = result;
 
           if (result.finished_at) {
@@ -174,17 +166,16 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   backMenu(): void {
-    if (window.confirm("Are you sure to cancel this game?")) {
-      if (!this.isGameOver && this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-        this.webSocket.send(new AbandonMessage().toJSON());
+    if (!this.isGameOver) {
+      if (window.confirm("Are you sure to cancel this game?")) {
+        if (!this.isGameOver && this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
+          this.webSocket.send(new AbandonMessage().toJSON());
+        }
       }
-      this.gameMenu = true;
-      this.gameMode = null;
-      this.singleSide = null;
-
-      this.router.navigate(['/'], { queryParams: {} });
-      this.closeWebSocket();
     }
+
+    this.router.navigate(['/'], { queryParams: {} });
+    this.closeWebSocket();
   }
 
   goHistory(): void {
@@ -207,7 +198,6 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
       } else {
         this.board.showMove(this.currentReplayIndex, this.cachedGame);
       }
-      this.pieces = this.board.pieces;
     }
   }
 
@@ -215,7 +205,6 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (this.cachedGame && this.currentReplayIndex < (this.cachedGame.history?.length || 0) - 1) {
       this.currentReplayIndex++;
       this.board.showMove(this.currentReplayIndex, this.cachedGame);
-      this.pieces = this.board.pieces;
     }
   }
 
