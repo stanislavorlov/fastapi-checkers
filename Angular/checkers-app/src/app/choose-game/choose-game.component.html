@@ -1,42 +1,27 @@
-<div class="content game-menu">
-    <div class="left-side">
-        <div>
-            <ul>
-                <li style="flex-direction: column">
-                    <h1>Game Mode</h1>
-                </li>
-                <li style="flex-direction: column">
-                    <button class="button-9 blue" role="button" (click)="choosePlayMode('computer')">Computer (AI
-                        bot)</button>
-                </li>
-                <li style="flex-direction: column">
-                    <button class="button-9 blue" role="button" (click)="choosePlayMode('online')">Play Online</button>
-                </li>
-            </ul>
-        </div>
-        <table>
-            <tr *ngIf="gameMode === 'computer'">
-                <td colspan="2">
-                    <h3>Choose your side</h3>
-                </td>
-            </tr>
-            <tr *ngIf="gameMode === 'computer'">
-                <td>
-                    <button class="button-9" role="button" style="display: inline-block;"
-                        (click)="computerModeColor('black')"><img src="./black_piece.png" alt="Black Piece"
-                            height="40" /></button>
-                </td>
-                <td>
-                    <button class="button-9" role="button" style="display: inline-block;"
-                        (click)="computerModeColor('red')"><img src="./red_piece.png" alt="Red Piece"
-                            height="40" /></button>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <button class="button-9 red" role="button" (click)="backMenu()">Back</button>
-                </td>
-            </tr>
-        </table>
+<div class="choose-container glass-panel">
+    <h1>Select Game Mode</h1>
+    <div class="mode-selection">
+        <button class="button-9 blue" (click)="choosePlayMode('computer')">
+            <i class="fas fa-robot" style="margin-right: 12px;"></i> Play vs Computer
+        </button>
+        <button class="button-9 blue" (click)="choosePlayMode('online')">
+            <i class="fas fa-globe" style="margin-right: 12px;"></i> Play Online
+        </button>
     </div>
+
+    <div *ngIf="gameMode === 'computer'">
+        <h3>Select Your Side</h3>
+        <div class="side-selection">
+            <button class="side-btn" (click)="computerModeColor('black')" title="Play as Black">
+                <img src="./black_piece.png" alt="Black Piece" />
+            </button>
+            <button class="side-btn" (click)="computerModeColor('red')" title="Play as Red">
+                <img src="./red_piece.png" alt="Red Piece" />
+            </button>
+        </div>
+    </div>
+
+    <button class="button-9 red" (click)="backMenu()">
+        <i class="fas fa-arrow-left" style="margin-right: 12px;"></i> Back to Menu
+    </button>
 </div>

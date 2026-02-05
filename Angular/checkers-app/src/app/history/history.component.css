@@ -1,53 +1,24 @@
-.history-container {
-    padding: 2rem;
-    min-height: calc(100vh - 80px);
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    background: radial-gradient(circle at top right, #1a1a2e, #16213e);
-}
-
 .glass-panel {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 2rem;
-    width: 100%;
     max-width: 800px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.history-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.history-header h2 {
-    margin: 0;
-    font-size: 2rem;
-    background: linear-gradient(90deg, #fff, #aaa);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    padding: 2rem;
 }
 
 .back-link {
-    background: none;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(133, 133, 143, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: #fff;
     padding: 0.5rem 1rem;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
 }
 
 .back-link:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .loading-state,
@@ -125,7 +96,6 @@
     align-self: flex-end;
     padding: 2px 8px;
     margin-bottom: 2px;
-    /* Subtle adjustment to align with text baseline */
 }
 
 .victory {
@@ -138,20 +108,4 @@
 
 .view-btn {
     color: rgba(255, 255, 255, 0.3);
-}
-
-.spinner {
-    width: 30px;
-    height: 30px;
-    border: 3px solid rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    border-top-color: #3b82f6;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 1rem;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
 }

@@ -1,11 +1,11 @@
-<div class="profile-container">
-    <div class="profile-header">
+<div class="profile-container glass-panel">
+    <div class="panel-header">
         <h2>Profile Settings</h2>
-        <button class="button-9 blue" (click)="goBack()">Back to Game</button>
     </div>
 
     <div *ngIf="loading" class="loading-spinner">
-        Loading profile data...
+        <div class="spinner"></div> <!-- Assuming there's a spinner class or I should add one -->
+        <p>Loading profile data...</p>
     </div>
 
     <form *ngIf="!loading" [formGroup]="profileForm" (ngSubmit)="save()">
@@ -57,14 +57,18 @@
                 <textarea id="bio" formControlName="bio" rows="4" placeholder="Tell us about yourself..."></textarea>
             </div>
         </div>
-
         <div *ngIf="message"
             [ngClass]="{'message': true, 'success': !message.includes('Failed'), 'error': message.includes('Failed')}">
             {{ message }}
         </div>
 
         <div class="actions">
+            <button class="button-9 blue" (click)="goBack()">
+                <i class="fas fa-chevron-left" style="margin-right: 8px;"></i> Back to Game
+            </button>
             <button type="submit" class="button-9 green" [disabled]="profileForm.invalid || saving">
+                <i class="fas" [ngClass]="saving ? 'fa-circle-notch fa-spin' : 'fa-check'"
+                    style="margin-right: 8px;"></i>
                 {{ saving ? 'Saving...' : 'Save Changes' }}
             </button>
         </div>

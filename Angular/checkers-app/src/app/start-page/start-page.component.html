@@ -1,38 +1,42 @@
-<div class="content game-menu">
+<div class="start-container glass-panel">
     <div class="left-side">
-        <h1>Welcome to Draughts Game!</h1>
-        <ul>
+        <h1>Welcome to Checkers</h1>
+
+        <ul class="menu-list">
             <li>
-                <button class="button-9 blue" (click)="play()" role="button">Play</button>
+                <button class="button-9 blue" (click)="play()">Play Game</button>
             </li>
             <li *ngIf="player$ | async as player">
-                <button *ngIf="!player.is_guest" class="button-9 orange" (click)="history()"
-                    role="button">History</button>
-            </li>
-            <li *ngIf="(player$ | async) && !(player$ | async)?.is_guest">
-                <hr>
+                <button *ngIf="!player.is_guest" class="button-9 orange" (click)="history()">
+                    Game History
+                </button>
             </li>
         </ul>
-        <div *ngIf="player$ | async as player">
-            Welcome,
-            <div><b>{{ player.displayName }}</b></div>
-            <div>
-                <button *ngIf="!player.is_guest" class="button-31" role="button"
-                    (click)="accountProfile()">Profile</button>
-                <button *ngIf="!player.is_guest" class="button-31" role="button" (click)="logOut()">Log Out</button>
+
+        <div class="player-info" *ngIf="player$ | async as player">
+            <span class="welcome-text">Welcome back,</span>
+            <b>{{ player.displayName }}</b>
+            <div class="player-actions">
+                <button *ngIf="!player.is_guest" class="button-31" (click)="accountProfile()">
+                    <i class="fas fa-user-circle"></i> Profile
+                </button>
+                <button *ngIf="!player.is_guest" class="button-31" (click)="logOut()">
+                    <i class="fas fa-sign-out-alt"></i> Log Out
+                </button>
             </div>
         </div>
 
-        <ul *ngIf="!(player$ | async) || (player$ | async)?.is_guest">
+        <ul class="auth-links" *ngIf="!(player$ | async) || (player$ | async)?.is_guest">
             <li>
-                <button class="button-9 green" (click)="signUp()" role="button">Sign Up</button>
+                <button class="button-9 green" (click)="signUp()">Create Account</button>
             </li>
             <li>
-                <button class="button-9 red" (click)="logIn()" role="button">Log In</button>
+                <button class="button-9 red" (click)="logIn()">Sign In</button>
             </li>
         </ul>
     </div>
+
     <div class="right-side">
-        <img src="./Draughts.png" alt="Checkers" width="90%" />
+        <img src="./Draughts.png" alt="Checkers Board" />
     </div>
 </div>
