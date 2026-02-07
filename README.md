@@ -2,6 +2,8 @@
 
 A modern, real-time online checkers application built with a focus on Clean Architecture and high-performance communication.
 
+![Checkers App Screenshot](images/CheckersApp.jpg)
+
 ## 🎮 Game Overview
 
 This application implements the classic game of Checkers (English Draughts) with the following features:
