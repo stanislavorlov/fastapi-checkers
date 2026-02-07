@@ -117,7 +117,9 @@ export class PlayComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   connectWebSocket(gameId: string): void {
-    this.webSocket = new WebSocket(`ws://localhost:8000/ws/${gameId}?player_id=${this.playerId}`);
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    this.webSocket = new WebSocket(`${protocol}//${host}/ws/${gameId}?player_id=${this.playerId}`);
 
     this.webSocket.onopen = (event) => {
       console.log('WebSocket connection established');

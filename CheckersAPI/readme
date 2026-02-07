@@ -10,4 +10,4 @@ ifconfig | grep inet
 uvicorn main:app --host 0.0.0.0 --port 8000
 
 Angular app:
-ng serve --host 0.0.0.0 --port 4200
+ng serve --host 0.0.0.0 --port 4200 --disable-host-check

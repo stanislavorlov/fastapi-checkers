@@ -18,8 +18,8 @@ export class MatchmakingService {
         }
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        // Use the same hostname as the application to support local network sharing
-        const host = `${window.location.hostname}:8000`;
+        // Use window.location.host to work with Angular proxy (supports ngrok)
+        const host = window.location.host;
         this.socket = new WebSocket(`${protocol}//${host}/ws/matchmaking/${playerId}`);
 
         this.socket.onmessage = (event) => {
