@@ -30,6 +30,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_hash.verify(plain_password, hashed_password)
 
 def create_access_token(player_id: str, name: str, email: str, access_type: str) -> AccessToken:
+    logger.debug(f"Creating access token for {player_id} {name} {email} {access_type}")
+
     access_token_data = AccessTokenData(
         sub=player_id,
         name=name,
@@ -39,6 +41,8 @@ def create_access_token(player_id: str, name: str, email: str, access_type: str)
         iss=settings.ISSUER,
         aud=settings.AUDIENCE,
     )
+
+    logger.debug(f"access_token_data={access_token_data}")
 
     access_token = jwt.encode(access_token_data.model_dump(), settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 

@@ -37,7 +37,7 @@ class ResolveGuestPlayerHandler(RequestHandler[ResolveGuestPlayerRequest, str]):
 
             create_player_request = CreatePlayerRequest(
                 type=PlayerType.GUEST,
-                player_level='1'
+                player_level='intermediate'
             )
             player_id = await self.create_player_handler.handle(create_player_request)
             logger.info('Created new Guest Player %s', player_id)

@@ -1,6 +1,7 @@
 from fastapi import Depends
 from application.handlers.retrieve_game_history_handler import RetrieveGameHistoryHandler
 from application.handlers.retrieve_player_history_handler import RetrievePlayerHistoryHandler
+from application.handlers.websocket.dispatcher import WebSocketDispatcher
 from application.requests.retrieve_game_history import RetrieveGameHistoryRequest
 from application.requests.retrieve_player_history import RetrievePlayerHistoryRequest
 from application.requests.update_profile import UpdateProfileRequest
@@ -21,8 +22,8 @@ from application.handlers.resolve_player_handler import ResolvePlayerHandler
 from application.handlers.start_computer_game_handler import StartComputerGameHandler
 from application.handlers.join_queue_handler import JoinQueueHandler
 from application.handlers.abandon_game_handler import AbandonGameHandler
-from application.handlers.websocket.dispatcher import WebSocketDispatcher
 from application.handlers.websocket.move_handler import MoveHandler
+from application.matchmaking_manager import MatchmakingManager
 from application.mediator import Mediator
 from application.requests.create_player import CreatePlayerRequest
 from application.requests.retrieve_token import RetrieveToken, RetrieveGuestToken, RetrieveProfileToken
@@ -154,6 +155,18 @@ def get_retrieve_game_history_handler(
         history_repository: HistoryRepository = Depends(get_history_repository),
 ) -> RetrieveGameHistoryHandler:
     return RetrieveGameHistoryHandler(history_repository)
+
+def get_matchmaking_manager(
+    matching_repository = Depends(get_matching_repository),
+    game_repository = Depends(get_game_repository),
+    player_repository = Depends(get_player_repository),
+) -> MatchmakingManager:
+    return MatchmakingManager(
+        matching_repository,
+        game_repository,
+        player_repository,
+        manager
+    )
 
 def get_mediator(
     create_player_handler = Depends(get_create_player_handler),

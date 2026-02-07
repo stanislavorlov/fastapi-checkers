@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ApiResult } from '../models/api-result';
 import { Game } from '../models/game';
+import { RequestGame } from '../models/request_game';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,7 @@ export class CheckersService {
   }
 
   requestOnlineGame() {
-    return this.httpClient.post<ApiResult<string>>('/api/games/online', {});
+    return this.httpClient.post<RequestGame>('/api/games/online', {});
   }
 
   requestComputerGame(singleSide: string) {

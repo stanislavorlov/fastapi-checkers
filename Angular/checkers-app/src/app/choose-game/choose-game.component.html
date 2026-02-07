@@ -25,3 +25,12 @@
         <i class="fas fa-arrow-left" style="margin-right: 12px;"></i> Back to Menu
     </button>
 </div>
+
+<div class="waiting-overlay" *ngIf="isWaiting">
+    <div class="waiting-card glass-panel">
+        <div class="spinner"></div>
+        <h2>Searching for Opponent...</h2>
+        <p>Please wait, we are finding the best match for you.</p>
+        <button class="button-9 red" (click)="backMenu()">Cancel</button>
+    </div>
+</div>

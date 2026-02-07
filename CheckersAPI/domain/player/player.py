@@ -28,7 +28,7 @@ class Player(AggregateRoot):
         self.type_ = type_
 
     @classmethod
-    def create(cls, identity: PlayerIdentity, player_level: str = "1", profile: Optional[Profile] = None) -> "Player":
+    def create(cls, identity: PlayerIdentity, player_level: str = "intermediate", profile: Optional[Profile] = None) -> "Player":
         """
         Unified factory method for all player types.
         """

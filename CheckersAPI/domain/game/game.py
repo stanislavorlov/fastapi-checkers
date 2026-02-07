@@ -39,6 +39,26 @@ class Game(AggregateRoot):
         game.start()
         return game
 
+    @classmethod
+    def create_pvp(cls, player1: Player, player2: Player) -> "Game":
+        # Randomly assign sides
+        import random
+        sides = [Side.Light, Side.Dark]
+        random.shuffle(sides)
+        
+        game = cls(
+            created_at=datetime.now(),
+            mode=GameMode.PVP,
+            players={
+                sides[0]: player1,
+                sides[1]: player2
+            },
+            history=[],
+            result={}
+        )
+        game.start()
+        return game
+
     def assign_player(self, side: Side, player: Player):
         if not side in self.players:
             self.players[side] = player

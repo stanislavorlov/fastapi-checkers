@@ -111,6 +111,8 @@ class RetrieveTokenHandler(RequestHandler[RetrieveToken, AccessToken]):
         player_id = await self.resolve_guest_player_handler.handle(
             ResolveGuestPlayerRequest(host=request.client_host, agent=request.agent)
         )
+
+        logger.debug("Handling Guest Token request for player %s", player_id)
         
         return AuthResult(
             player_id=player_id,

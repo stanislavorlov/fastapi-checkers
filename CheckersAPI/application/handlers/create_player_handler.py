@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from application.requests.create_player import CreatePlayerRequest
 from domain.player.player import Player
@@ -7,6 +8,8 @@ from infrastructure.repositories.profile_repository import ProfileRepository
 from application.handlers.base_handler import RequestHandler
 from domain.player.player_identity import PlayerIdentity
 
+
+logger = logging.getLogger(__name__)
 
 class CreatePlayerHandler(RequestHandler[CreatePlayerRequest, str]):
 
@@ -32,5 +35,7 @@ class CreatePlayerHandler(RequestHandler[CreatePlayerRequest, str]):
             identity,
             request.player_level,
             profile)
+
+        logger.debug(f"Created new player {player}")
 
         return self.player_repository.create(player)

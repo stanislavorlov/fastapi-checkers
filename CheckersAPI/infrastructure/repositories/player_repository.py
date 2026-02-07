@@ -43,7 +43,7 @@ class PlayerRepository:
             created_at=player.created_at
         )
 
-        self.db.players.insert_one(
+        inserted_player_result = self.db.players.insert_one(
             player_document.model_dump(mode='python', by_alias=True)
         )
 
@@ -66,6 +66,8 @@ class PlayerRepository:
         )
 
         self.db.stats.insert_one(stats_document.model_dump(mode='python', by_alias=True))
+
+        return str(inserted_player_result.inserted_id)
 
     def save(self, player: Player) -> None:
         """Saves player state and ensures its sessions are in the standalone collection."""
